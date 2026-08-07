@@ -21,6 +21,13 @@ class Config:
 
     if DATABASE_URL:
         # Render PostgreSQL
+        if DATABASE_URL:
+        if DATABASE_URL.startswith("postgres://"):
+            DATABASE_URL = DATABASE_URL.replace(
+                "postgres://",
+                "postgresql://",
+                1
+            )
         SQLALCHEMY_DATABASE_URI = DATABASE_URL
 
     else:
