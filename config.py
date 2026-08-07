@@ -10,8 +10,7 @@ class Config:
     # ---------------------------------
 
     SECRET_KEY = os.environ.get(
-        "SECRET_KEY",
-        "dev-secret-key-change-this"
+        "SECRET_KEY"
     )
 
     # ---------------------------------
