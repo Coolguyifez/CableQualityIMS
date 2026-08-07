@@ -14,7 +14,7 @@ from .models import User, Notification
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get( User, int(user_id) )
 
 
 def create_app():
@@ -31,7 +31,7 @@ def create_app():
 
     # Login settings
     login_manager.login_view = "auth.login"
-    login_manager.login_message = "Please log in to continue."
+    login_manager.login_message = ("Please log in to continue.")
     login_manager.login_message_category = "warning"
 
     # Register blueprints
@@ -60,7 +60,7 @@ def create_app():
                 Notification.created_at.desc()
             ).limit(5).all()
 
-        return dict(
+        return (
             unread_notifications=unread_notifications,
             latest_notifications=latest_notifications
         )
