@@ -7,8 +7,7 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 class Config:
 
     SECRET_KEY = os.environ.get(
-        "SECRET_KEY",
-        "change-this-later"
+        "SECRET_KEY"
     )
 
     DATABASE_URL = os.environ.get("DATABASE_URL")
