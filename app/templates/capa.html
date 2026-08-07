@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}CAPA{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+    <div>
+
+        <h2 class="fw">
+
+            Corrective & Preventive Actions
+
+        </h2>
+
+        <p class="text-muted">
+
+            Manage all CAPA records
+
+        </p>
+
+    </div>
+
+</div>
+
+<div class="card shadow-sm">
+
+        <div class="card-header">
+
+            <div class="row align-items-center">
+
+                <div class="col-md-4">
+
+                    <input
+                        type="text"
+                        id="capaSearch"
+                        class="form-control"
+                        placeholder="Search CAPA records...">
+
+                </div>
+
+                <div class="col-md-8 text-md-end mt-3 mt-md-0">
+
+                    <span class="text-muted">
+
+                        Total CAPAs:
+
+                        <strong>{{ capas|length }}</strong>
+
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="table-responsive">
+
+        <table class="table table-hover align-middle mb-0"
+            id="capaTable">
+
+                <thead class="table table-hover"">
+
+                    <tr>
+
+                        <th>#</th>
+
+                        <th>Deviation</th>
+
+                        <th>Assigned To</th>
+
+                        <th>Due Date</th>
+
+                        <th>Status</th>
+
+                        <th>Effectiveness</th>
+
+                        <th class="text-center">Actions</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                {% for capa in capas %}
+
+                    <tr>
+
+                        <td>{{ loop.index }}</td>
+
+                        <td>
+
+                            {{ capa.deviation.deviation_number }}
+
+                        </td>
+
+                        <td>
+
+                            {{ capa.assigned_to }}
+
+                        </td>
+
+                        <td>
+
+                            {{ capa.due_date or "-" }}
+
+                        </td>
+
+                        <td>
+                            {% if capa.display_status == "Closed" %}
+
+                                <span class="badge bg-success">
+
+                                    Closed
+
+                                </span>
+
+                            {% elif capa.display_status == "Overdue" %}
+
+                                <span class="badge bg-danger">
+
+                                    Overdue
+
+                                    ({{ capa.days_overdue }} day{% if capa.days_overdue != 1 %}s{% endif %})
+
+                                </span>
+
+                            {% elif capa.display_status == "In Progress" %}
+
+                                <span class="badge bg-warning text-dark">
+
+                                    In Progress
+
+                                </span>
+
+                            {% elif capa.display_status == "Completed" %}
+
+                                <span class="badge bg-primary">
+
+                                    Completed
+
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge bg-secondary">
+
+                                    Open
+
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            {% if capa.effectiveness=="Effective" %}
+
+                            <span class="badge bg-success">
+
+                            Effective
+
+                            </span>
+
+                            {% elif capa.effectiveness=="Pending" %}
+
+                            <span class="badge bg-warning text-dark">
+
+                            Pending
+
+                            </span>
+
+                            {% else %}
+
+                            <span class="badge bg-danger">
+
+                            Not Effective
+
+                            </span>
+
+                            {% endif %}
+
+                            </td>
+
+                        <td class="text-center">
+
+                           <div class="d-inline-flex gap-1">
+
+                            <a href="{{ url_for('main.view_capa', capa_id=capa.id) }}"
+                               class="btn btn-primary btn-sm">
+
+                                <i class="bi bi-eye"></i>
+
+                            </a>
+
+                            <a href="{{ url_for('main.edit_capa', capa_id=capa.id) }}"
+                               class="btn btn-warning btn-sm">
+
+                                <i class="bi bi-pencil"></i>
+
+                            </a>
+
+                            <a href="{{ url_for('main.delete_capa', capa_id=capa.id) }}"
+                               class="btn btn-danger btn-sm"
+                               onclick="return confirm('Delete this CAPA?')">
+
+                                <i class="bi bi-trash"></i>
+
+                            </a>
+
+                           </div>
+
+                        </td>
+
+                    </tr>
+
+                {% else %}
+
+                    <tr>
+
+                        <td colspan="8" class="text-center py-5">
+
+                        <i class="bi bi-tools display-4 text-secondary"></i>
+
+                        <h5 class="mt-3">
+
+                            No CAPA Found
+
+                        </h5>
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+          
+
+        </div>
+
+    
+
+</div>
+
+{% endblock %}

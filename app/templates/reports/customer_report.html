@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% from "components/report_table_header.html" import sortable %}
+
+{% block title %}
+
+Customer Report
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+
+
+    <div class="d-flex flex-wrap gap-6 justify-content-end mb-3">
+        <a href="{{ url_for('main.reports') }}"
+            class="btn btn-outline-secondary">
+
+            Back
+
+        </a>
+    </div>  
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+<div>
+
+<h2 class="fw-bold">
+
+Customer Report
+
+</h2>
+
+<p class="text-muted">
+
+Customer information and contact summary
+
+</p>
+
+</div>
+
+{% set excel_endpoint = "main.export_customer_excel" %}
+
+{% set pdf_endpoint = "main.export_customer_pdf" %}
+
+{% include "components/report_export_buttons.html" %}
+
+</div>
+
+<div class="row">
+
+<div class="col-md-6 mb-3">
+
+<div class="card shadow-sm">
+
+<div class="card-body">
+
+<small>Total Customers</small>
+
+<h2>{{ total }}</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<div class="card border-success shadow-sm">
+
+<div class="card-body">
+
+<small>Customers with Email</small>
+
+<h2 class="text-success">
+
+{{ with_email }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<div class="card border-primary shadow-sm">
+
+<div class="card-body">
+
+<small>Customers with Phone</small>
+
+<h2 class="text-primary">
+
+{{ with_phone }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="card shadow-sm mb-4">
+
+    <div class="card-header">
+
+        <h5 class="mb-0">
+
+            Customer Cable Request Frequency
+
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <canvas id="customerRequestChart"></canvas>
+
+    </div>
+
+</div>
+
+<form method="GET" class="card shadow-sm mb-4">
+
+<div class="card-body">
+
+<div class="row g-3">
+
+<div class="col-md-4">
+
+<label>Company</label>
+
+<input
+
+type="text"
+
+name="company_name"
+
+value="{{ request.args.get('company_name','') }}"
+
+class="form-control">
+
+</div>
+
+<div class="col-md-4">
+
+<label>Contact Person</label>
+
+<input
+
+type="text"
+
+name="contact_person"
+
+value="{{ request.args.get('contact_person','') }}"
+
+class="form-control">
+
+</div>
+
+<div class="col-md-4">
+
+<label>Email</label>
+
+<input
+
+type="text"
+
+name="email"
+
+value="{{ request.args.get('email','') }}"
+
+class="form-control">
+
+</div>
+
+<div class="col-12">
+
+<button class="btn btn-primary">
+
+Search
+
+</button>
+
+<a
+
+href="{{ url_for('main.customer_report') }}"
+
+class="btn btn-secondary">
+
+Reset
+
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+</form>
+
+<div class="card shadow-sm">
+
+<div class="card-body p-0">
+
+<div class="table-responsive">
+
+<table class="table table-hover align-middle mb-0">
+
+<thead class="table">
+
+<tr>
+
+<th>
+
+{{ sortable("Company","company_name") }}
+
+</th>
+
+<th>Requests</th>
+
+<th>
+
+{{ sortable("Contact","contact_person") }}
+
+</th>
+
+<th>
+
+{{ sortable("Email","email") }}
+
+</th>
+
+<th>
+
+{{ sortable("Phone","phone") }}
+
+</th>
+
+<th>
+
+Address
+
+</th>
+
+<th>
+
+{{ sortable("Created","created_at") }}
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for customer in customers %}
+
+<tr>
+
+<td>
+
+<strong>
+
+{{ customer.company_name }}
+
+</strong>
+
+</td>
+
+<td>
+
+<span class="badge bg-primary">
+{{ customer.request_count }}
+</span>
+
+</td>
+
+
+<td>
+
+{{ customer.contact_person or "-" }}
+
+</td>
+
+<td>
+
+{{ customer.email or "-" }}
+
+</td>
+
+<td>
+
+{{ customer.phone or "-" }}
+
+</td>
+
+<td>
+
+{{ customer.address or "-" }}
+
+</td>
+
+<td>
+
+{{ customer.created_at.strftime("%d-%m-%Y") }}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+{% if not customers %}
+
+<tr>
+
+<td colspan="6" class="text-center py-5">
+
+<i class="bi bi-people display-4 text-muted"></i>
+
+<h5 class="mt-3">
+
+No customers found.
+
+</h5>
+
+</td>
+
+</tr>
+
+{% endif %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+{% include "components/report_pagination.html" %}
+
+{% endblock %}
+
+{% block scripts %}
+
+{{ super() }}
+
+<script>
+
+new Chart(
+
+    document.getElementById("customerRequestChart"),
+
+    {
+
+        type: "bar",
+
+        data: {
+
+            labels: {{ request_chart["labels"]|tojson }},
+
+            datasets: [
+
+                {
+
+                    label: "Cable Requests",
+
+                    data: {{ request_chart["values"]|tojson }},
+
+                    backgroundColor:"#0d6efd"
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            plugins: {
+
+                legend: {
+
+                    display: false
+
+                }
+
+            },
+
+            scales: {
+
+                y: {
+
+                    beginAtZero: true,
+
+                    ticks: {
+
+                        precision: 0
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+
+);
+
+</script>
+
+{% endblock %}

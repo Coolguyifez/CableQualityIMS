@@ -1,0 +1,102 @@
+:root{
+
+    --primary:#0F172A;
+    --secondary:#2563EB;
+    --success:#16A34A;
+    --warning:#F59E0B;
+    --danger:#DC2626;
+
+    --background:#F8FAFC;
+    --card:#FFFFFF;
+    --border:#E5E7EB;
+
+    --text:#1F2937;
+
+    --sidebar-width:260px;
+
+}
+
+
+body.dark{
+
+    --primary:#60A5FA;
+    --secondary:#3B82F6;
+
+    --success:#22C55E;
+    --warning:#FBBF24;
+    --danger:#EF4444;
+
+    --background:#103895;
+    --card:#1E293B;
+    --border:#334155;
+
+    --text:#F8FAFC;
+
+}
+
+
+@media (prefers-color-scheme: dark){
+
+    body.system{
+
+        --primary:#60A5FA;
+        --secondary:#3B82F6;
+
+        --success:#22C55E;
+        --warning:#FBBF24;
+        --danger:#EF4444;
+
+        --background:#103895;
+        --card:#1E293B;
+        --border:#334155;
+
+        --text:#F8FAFC;
+
+    }
+
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+
+    background:var(--background);
+
+    color:var(--text);
+
+    overflow-x:hidden;
+
+}
+
+.wrapper{
+
+    display:flex;
+
+    min-height:100vh;
+
+}
+
+.page{
+
+    flex:1;
+
+    display:flex;
+
+    flex-direction:column;
+
+    min-width:0;
+
+}
+
+main{
+
+    flex:1;
+
+}
+

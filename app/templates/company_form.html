@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <div class="row justify-content-center">
+
+        <div class="col-lg-9">
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-header">
+
+                    <h4 class="mb-0">
+
+                        
+
+                        {{ title }}
+
+                    </h4>
+
+                </div>
+
+                <div class="card-body">
+
+                    <form method="POST">
+
+                        {{ form.hidden_tag() }}
+
+                        <!-- ===================================== -->
+                        <!-- COMPANY INFORMATION -->
+                        <!-- ===================================== -->
+
+                        <h5 class="mb-3">
+
+                            
+
+                            Company Information
+
+                        </h5>
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                {{ form.company_name.label(class="form-label") }}
+
+                                {{ form.company_name(class="form-control") }}
+
+                                {% for error in form.company_name.errors %}
+                                <small class="text-danger">
+                                    {{ error }}
+                                </small>
+                                {% endfor %}
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                {{ form.company_code.label(class="form-label") }}
+
+                                {{ form.company_code(class="form-control") }}
+
+                                {% for error in form.company_code.errors %}
+                                <small class="text-danger">
+                                    {{ error }}
+                                </small>
+                                {% endfor %}
+
+                            </div>
+
+                        </div>
+
+                        <div class="mb-3">
+
+                            {{ form.address.label(class="form-label") }}
+
+                            {{ form.address(class="form-control", rows="3") }}
+
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                {{ form.email.label(class="form-label") }}
+
+                                {{ form.email(class="form-control") }}
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                {{ form.phone.label(class="form-label") }}
+
+                                {{ form.phone(class="form-control") }}
+
+                            </div>
+
+                        </div>
+
+                        <div class="mb-4">
+
+                            {{ form.logo.label(class="form-label") }}
+
+                            {{ form.logo(class="form-control") }}
+
+                            <small class="text-muted">
+
+                                Enter the company logo URL (optional).
+
+                            </small>
+
+                        </div>
+
+                        <div class="form-check mb-4">
+
+                            {{ form.is_active(class="form-check-input") }}
+
+                            {{ form.is_active.label(class="form-check-label") }}
+
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- ===================================== -->
+                        <!-- COMPANY ADMINISTRATOR -->
+                        <!-- ===================================== -->
+
+                        <h5 class="mb-3">
+
+                            <i class="bi bi-person-badge"></i>
+
+                            Company Administrator
+
+                        </h5>
+
+                        <div class="alert alert-info">
+
+                            The first administrator account for this company.
+
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                {{ form.admin_full_name.label(class="form-label") }}
+
+                                {{ form.admin_full_name(class="form-control") }}
+
+                                {% for error in form.admin_full_name.errors %}
+                                <small class="text-danger">
+                                    {{ error }}
+                                </small>
+                                {% endfor %}
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                {{ form.admin_username.label(class="form-label") }}
+
+                                {{ form.admin_username(class="form-control") }}
+
+                                {% for error in form.admin_username.errors %}
+                                <small class="text-danger">
+                                    {{ error }}
+                                </small>
+                                {% endfor %}
+
+                            </div>
+
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                {{ form.admin_email.label(class="form-label") }}
+
+                                {{ form.admin_email(class="form-control") }}
+
+                                {% for error in form.admin_email.errors %}
+                                <small class="text-danger">
+                                    {{ error }}
+                                </small>
+                                {% endfor %}
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                {{ form.admin_password.label(class="form-label") }}
+
+                                {{ form.admin_password(class="form-control") }}
+
+                                {% for error in form.admin_password.errors %}
+                                <small class="text-danger">
+                                    {{ error }}
+                                </small>
+                                {% endfor %}
+
+                            </div>
+
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between">
+
+                            <a href="{{ url_for('main.companies') }}"
+                               class="btn btn-secondary">
+
+
+                                Cancel
+
+                            </a>
+
+                            {{ form.submit(class="btn btn-primary") }}
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

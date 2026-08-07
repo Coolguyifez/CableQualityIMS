@@ -1,0 +1,615 @@
+{% extends "base.html" %}
+
+{% from "components/report_table_header.html" import sortable %}
+
+{% block title %}
+
+Inspection Report
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+
+    <div class="d-flex flex-wrap gap-6 justify-content-end mb-3">
+        <a href="{{ url_for('main.reports') }}"
+            class="btn btn-outline-secondary">
+
+            Back
+
+        </a>
+    </div>  
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="fw-bold">
+
+                Inspection Report
+
+            </h2>
+
+            <p class="text-muted mb-0">
+
+                Inspection analytics and export center
+
+            </p>
+
+        </div>
+
+        {% set excel_endpoint = "main.export_inspection_excel" %}
+
+        {% set pdf_endpoint = "main.export_inspection_pdf" %}
+
+        {% include "components/report_export_buttons.html" %}
+
+    </div>
+
+    {% include "components/report_cards.html" %}
+
+    
+
+</div>
+
+<div class="row">
+
+    <div class="col-md-6 mb-3">
+
+        <div class="card shadow-sm">
+
+            <div class="card-header">
+
+                Inspection Results
+
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="resultChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+
+
+    <div class="col-md-6 mb-3">
+
+        <div class="card shadow-sm">
+
+            <div class="card-header">
+
+                Monthly Inspection Trend
+
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="monthlyChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="row">
+
+    <div class="col-md-6 mb-3">
+
+        <div class="card shadow-sm">
+
+            <div class="card-header">
+
+                Production Line Performance
+
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="lineChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="col-md-6 mb-3">
+
+        <div class="card shadow-sm">
+
+            <div class="card-header">
+
+                Cable Types Inspected
+
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="cableChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% include "components/report_filters.html" %}
+
+<div class="card shadow-sm">
+
+    <div class="card-body p-0">
+
+        <div class="table-responsive">
+
+            <table class="table table-hover table-striped align-middle mb-0">
+
+                <thead class="table">
+
+                <tr>
+
+                    <th>
+
+                        {{ sortable(
+
+                            "Inspection No",
+
+                            "inspection_number"
+
+                        ) }}
+
+                    </th>
+
+
+                    <th>
+
+                        Cable Type
+
+                    </th>
+
+
+                    <th>
+                        
+                        Voltage Rating
+
+
+                    </th>
+
+                    <th>
+
+                        Drain Config
+
+                    </th>
+
+                    <th>
+
+                        Length
+
+                    </th>
+
+                    <th>
+
+                       Customer
+
+                    </th>
+
+                    <th>
+
+                        Batch No
+
+                    </th>
+
+                    <th>
+
+                        Drum No
+
+                    </th>
+
+                    <th class="text-center">
+
+                        Cable Code
+
+                    </th>
+
+
+                    <th>
+
+                        Production Line
+
+                    </th>
+
+                    <th>
+
+                        {{ sortable(
+
+                            "Inspector",
+
+                            "inspector"
+
+                        ) }}
+
+                    </th>
+
+                    <th>
+
+                        {{ sortable(
+
+                            "Date",
+
+                            "inspection_date"
+
+                        ) }}
+
+                    </th>
+
+                    <th>
+
+                        {{ sortable(
+
+                            "Result",
+
+                            "result"
+
+                        ) }}
+
+                    </th>
+
+                    <th class="text-center">
+
+                     Action
+
+                    </th>
+
+                </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for inspection in inspections %}
+
+                    <tr>
+
+                        <!-- Inspection Number -->
+                        <td>
+                            <strong>{{ inspection.inspection_number }}</strong>
+                        </td>
+
+                        <!-- Cable Type -->
+                        <td>
+                           {{inspection.batch.cable_type.pair_count}} x {{inspection.batch.cable_type.conductor_size}} - {{ inspection.batch.cable_type.name }}
+                        </td>
+
+                        <!-- Voltage Rating -->
+                        <td>
+                            {{ inspection.batch.cable_type.voltage_rating }}
+                        </td>
+
+                        <!-- Drain Configuration -->
+                        <td>
+                            {{ inspection.batch.cable_type.drain_configuration }}
+                        </td>
+
+                        <!-- Cable Length -->
+                        <td>
+                            {{ inspection.batch.cable_length }} m
+                        </td>
+
+                        <!-- Project Name -->
+                        <td>
+                            {{ inspection.batch.customer.company_name }} {{inspection.batch.customer.address}}
+                        </td>
+
+                        <!-- Batch Number -->
+                        <td>
+                            {{ inspection.batch.batch_number }}
+                        </td>
+
+                        <!-- Drum Number -->
+                        <td>
+                            {{ inspection.batch.drum_number }}
+                        </td>
+
+                        <!-- Cable Code -->
+                        <td>
+                            <span class="badge bg-primary">{{ inspection.batch.cable_code }}</span>
+                            
+                        </td>
+
+                        <!-- Production Line -->
+                        <td>
+                            {{ inspection.batch.production_line.line_name }}
+                        </td>
+
+                        <!-- Inspector -->
+                        <td>
+                            {{ inspection.inspector }}
+                        </td>
+
+                        <!-- Inspection Date -->
+                        <td>
+                            {{ inspection.inspection_date.strftime("%d %b %Y") }}
+                        </td>
+
+                        <!-- Result -->
+                        <td>
+
+                            {% if inspection.overall_result == "Pass" %}
+
+                                <span class="badge bg-success">
+                                    Pass
+                                </span>
+
+                            {% elif inspection.overall_result == "Fail" %}
+
+                                <span class="badge bg-danger">
+                                    Fail
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge bg-warning text-dark">
+                                    Pending
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <!-- Actions -->
+                        <td>
+
+                            <div class="d-inline-flex gap-1">
+
+                                <a
+                                    href="{{ url_for(
+                                        'main.view_inspection',
+                                        inspection_id=inspection.id
+                                    ) }}"
+                                    class="btn btn-primary btn-sm"
+                                >
+                                    <i class="bi bi-eye"></i>
+                                </a>
+
+                                <a
+                                    href="{{ url_for(
+                                        'main.edit_inspection',
+                                        inspection_id=inspection.id
+                                    ) }}"
+                                    class="btn btn-warning btn-sm"
+                                >
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                    {% if not inspections %}
+
+                    <tr>
+
+                        <td colspan="14" class="text-center py-5">
+
+                            <i class="bi bi-inbox display-4 text-muted"></i>
+
+                            <h5 class="mt-3">
+                                No inspections found.
+                            </h5>
+
+                        </td>
+
+                    </tr>
+
+                    {% endif %}
+
+                    </tbody>
+
+                </table>
+
+                </div>
+
+                </div>
+
+                </div>
+
+                {% include "components/report_pagination.html" %}
+
+
+                {% endblock %}
+
+
+                {% block scripts %}
+
+                {{ super() }}
+
+
+                <script>
+
+                    const resultCtx = document.getElementById("resultChart");
+
+                    new Chart(resultCtx,{
+
+                        type:"pie",
+
+                        data:{
+
+                            labels:{{ result_chart["labels"]|tojson }},
+
+                            datasets:[{
+
+                                data:{{ result_chart["values"]|tojson }},
+
+                                backgroundColor:[
+
+                                    "#198754",
+
+                                    "#dc3545",
+
+                                    "#ffc107"
+
+                                ]
+
+                            }]
+
+                        },
+
+                        options:{
+
+                            responsive:true,
+
+                            plugins:{
+
+                                legend:{
+
+                                    position:"bottom"
+
+                                }
+
+                            }
+
+                        }
+
+                    });
+
+                    const monthlyCtx=document.getElementById("monthlyChart");
+
+                    new Chart(monthlyCtx,{
+
+                        type:"line",
+
+                        data:{
+
+                            labels:{{ monthly_chart["labels"]|tojson }},
+
+                            datasets:[{
+
+                                label:"Inspections",
+
+                                data:{{ monthly_chart["data"]|tojson }},
+
+                                borderColor:"#0d6efd",
+
+                                backgroundColor:"rgba(13,110,253,.15)",
+
+                                tension:.35,
+
+                                fill:true
+
+                            }]
+
+                        },
+
+                        options:{
+
+                            responsive:true,
+
+
+
+                        }
+
+                    });
+
+                    const lineCtx=document.getElementById("lineChart");
+
+                    new Chart(lineCtx,{
+
+                        type:"bar",
+
+                        data:{
+
+                            labels:{{ line_chart["labels"]|tojson }},
+
+                            datasets:[{
+
+                                label:"Inspections",
+
+                                data:{{ line_chart["values"]|tojson }},
+
+                                backgroundColor:"#0d6efd"
+
+                            }]
+
+                        },
+
+                        options:{
+
+                            responsive:true,
+
+                            plugins:{
+
+                                legend:{
+
+                                    display:false
+
+                                }
+
+                            }
+
+                        }
+
+                    });
+
+                    const cableCtx=document.getElementById("cableChart");
+
+                    new Chart(cableCtx,{
+
+                        type:"bar",
+
+                        data:{
+
+                            labels:{{ cable_chart["labels"]|tojson }},
+
+                            datasets:[{
+
+                                label:"Inspections",
+
+                                data:{{ cable_chart["values"]|tojson }},
+
+                                backgroundColor:"#20c997"
+
+                            }]
+
+                        },
+
+                        options:{
+
+                            indexAxis:"y",
+
+                            responsive:true,
+
+                            plugins:{
+
+                                legend:{
+
+                                    display:false
+
+                                }
+
+                            }
+
+                        }
+
+                    });
+
+                    </script>
+
+
+{% endblock %}

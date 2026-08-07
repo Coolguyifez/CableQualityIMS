@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}
+Quality Metric
+{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+
+    <div class="col-lg-8">
+
+        <div class="card shadow-sm border-0">
+
+            <div class="card-header  d-flex justify-content-between align-items-center">
+
+                <h4 class="mb-0">
+
+                    Record Quality Metric
+
+                </h4>
+
+            </div>
+
+            <div class="card-body">
+
+                <form method="POST">
+
+                    {{ form.hidden_tag() }}
+
+                    <!-- Inspection Details -->
+
+                    <div class="row">
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label fw-semibold">
+
+                                Inspection Number
+
+                            </label>
+
+                            <input
+                                type="text"
+                                class="form-control"
+                                value="{{ inspection.inspection_number }}"
+                                readonly>
+
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label fw-semibold">
+
+                                Batch Number
+
+                            </label>
+
+                            <input
+                                type="text"
+                                class="form-control"
+                                value="{{ inspection.batch.batch_number }}"
+                                readonly>
+
+                        </div>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+
+                            Cable Name
+
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            value="{{ inspection.batch.cable_type.pair_count }} x {{ inspection.batch.cable_type.conductor_size }} - {{ inspection.batch.cable_type.name }}"
+                            readonly>
+
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Cable Code
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            value="{{ inspection.batch.cable_code }}"
+                            readonly>
+
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Voltage Rating
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            value="{{ inspection.batch.cable_type.voltage_rating }}"
+                            readonly>
+
+                    </div>
+
+                    <!-- Metric -->
+
+                    <div class="mb-3">
+
+                        {{ form.specification_id.label(class="form-label fw-semibold") }}
+
+                        {{ form.specification_id(class="form-select", id="specification_id") }}
+
+                    </div>
+
+                    <!-- Specification Details -->
+
+                    <div class="row">
+
+                        <div class="col-md-3 mb-3" id="unit_box">
+
+                            {{ form.unit.label(class="form-label fw-semibold") }}
+
+                            {{ form.unit(
+                                class="form-control",
+                                id="unit",
+                                readonly=True
+                            ) }}
+
+                        </div>
+
+                        <div class="col-md-3 mb-3" id="minimum_box">
+
+                            {{ form.minimum_value.label(class="form-label fw-semibold") }}
+
+                            {{ form.minimum_value(
+                                class="form-control",
+                                id="minimum_value",
+                                readonly=True
+                            ) }}
+
+                        </div>
+
+                        <div class="col-md-3 mb-3" id="maximum_box">
+
+                            {{ form.maximum_value.label(class="form-label fw-semibold") }}
+
+                            {{ form.maximum_value(
+                                class="form-control",
+                                id="maximum_value",
+                                readonly=True
+                            ) }}
+
+                        </div>
+
+                        <div class="col-md-3 mb-3" id="expected_box">
+
+                            {{ form.expected_text.label(class="form-label fw-semibold") }}
+
+                            {{ form.expected_text(
+                                class="form-control",
+                                id="expected_text",
+                                readonly=True
+                            ) }}
+
+                        </div>
+
+                    </div>
+
+                    <input
+                        type="hidden"
+                        id="validation_type">
+
+                    <!-- Measured Value -->
+
+                    <div class="mb-4">
+
+                        {{ form.measured_value.label(class="form-label fw-semibold") }}
+
+                        {{ form.measured_value(
+                            class="form-control",
+                            placeholder="Enter measured value"
+                        ) }}
+
+                    </div>
+
+                    <div class="alert alert-info">
+
+                        <strong>Automatic Validation</strong><br>
+
+                        Enter the measured value only.
+
+                        The system automatically compares it with the requirement
+                        and determines whether it is <strong class="text-success">Pass</strong> or
+                        <strong class="text-danger">Fail</strong>.
+
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+
+                        <a href="{{ url_for('main.view_inspection',
+                        inspection_id=inspection.id) }}"
+                           class="btn btn-secondary">
+
+                            Cancel
+
+                        </a>
+
+                        {{ form.submit(class="btn btn-primary") }}
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

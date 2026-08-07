@@ -1,0 +1,44 @@
+{% macro sortable(title, column) %}
+
+{% set current_sort = request.args.get("sort", "") %}
+{% set current_direction = request.args.get("direction", "asc") %}
+
+{% if current_sort == column and current_direction == "asc" %}
+    {% set new_direction = "desc" %}
+{% else %}
+    {% set new_direction = "asc" %}
+{% endif %}
+
+{% set args = request.args.copy() %}
+{% set _ = args.update({
+    "sort": column,
+    "direction": new_direction
+}) %}
+
+<a
+class=" text-decoration-none"
+href="{{ url_for(request.endpoint, **args) }}">
+
+    {{ title }}
+
+    {% if current_sort == column %}
+
+        {% if current_direction == "asc" %}
+
+            <i class="bi bi-arrow-up ms-1"></i>
+
+        {% else %}
+
+            <i class="bi bi-arrow-down ms-1"></i>
+
+        {% endif %}
+
+    {% else %}
+
+        <i class="bi bi-arrow-down-up ms-1"></i>
+
+    {% endif %}
+
+</a>
+
+{% endmacro %}

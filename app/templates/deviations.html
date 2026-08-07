@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Deviations{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+
+    <div>
+
+        <h2 class="fw mb-1">
+            Deviations
+        </h2>
+
+        <p class="text-muted">
+            Manage quality non-conformances.
+        </p>
+
+    </div>
+
+    
+
+</div>
+
+<div class="card shadow-sm">
+
+    <div class="card-header">
+
+        <div class="row align-items-center">
+
+            <div class="col-md-4">
+
+                <input
+                    type="text"
+                    id="deviationSearch"
+                    class="form-control"
+                    placeholder="Search deviations...">
+
+            </div>
+
+            <div class="col-md-8 text-md-end mt-3 mt-md-0">
+
+                <span class="text-muted">
+
+                    Total Deviations:
+
+                    <strong>{{ deviations|length }}</strong>
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="table-responsive">
+
+        <table class="table table-hover align-middle mb-0" id="deviationTable">
+
+            <thead class="table">
+
+                <tr>
+
+                    <th>#</th>
+
+                    <th>Deviation No.</th>
+
+                    <th>Inspection</th>
+
+                    <th>Metric</th>
+
+                    <th>Severity</th>
+
+                    <th>Status</th>
+
+                    <th>Reported By</th>
+
+                    <th>Date</th>
+
+                    <th class="text-center">Actions</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+            {% for deviation in deviations %}
+
+                <tr>
+
+                    <td>{{ loop.index }}</td>
+
+                    <td>
+
+                        <strong>
+                            {{ deviation.deviation_number }}
+                        </strong>
+
+                    </td>
+
+                    <td>
+
+                        {{ deviation.inspection.inspection_number }}
+
+                    </td>
+
+                    <td>
+
+                        {{ deviation.quality_metric.specification.metric_name }}
+
+                    </td>
+
+                    <td>
+
+                        {% if deviation.severity=="Critical" %}
+
+                            <span class="badge bg-danger">
+                                Critical
+                            </span>
+
+                        {% elif deviation.severity=="Major" %}
+
+                            <span class="badge bg-warning text-dark">
+                                Major
+                            </span>
+
+                        {% else %}
+
+                            <span class="badge bg-info">
+                                Minor
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+
+                        {% if deviation.status=="Closed" %}
+
+                            <span class="badge bg-success">
+                                Closed
+                            </span>
+
+                        {% elif deviation.status=="In Progress" %}
+
+                            <span class="badge bg-secondary">
+                                In Progress
+                            </span>
+
+                        {% else %}
+
+                            <span class="badge bg-danger">
+                                Open
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+
+                        {{ deviation.reported_by }}
+
+                    </td>
+
+                    <td>
+
+                        {{ deviation.reported_date }}
+
+                    </td>
+
+                    <td class="text-center">
+
+                        <div class="d-inline-flex gap-1">
+
+                        <a href="{{ url_for('main.view_deviation', deviation_id=deviation.id) }}"
+                           class="btn btn-primary btn-sm">
+
+                            <i class="bi bi-eye"></i>
+
+                        </a>
+
+                        <a href="{{ url_for('main.edit_deviation', deviation_id=deviation.id) }}"
+                           class="btn btn-warning btn-sm">
+
+                            <i class="bi bi-pencil"></i>
+
+                        </a>
+                        </div>
+
+                    </td>
+
+                </tr>
+
+            {% else %}
+
+                <tr>
+
+                    <td colspan="8"
+                        class="text-center py-5">
+
+                        <i class="bi bi-exclamation-triangle display-4 text-secondary"></i>
+
+                        <h5 class="mt-3">
+
+                            No deviation found
+
+                        </h5>
+
+            
+
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

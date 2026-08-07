@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Customer{% endblock %}
+
+{% block content %}
+
+
+{% set title = "Customer" %}
+{% set subtitle = "Create or edit a Customer." %}
+
+{% include "partials/page_header.html" %}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+
+        <form method="POST">
+
+            {{ form.hidden_tag() }}
+
+           <div class="row">
+
+                <div class="col-md-6 mb-3">
+
+                    {{ form.company_name.label(class="form-label") }}
+
+                    {{ form.company_name(class="form-control") }}
+
+                </div>
+
+                <div class="col-md-6 mb-3">
+
+                    {{ form.contact_person.label(class="form-label") }}
+
+                    {{ form.contact_person(class="form-control") }}
+
+                </div>
+
+                <div class="col-md-6 mb-3">
+
+                    {{ form.email.label(class="form-label") }}
+
+                    {{ form.email(class="form-control") }}
+
+                </div>
+
+                <div class="col-md-6 mb-3">
+
+                    {{ form.phone.label(class="form-label") }}
+
+                    {{ form.phone(class="form-control") }}
+
+                </div>
+
+                <div class="col-md-6 mb-3">
+
+                    {{ form.address.label(class="form-label") }}
+
+                    {{ form.address(class="form-control", rows="3") }}
+
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+
+                    <a href="{{ url_for('main.customers') }}"
+                    class="btn btn-secondary">
+                        Cancel
+                    </a>
+
+                    {{ form.submit(class="btn btn-primary") }}
+
+            </div>        
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

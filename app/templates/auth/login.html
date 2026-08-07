@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}
+
+Login
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5">
+
+<div class="row justify-content-center">
+
+<div class="col-md-6">
+
+<div class="card shadow">
+
+<div class="card-header">
+
+<h3 class="mb-0">
+
+CableQIMS Login
+
+</h3>
+
+</div>
+
+<div class="card-body">
+
+<form method="POST">
+
+{{ form.hidden_tag() }}
+
+<div class="mb-3">
+
+{{ form.company_code.label(class="form-label") }}
+
+{{ form.company_code(
+    class="form-control",
+    placeholder="e.g. COLEMAN or COLEMAN12"
+) }}
+
+{% for error in form.company_code.errors %}
+
+<div class="text-danger">
+
+{{ error }}
+
+</div>
+
+{% endfor %}
+
+</div>
+
+<div class="mb-3">
+
+{{ form.username.label(class="form-label") }}
+
+{{ form.username(class="form-control",
+placeholder="Username") }}
+
+{% for error in form.username.errors %}
+
+<div class="text-danger">
+
+{{ error }}
+
+</div>
+
+{% endfor %}
+
+</div>
+
+<div class="mb-3">
+
+{{ form.password.label(class="form-label") }}
+
+{{ form.password(class="form-control",
+placeholder="Password") }}
+
+{% for error in form.password.errors %}
+
+<div class="text-danger">
+
+{{ error }}
+
+</div>
+
+{% endfor %}
+
+</div>
+
+<div class="form-check mb-3">
+
+{{ form.remember(class="form-check-input") }}
+
+{{ form.remember.label(class="form-check-label") }}
+
+</div>
+
+<div class="d-grid">
+
+{{ form.submit(class="btn btn-primary") }}
+
+</div>
+
+</form>
+
+<hr>
+
+<div class="text-center">
+
+<p>
+
+Don't have a company account?
+
+</p>
+
+<a href="{{ url_for('auth.register_company') }}"
+class="btn text-primary fw-bold">
+
+Register Company
+
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}

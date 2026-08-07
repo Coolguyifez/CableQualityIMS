@@ -1,0 +1,228 @@
+<nav class="navbar navbar-expand-lg bg-body  px-4">
+
+    <div class="container-fluid">
+
+        <!-- Mobile Menu -->
+        <button
+            class="btn btn-outline-primary d-lg-none"
+            id="menu-toggle"
+            type="button">
+
+            <i class="bi bi-list"></i>
+
+        </button>
+
+        <!-- Company Name -->
+        <div class="navbar-brand-title ms-3 fw-bold text-primary">
+            {% if current_user.is_authenticated %}
+                {{ current_user.company.company_name }}
+            {% else %}
+                CableQIMS
+            {% endif %}
+        </div>
+
+        <div class="ms-auto navbar-right">
+
+            <!-- Search -->
+
+            {% if current_user.is_authenticated %}
+
+            <div class="d-none d-lg-flex ms-4">
+
+                <div class="input-group" style="width:350px;">
+
+                    <span class="input-group-text btn-outline-secondary">
+                        <i class="bi bi-search"></i>
+                    </span>
+
+                    <input
+                        type="text"
+                        id="globalSearch"
+                        class="form-control"
+                        placeholder="Search anything...">
+
+                </div>
+
+                <div id="searchResults"
+                    class="list-group position-absolute  w-120 shadow d-none"
+                    style="z-index:2000; max-height:400px; overflow:auto;">
+
+                </div>
+
+            </div>
+            {% endif %}
+
+            <!-- Notifications -->
+
+            <div class="dropdown">
+
+                <button
+
+                    class="btn btn-outline-secondary nav-icon position-relative"
+
+                    data-bs-toggle="dropdown">
+
+                    <i class="bi bi-bell"></i>
+
+                    {% if unread_notifications > 0 %} 
+
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+
+                        {{ unread_notifications }}
+
+                    </span>
+
+                    {% endif %}
+
+                </button>
+
+                <ul class="dropdown-menu dropdown-menu-end shadow notification-dropdown">
+
+                    <li class="dropdown-header fw-semibold">
+
+                        Notifications
+
+                    </li>
+
+                    <li><hr class="dropdown-divider"></li>
+
+                    {% if latest_notifications %}
+
+                        {% for notification in latest_notifications %}
+
+                        <li>
+
+                            <a class="dropdown-item"
+
+                            href="{{ notification.link if notification.link else '#' }}">
+
+                                <strong>
+
+                                    {{ notification.title }} {{ notification.created_at.strftime("%d %b %Y %H:%M") }}
+
+                                </strong>
+
+                                <br>
+
+                                <small>
+
+                                    {{ notification.message }}
+
+                                </small>
+
+                            </a>
+
+                        </li>
+
+                        {% endfor %}
+
+                    {% else %}
+
+                        <li>
+
+                            <span class="dropdown-item text-muted">
+
+                                No notifications
+
+                            </span>
+
+                        </li>
+
+                    {% endif %}
+
+                    <li><hr class="dropdown-divider"></li>
+
+                    <li>
+
+                        <a class="dropdown-item text-center"
+
+                        href="{{ url_for('main.notifications') }}">
+
+                            View All Notifications
+
+                        </a>
+
+                    </li>
+
+                </ul>
+
+            </div>
+
+            <!-- User Dropdown -->
+
+            {% if current_user.is_authenticated %}
+
+            <div class="dropdown">
+
+                <button
+                    class="btn btn-outline-secondary dropdown-toggle user-btn"
+
+                    data-bs-toggle="dropdown">
+
+                    <i class="bi bi-person-circle"></i>
+
+                    <span>{{ current_user.full_name }}</span>
+
+                </button>
+
+                <ul class="dropdown-menu dropdown-menu-end">
+
+                    <li class="dropdown-header">
+
+                        {{ current_user.role }}
+
+                    </li>
+
+                    <li>
+
+                        <hr class="dropdown-divider">
+
+                    </li>
+
+                    <li>
+
+                        <a class="dropdown-item"
+
+                           href="{{ url_for('main.profile') }}">
+
+                            <i class="bi bi-person"></i>
+
+                            My Profile
+
+                        </a>
+
+                    </li>
+
+                 
+
+                    <li>
+
+                        <hr class="dropdown-divider">
+
+                    </li>
+
+                    <li>
+
+                        <a class="dropdown-item text-danger"
+
+                           href="{{ url_for('auth.logout') }}">
+
+                            <i class="bi bi-box-arrow-right"></i>
+
+                            Logout
+
+                        </a>
+
+                    </li>
+
+                </ul>
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</nav>

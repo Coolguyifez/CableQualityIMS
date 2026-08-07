@@ -1,0 +1,251 @@
+<form method="GET" class="card shadow-sm mb-4">
+
+    <div class="card-body">
+
+        <div class="row g-3">
+
+            <div class="col-lg-3">
+
+                <label class="form-label">
+
+                    From
+
+                </label>
+
+                <input
+
+                    type="date"
+
+                    name="date_from"
+
+                    value="{{ request.args.get('date_from','') }}"
+
+                    class="form-control"
+
+                >
+
+            </div>
+
+            <div class="col-lg-3">
+
+                <label class="form-label">
+
+                    To
+
+                </label>
+
+                <input
+
+                    type="date"
+
+                    name="date_to"
+
+                    value="{{ request.args.get('date_to','') }}"
+
+                    class="form-control"
+
+                >
+
+            </div>
+
+            <div class="col-lg-3">
+
+                <label class="form-label">
+
+                    Inspector
+
+                </label>
+
+                <input
+
+                    class="form-control"
+
+                    name="inspector"
+
+                    value="{{ request.args.get('inspector','') }}"
+
+                >
+
+            </div>
+
+            <div class="col-lg-3">
+
+                <label class="form-label">
+
+                    Result
+
+                </label>
+
+                <select
+
+                    class="form-select"
+
+                    name="status"
+
+                >
+
+                    <option value="">
+
+                        All
+
+                    </option>
+
+                    <option value="Pass"
+
+                    {% if request.args.get('status')=="Pass" %}
+
+                    selected
+
+                    {% endif %}
+
+                    >
+
+                        Pass
+
+                    </option>
+
+                    <option value="Fail"
+
+                    {% if request.args.get('status')=="Fail" %}
+
+                    selected
+
+                    {% endif %}
+
+                    >
+
+                        Fail
+
+                    </option>
+
+                    <option value="Pending"
+
+                    {% if request.args.get('status')=="Pending" %}
+
+                    selected
+
+                    {% endif %}
+
+                    >
+
+                        Pending
+
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="col-lg-3">
+
+                <label class="form-label">
+
+                    Customer
+
+                </label>
+
+                <input
+
+                    class="form-control"
+
+                    name="customer"
+
+                    value="{{ request.args.get('customer','') }}"
+
+                >
+
+            </div>
+
+            <div class="col-lg-3">
+
+                <label class="form-label">
+
+                    Cable Type
+
+                </label>
+
+                <input
+
+                    class="form-control"
+
+                    name="cable_type"
+
+                    value="{{ request.args.get('cable_type','') }}"
+
+                >
+
+            </div>
+
+            <div class="col-lg-3">
+
+                <label class="form-label">
+
+                    Production Line
+
+                </label>
+
+                <input
+
+                    class="form-control"
+
+                    name="production_line"
+
+                    value="{{ request.args.get('production_line','') }}"
+
+                >
+
+            </div>
+
+            <div class="col-lg-3">
+
+                <label class="form-label">
+
+                    Batch
+
+                </label>
+
+                <input
+
+                    class="form-control"
+
+                    name="batch_number"
+
+                    value="{{ request.args.get('batch_number','') }}"
+
+                >
+
+            </div>
+
+            <div class="col-12">
+
+                <button
+
+                    class="btn btn-primary"
+
+                >
+
+                    <i class="bi bi-search"></i>
+
+                    Search
+
+                </button>
+
+                <a
+
+                    href="{{ url_for('main.inspection_report') }}"
+
+                    class="btn btn-outline-secondary"
+
+                >
+
+                    Reset
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</form>

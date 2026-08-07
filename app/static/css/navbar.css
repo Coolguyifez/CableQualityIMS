@@ -1,0 +1,199 @@
+.navbar{
+
+    height:70px;
+    min-height:70px;
+
+   /*border-bottom:1px solid var(--border);*/
+
+}
+
+/* Default - Desktop */
+.navbar-brand-title{
+    display:block;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:300px;
+}
+
+/* Right side */
+
+.navbar-right{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+}
+
+/* Icon buttons */
+
+.nav-icon{
+
+    width:42px;
+
+    height:42px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:50%;
+
+}
+
+
+/* User button */
+
+.navbar .btn{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    border-radius:10px;
+
+}
+
+/* Tablet */
+
+/* Hide on laptop/tablet */
+@media (min-width:992px) and (max-width:4000px){
+
+    .navbar-brand-title{
+
+        display:none;
+
+    }
+
+}
+
+/* Show again on mobile */
+@media (max-width:991px){
+
+    .navbar-brand-title{
+
+        display:block;
+
+        max-width:150px;
+
+        font-size:0.95rem;
+
+    }
+
+}
+
+/* Mobile */
+
+@media (max-width:768px){
+
+    .navbar{
+
+        padding:.5rem .8rem;
+
+    }
+
+    .navbar-right{
+
+        gap:6px;
+
+    }
+
+    .nav-icon{
+
+        width:36px;
+
+        height:36px;
+
+    }
+
+    .user-btn{
+
+        padding:6px 8px;
+
+    }
+
+    .user-btn span{
+
+        display:none;
+
+    }
+
+}
+
+/* Very small phones */
+
+@media (max-width:400px){
+
+    .navbar-right{
+
+        gap:4px;
+
+    }
+
+    .nav-icon{
+
+        width:34px;
+
+        height:34px;
+
+    }
+
+}
+
+
+/* ===========================
+   Notification Dropdown
+=========================== */
+
+.notification-dropdown{
+
+    width:350px;
+
+    max-height:420px;
+
+    overflow-y:auto;
+
+}
+
+.notification-dropdown .dropdown-item{
+
+    white-space:normal;
+
+    word-break:break-word;
+
+}
+
+/* Mobile */
+
+@media (max-width:768px){
+
+    .notification-dropdown{
+
+        position:fixed !important;
+
+        top:70px !important;
+
+        left:10px !important;
+
+        right:10px !important;
+
+        width:auto !important;
+
+        max-width:none !important;
+
+        transform:none !important;
+
+        max-height:65vh;
+
+        border-radius:12px;
+
+    }
+
+}

@@ -1,0 +1,893 @@
+{% extends "base.html" %}
+
+{% block title %}
+
+Dashboard
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+<div>
+
+<h2 class="fw-bold">
+
+Dashboard
+
+</h2>
+
+<p class="text-muted">
+
+Welcome back,
+
+<strong>{{ current_user.full_name }}</strong>
+
+</p>
+
+</div>
+
+</div>
+<div class="row g-4 mb-4">
+
+<div class="col-lg-3">
+
+<div class="card shadow-sm">
+
+<div class="card-body">
+
+<h6 class="text-muted">
+
+Total Inspections
+
+</h6>
+
+<h2>
+
+{{ stats.inspections }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-3">
+
+<div class="card shadow-sm border-success">
+
+<div class="card-body">
+
+<h6 class="text-muted">
+
+Pass Rate
+
+</h6>
+
+<h2 class="text-success">
+
+{{ pass_rate }}%
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-3">
+
+<div class="card shadow-sm border-warning">
+
+<div class="card-body">
+
+<h6 class="text-muted">
+
+Open CAPAs
+
+</h6>
+
+<h2 class="text-warning">
+
+{{ stats.open_capa }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-3">
+
+<div class="card shadow-sm border-danger">
+
+<div class="card-body">
+
+<h6 class="text-muted">
+
+Overdue CAPAs
+
+</h6>
+
+<h2 class="text-danger">
+
+{{ overdue_capas }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="row g-4 mb-4">
+
+    <!-- Inspection Results -->
+    <div class="col-lg-6">
+
+        <div class="card shadow-sm h-100">
+
+            <div class="card-header fw-bold">
+
+                Inspection Results
+
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="inspectionChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Monthly Trend -->
+    <div class="col-lg-6">
+
+        <div class="card shadow-sm">
+
+            <div class="card-header fw-bold">
+
+                Monthly Inspection Trend
+
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="monthlyChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="row g-4 mb-4">
+
+    <!-- CAPA -->
+    <div class="col-lg-6">
+
+        <div class="card shadow-sm h-100">
+
+            <div class="card-header fw-bold">
+
+                CAPA Status
+
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="capaChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Deviations -->
+    <div class="col-lg-6">
+
+        <div class="card shadow-sm h-60">
+
+            <div class="card-header fw-bold">
+
+                Deviation Severity
+
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="deviationChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="row mb-4">
+
+    <div class="col-12">
+
+        <div class="card shadow-sm">
+
+            <div class="card-header fw-bold">
+
+                Production By Line
+
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="productionChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<div class="card shadow-sm mb-4">
+
+    <div class="card-header fw-bold">
+
+        Quick Actions
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="row g-3">
+
+            <div class="col-md-2">
+
+                <a href="{{ url_for('main.new_inspection') }}"
+                   class="btn btn-primary w-100 py-3">
+
+                    <i class="bi bi-clipboard-check fs-3 d-block mb-2"></i>
+
+                    New Inspection
+
+                </a>
+
+            </div>
+
+            <div class="col-md-2">
+
+                <a href="{{ url_for('main.new_batch') }}"
+                   class="btn btn-success w-100 py-3">
+
+                    <i class="bi bi-box-seam fs-3 d-block mb-2"></i>
+
+                    New Batch
+
+                </a>
+
+            </div>
+
+            <div class="col-md-2">
+
+                <a href="{{ url_for('main.capa') }}"
+                   class="btn btn-warning w-100 py-3">
+
+                    <i class="bi bi-tools fs-3 d-block mb-2"></i>
+
+                    New CAPA
+
+                </a>
+
+            </div>
+
+            <div class="col-md-2">
+
+                <a href="{{ url_for('main.reports') }}"
+                   class="btn btn-danger w-100 py-3">
+
+                    <i class="bi bi-bar-chart fs-3 d-block mb-2"></i>
+
+                    Reports
+
+                </a>
+
+            </div>
+
+            <div class="col-md-2">
+
+                <a href="{{ url_for('main.users') }}"
+                   class="btn btn-secondary w-100 py-3">
+
+                    <i class="bi bi-people fs-3 d-block mb-2"></i>
+
+                    Users
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="row mb-4">
+
+<div class="col-lg-8 mb-4 mb-lg-0">
+
+<div class="card shadow-sm">
+
+<div class="card-header fw-bold">
+
+Recent Inspections
+
+</div>
+
+<div class="table-responsive">
+
+<table class="table table-hover mb-0">
+
+<thead>
+
+<tr>
+
+<th>Inspection</th>
+
+<th>Batch</th>
+
+<th>Inspector</th>
+
+<th>Result</th>
+
+<th>Date</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for inspection in recent_inspections %}
+
+<tr>
+
+<td>{{ inspection.inspection_number }}</td>
+
+<td>{{ inspection.batch.batch_number }}</td>
+
+<td>{{ inspection.inspector }}</td>
+
+<td>
+
+{% if inspection.overall_result=="Pass" %}
+
+<span class="badge bg-success">
+
+Pass
+
+</span>
+
+{% elif inspection.overall_result=="Fail" %}
+
+<span class="badge bg-danger">
+
+Fail
+
+</span>
+
+{% else %}
+
+<span class="badge bg-warning">
+
+Pending
+
+</span>
+
+{% endif %}
+
+</td>
+
+<td>
+
+{{ inspection.inspection_date.strftime("%d-%m-%Y") }}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-4">
+
+<div class="card shadow-sm">
+
+<div class="card-header fw-bold">
+
+Recent CAPAs
+
+</div>
+
+<div class="list-group list-group-flush">
+
+{% for capa in recent_capas %}
+
+<div class="list-group-item">
+
+<strong>
+
+{{ capa.assigned_to }}
+
+</strong>
+
+<br>
+
+<small>
+
+Due:
+
+{{ capa.due_date }}
+
+</small>
+
+<br>
+
+<span>
+
+{% if capa.status == "Closed" %}
+
+<span class="badge bg-success">
+
+    Closed
+
+</span>
+
+{% elif capa.status == "Overdue" %}
+
+<span class="badge bg-danger">
+
+    Overdue
+
+    ({{ capa.days_overdue }} day{% if capa.days_overdue != 1 %}s{% endif %})
+
+</span>
+
+{% elif capa.status == "In Progress" %}
+
+<span class="badge bg-warning text-dark">
+
+    In Progress
+
+</span>
+
+{% elif capa.status == "Completed" %}
+
+<span class="badge bg-primary">
+
+    Completed
+
+</span>
+
+{% else %}
+
+<span class="badge bg-secondary">
+
+    Open
+
+</span>
+
+{% endif %}
+
+</span>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="card shadow-sm mb-4">
+
+<div class="card-header fw-bold">
+
+Recent Activities
+
+</div>
+
+<div class="table-responsive">
+
+<table class="table table-hover mb-0">
+
+<thead>
+
+<tr>
+
+<th>User</th>
+
+<th>Module</th>
+
+<th>Action</th>
+
+<th>Date</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for log in recent_audits %}
+
+<tr>
+
+<td>
+
+{{ log.user.full_name if log.user else "-" }}
+
+</td>
+
+<td>
+
+{{ log.module }}
+
+</td>
+
+<td>
+
+{{ log.action }}
+
+</td>
+
+<td>
+
+{{ log.created_at.strftime("%d-%m-%Y %H:%M") }}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+<div class="row g-4">
+
+<div class="col-md-3">
+
+<div class="card shadow-sm">
+
+<div class="card-body">
+
+<h6>Total Batches</h6>
+
+<h2>{{ stats.batches }}</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-3">
+
+<div class="card shadow-sm">
+
+<div class="card-body">
+
+<h6>Customers</h6>
+
+<h2>{{ stats.customers }}</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-3">
+
+<div class="card shadow-sm">
+
+<div class="card-body">
+
+<h6>Production Lines</h6>
+
+<h2>{{ stats.lines }}</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-3">
+
+<div class="card shadow-sm">
+
+<div class="card-body">
+
+<h6>Cable Types</h6>
+
+<h2>{{ stats.cable_types }}</h2>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+
+
+{% endblock %}
+
+{% block scripts %}
+
+{{ super() }}
+
+<script>
+    new Chart(
+
+document.getElementById("inspectionChart"),
+
+{
+
+type:"doughnut",
+
+data:{
+
+labels:{{ inspection_chart["labels"]|tojson }},
+
+datasets:[{
+
+data:{{ inspection_chart["data"]|tojson }},
+
+backgroundColor:[
+
+"#198754",
+
+"#dc3545",
+
+"#ffc107"
+
+]
+
+}]
+
+},
+
+options:{
+
+responsive:true
+
+}
+
+}
+
+);
+
+new Chart(
+
+document.getElementById("monthlyChart"),
+
+{
+
+type:"line",
+
+data:{
+
+labels:{{ monthly_chart["labels"]|tojson }},
+
+datasets:[{
+
+label:"Inspections",
+
+data:{{ monthly_chart["data"]|tojson }},
+
+borderColor:"#0d6efd",
+
+backgroundColor:"rgba(13,110,253,.15)",
+
+tension:.35,
+
+fill:true
+
+}]
+
+},
+
+options:{
+
+responsive:true
+
+}
+
+}
+
+);
+
+new Chart(
+
+document.getElementById("capaChart"),
+
+{
+
+type:"doughnut",
+
+data:{
+
+labels:{{ capa_chart["labels"]|tojson }},
+
+datasets:[{
+
+data:{{ capa_chart["data"]|tojson }},
+
+backgroundColor:[
+
+"#8D8D8F",
+
+"#ffc107",
+
+"#2727E8",
+
+"#dc3545",
+
+"#198754"
+
+
+]
+
+}]
+
+
+},
+
+options:{
+
+responsive:true
+
+}
+
+}
+
+);
+
+new Chart(
+
+document.getElementById("deviationChart"),
+
+{
+
+type:"bar",
+
+data:{
+
+labels:{{ deviation_chart["labels"]|tojson }},
+
+datasets:[{
+
+label:"Count",
+
+data:{{ deviation_chart["data"]|tojson }},
+
+backgroundColor:[
+
+"#0dcaf0",
+
+"#ffc107",
+
+"#dc3545"
+
+]
+
+}]
+
+},
+
+options:{
+
+responsive:true,
+
+plugins:{
+
+legend:{
+
+display:false
+
+}
+
+}
+
+}
+
+}
+
+);
+
+new Chart(
+
+document.getElementById("productionChart"),
+
+{
+
+type:"bar",
+
+data:{
+
+labels:{{ production_chart["labels"]|tojson }},
+
+datasets:[{
+
+label:"Batches",
+
+data:{{ production_chart["data"]|tojson }},
+
+backgroundColor:"#0d6efd"
+
+}]
+
+},
+
+options:{
+
+responsive:true,
+
+scales:{
+
+y:{
+
+beginAtZero:true
+
+}
+
+}
+
+}
+
+}
+
+);
+
+</script>
+
+{% endblock %}

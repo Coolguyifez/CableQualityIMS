@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Deviation Details{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+    <h2>
+        Deviation Details
+    </h2>
+
+    <div>
+
+        {% if deviation.capa %}
+
+            <a href="{{ url_for('main.view_capa', capa_id=deviation.capa[0].id) }}"
+               class="btn btn-primary">
+
+                <i class="bi bi-check2-square"></i>
+
+                View CAPA
+
+            </a>
+
+        {% else %}
+
+            <a href="{{ url_for('main.new_capa', deviation_id=deviation.id) }}"
+               class="btn btn-primary">
+
+                <i class="bi bi-plus-circle"></i>
+
+                Create CAPA
+
+            </a>
+
+        {% endif %}
+
+        
+
+    </div>
+
+</div>
+
+<div class="card shadow-sm border-0">
+
+<div class="card-body">
+
+<table class="table">
+
+<tr>
+
+<th width="30%">Deviation Number</th>
+
+<td>{{ deviation.deviation_number }}</td>
+
+</tr>
+
+<tr>
+
+<th>Inspection</th>
+
+<td>{{ deviation.inspection.inspection_number }}</td>
+
+</tr>
+
+<tr>
+
+<th>Batch</th>
+
+<td>{{ deviation.inspection.batch.batch_number }}</td>
+
+</tr>
+
+
+<tr>
+
+<th>
+
+Cable Name
+
+</th>
+
+<td class="text-wrap" style="max-width:20px; white-space:normal;">
+
+{{ deviation.inspection.batch.cable_type.pair_count }} × {{ deviation.inspection.batch.cable_type.conductor_size }} - {{deviation.inspection.batch.cable_type.name }}
+
+
+</td>
+
+</tr>
+
+
+<tr>
+
+<th>
+
+Voltage Rating
+
+</th>
+
+<td>
+    {{ deviation.inspection.batch.cable_type.voltage_rating }}
+</td>
+
+</tr>
+
+
+<tr>
+
+<th>
+
+Cable Code
+
+</th>
+
+<td>
+
+    <span class="badge bg-primary">{{ deviation.inspection.batch.cable_code }}</span>
+    
+</td>
+
+</tr>
+
+
+<tr>
+
+<th>
+
+Customer
+
+</th>
+
+<td>
+    {{ deviation.inspection.batch.customer.company_name }}<br>
+    <small class="text-muted">
+        {{ deviation.inspection.batch.customer.address }}
+    </small>
+</td>
+
+</tr>
+
+<tr>
+
+<th>Quality Metric</th>
+
+<td>{{ deviation.quality_metric.specification.metric_name }}</td>
+
+</tr>
+
+<tr>
+
+    <th>Measured Value</th>
+
+    <td>
+        {{ deviation.quality_metric.measured_value }}
+        {% if deviation.quality_metric.specification.unit %}
+            {{ deviation.quality_metric.specification.unit }}
+        {% endif %}
+    </td>
+
+</tr>
+
+<tr>
+
+    <th>Result</th>
+
+    <td>
+
+        <span class="badge bg-danger">
+            FAIL
+        </span>
+
+    </td>
+
+</tr>
+
+<tr>
+
+<th>Description</th>
+
+<td>{{ deviation.description }}</td>
+
+</tr>
+
+<tr>
+
+<th>Severity</th>
+
+<td>{{ deviation.severity }}</td>
+
+</tr>
+
+<tr>
+
+<th>Root Cause</th>
+
+<td>{{ deviation.root_cause or "-" }}</td>
+
+</tr>
+
+<tr>
+
+<th>Status</th>
+
+<td>{{ deviation.status }}</td>
+
+</tr>
+
+<tr>
+
+<th>Reported By</th>
+
+<td>{{ deviation.reported_by }}</td>
+
+</tr>
+
+<tr>
+
+<th>Reported Date</th>
+
+<td>{{ deviation.reported_date }}</td>
+
+</tr>
+
+<tr>
+
+<th>Closed Date</th>
+
+<td>
+
+{{ deviation.closed_date or "-" }}
+
+</td>
+
+</tr>
+
+</table>
+
+<div class="mt-3">
+
+
+<a href="{{ url_for('main.edit_deviation', deviation_id=deviation.id) }}"
+class="btn btn-warning">
+
+Edit Deviation
+
+</a>    
+
+<a href="{{ url_for('main.deviations') }}"
+    class="btn btn-secondary">
+
+        Cancel
+
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+
+
+{% endblock %}

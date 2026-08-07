@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+
+{% from "components/report_table_header.html" import sortable %}
+
+{% block title %}
+
+Quality Metrics Report
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+
+
+    <div class="d-flex flex-wrap gap-6 justify-content-end mb-3">
+        <a href="{{ url_for('main.reports') }}"
+            class="btn btn-outline-secondary">
+
+            Back
+
+        </a>
+    </div>  
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+<div>
+
+<h2 class="fw-bold">
+
+Quality Metrics Report
+
+</h2>
+
+<p class="text-muted">
+
+Inspection measurement analysis
+
+</p>
+
+</div>
+
+{% set excel_endpoint = "main.export_quality_metric_excel" %}
+
+{% set pdf_endpoint = "main.export_quality_metric_pdf" %}
+
+{% include "components/report_export_buttons.html" %}
+
+</div>
+<div class="row">
+
+<div class="col-md-6 mb-3">
+
+<div class="card shadow-sm">
+
+<div class="card-body">
+
+<small>Total Metrics</small>
+
+<h2>{{ total }}</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<div class="card border-success">
+
+<div class="card-body">
+
+<small>Pass</small>
+
+<h2 class="text-success">
+
+{{ passed }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<div class="card border-danger">
+
+<div class="card-body">
+
+<small>Fail</small>
+
+<h2 class="text-danger">
+
+{{ failed }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="card shadow-sm mb-4">
+
+<div class="card-header">
+
+Result Distribution
+
+</div>
+
+<div class="card-body">
+
+<canvas id="resultChart"></canvas>
+
+</div>
+
+</div>
+<form method="GET" class="card shadow-sm mb-4">
+
+<div class="card-body">
+
+<div class="row g-3">
+
+<div class="col-md-3">
+
+<label class="form-label">
+
+Inspection
+
+</label>
+
+<input
+
+type="text"
+
+name="inspection"
+
+value="{{ request.args.get('inspection','') }}"
+
+class="form-control">
+
+</div>
+
+<div class="col-md-3">
+
+<label class="form-label">
+
+Result
+
+</label>
+
+<select
+
+name="result"
+
+class="form-select">
+
+<option value="">All</option>
+
+<option value="Pass"
+
+{% if request.args.get("result")=="Pass" %}
+
+selected
+
+{% endif %}>
+
+Pass
+
+</option>
+
+<option value="Fail"
+
+{% if request.args.get("result")=="Fail" %}
+
+selected
+
+{% endif %}>
+
+Fail
+
+</option>
+
+</select>
+
+</div>
+
+<div class="col-md-2">
+
+<label class="form-label">
+
+From
+
+</label>
+
+<input
+
+type="date"
+
+name="date_from"
+
+value="{{ request.args.get('date_from','') }}"
+
+class="form-control">
+
+</div>
+
+<div class="col-md-2">
+
+<label class="form-label">
+
+To
+
+</label>
+
+<input
+
+type="date"
+
+name="date_to"
+
+value="{{ request.args.get('date_to','') }}"
+
+class="form-control">
+
+</div>
+
+<div class="col-md-2 d-flex align-items-end">
+
+<button class="btn btn-primary w-100">
+
+Search
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+</form>
+<div class="card shadow-sm">
+
+<div class="card-body p-0">
+
+<div class="table-responsive">
+
+<table class="table table-hover align-middle mb-0">
+
+<thead class="table">
+
+<tr>
+
+<th>
+
+Inspection
+
+</th>
+
+<th>
+
+Metric
+
+</th>
+
+<th>
+
+{{ sortable("Measured Value","measured_value") }}
+
+</th>
+
+<th>
+
+Unit
+
+</th>
+
+<th>
+
+Requirement
+
+</th>
+
+<th>
+
+{{ sortable("Result","result") }}
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for metric in metrics %}
+<tr>
+
+<td>
+
+{{ metric.inspection.inspection_number }}
+
+</td>
+
+<td>
+
+{{ metric.specification.metric_name }}
+
+</td>
+
+<td>
+
+{{ metric.measured_value }}
+
+</td>
+
+<td>
+
+{{ metric.specification.unit }}
+
+</td>
+
+<td>
+
+{% if metric.specification.requirement %}
+
+{{ metric.specification.requirement }}
+
+{% elif metric.specification.validation_type == "any" %}
+
+Accept Any Value
+
+{% elif metric.specification.validation_type == "minimum" %}
+
+{{ metric.specification.minimum_value }} (Min)
+
+{% elif metric.specification.validation_type == "maximum" %}
+
+{{ metric.specification.maximum_value }} (Max)
+
+{% elif metric.specification.validation_type == "range" %}
+
+{{ metric.specification.minimum_value }}
+-
+{{ metric.specification.maximum_value }}
+
+{% elif metric.specification.validation_type == "text" %}
+
+{{ metric.specification.expected_result }}
+
+{% else %}
+
+-
+
+{% endif %}
+
+
+</td>
+
+<td>
+
+{% if metric.result=="Pass" %}
+
+<span class="badge bg-success">
+
+Pass
+
+</span>
+
+{% else %}
+
+<span class="badge bg-danger">
+
+Fail
+
+</span>
+
+{% endif %}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+{% if not metrics %}
+
+<tr>
+
+<td colspan="9" class="text-center py-5">
+
+<i class="bi bi-inbox display-4 text-muted"></i>
+
+<h5 class="mt-3">
+
+No quality metrics found.
+
+</h5>
+
+</td>
+
+</tr>
+
+{% endif %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+{% include "components/report_pagination.html" %}
+{% endblock %}
+
+{% block scripts %}
+
+{{ super() }}
+
+<script>
+
+new Chart(
+
+document.getElementById(
+
+"resultChart"
+
+),
+
+{
+
+type:"pie",
+
+data:{
+
+labels:{{ chart["labels"]|tojson }},
+
+datasets:[{
+
+data:{{ chart["values"]|tojson }},
+
+backgroundColor:[
+
+"#198754",
+
+"#dc3545",
+
+]
+
+}]
+
+},
+
+options:{
+
+responsive:true,
+
+plugins:{
+
+legend:{
+
+position:"bottom"
+
+}
+
+}
+
+}
+
+}
+
+);
+
+</script>
+
+{% endblock %}

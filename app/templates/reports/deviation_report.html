@@ -1,0 +1,662 @@
+{% extends "base.html" %}
+
+{% from "components/report_table_header.html" import sortable %}
+
+{% block title %}
+
+Deviation Report
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+
+    <div class="d-flex flex-wrap gap-6 justify-content-end mb-3">
+        <a href="{{ url_for('main.reports') }}"
+            class="btn btn-outline-secondary">
+
+            Back
+
+        </a>
+    </div>   
+
+
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+<div>
+
+<h2 class="fw-bold">
+
+Deviation Report
+
+</h2>
+
+<p class="text-muted">
+
+Track quality deviations across inspections.
+
+</p>
+
+
+
+</div>
+
+
+{% set excel_endpoint = "main.export_deviation_excel" %}
+
+{% set pdf_endpoint = "main.export_deviation_pdf" %}
+
+{% include "components/report_export_buttons.html" %}
+</div>
+
+<div class="row ">
+
+<div class="col-md-6 mb-3">
+
+<div class="card shadow-sm">
+
+<div class="card-body">
+
+<small>Total</small>
+
+<h2>{{ total }}</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<div class="card border-success shadow-sm">
+
+<div class="card-body">
+
+<small>Open</small>
+
+<h2 class="text-success">
+
+{{ open_count }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<div class="card border-warning shadow-sm">
+
+<div class="card-body">
+
+<small>In Progress</small>
+
+<h2 class="text-warning">
+
+{{ progress }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<div class="card border-danger shadow-sm">
+
+<div class="card-body">
+
+<small>Critical</small>
+
+<h2 class="text-danger">
+
+{{ critical }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="row">
+
+<div class="col-md-6 mb-3">
+
+<div class="card shadow-sm">
+
+<div class="card-header">
+
+Deviation Status
+
+</div>
+
+<div class="card-body">
+
+<canvas id="statusChart"></canvas>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<div class="card shadow-sm">
+
+<div class="card-header">
+
+Severity Distribution
+
+</div>
+
+<div class="card-body">
+
+<canvas id="severityChart"></canvas>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<form method="GET" class="card shadow-sm mb-4">
+
+<div class="card-body">
+
+<div class="row g-3">
+
+<div class="col-md-3">
+
+<label>Status</label>
+
+<select
+
+name="status"
+
+class="form-select"
+
+>
+
+<option value="">All</option>
+
+<option value="Open">Open</option>
+
+<option value="In Progress">In Progress</option>
+
+<option value="Closed">Closed</option>
+
+</select>
+
+</div>
+
+<div class="col-md-3">
+
+<label>Severity</label>
+
+<select
+
+name="severity"
+
+class="form-select"
+
+>
+
+<option value="">All</option>
+
+<option value="Minor">Minor</option>
+
+<option value="Major">Major</option>
+
+<option value="Critical">Critical</option>
+
+</select>
+
+</div>
+
+<div class="col-md-3">
+
+<label>Reported By</label>
+
+<input
+
+class="form-control"
+
+name="reported_by"
+
+>
+
+</div>
+
+<div class="col-md-3">
+
+<label>Date</label>
+
+<input
+
+type="date"
+
+name="date"
+
+class="form-control"
+
+>
+
+</div>
+
+<div class="col-12">
+
+<button
+
+class="btn btn-primary"
+
+>
+
+Search
+
+</button>
+
+<a
+
+href="{{ url_for('main.deviation_report') }}"
+
+class="btn btn-secondary"
+
+>
+
+Reset
+
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+</form>
+<div class="card shadow-sm">
+
+    <div class="card-body p-0">
+
+        <div class="table-responsive">
+
+            <table class="table table-hover table-striped align-middle mb-0">
+
+                <thead class="table">
+
+                    <tr>
+
+                        <th>
+
+                            {{ sortable("Deviation No","deviation_number") }}
+
+                        </th>
+
+                        <th>
+
+                            Inspection
+
+                        </th>
+
+                        <th>
+
+                            Metric
+
+                        </th>
+
+                        <th>
+
+                            Severity
+
+                        </th>
+
+                        <th>
+
+                            Status
+
+                        </th>
+
+                        <th>
+
+                            Reported By
+
+                        </th>
+
+                        <th>
+
+                            Reported Date
+
+                        </th>
+
+                        <th>
+
+                            Closed Date
+
+                        </th>
+
+                        <th class="text-center">
+
+                            Action
+
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                {% for deviation in deviations %}
+
+                <tr>
+
+    <td>
+
+        <strong>
+
+            {{ deviation.deviation_number }}
+
+        </strong>
+
+    </td>
+
+    <td>
+
+        {{ deviation.inspection.inspection_number }}
+
+    </td>
+
+    <td>
+
+        {{ deviation.quality_metric.specification.metric_name }}
+
+    </td>
+
+    <td>
+
+        {% if deviation.severity=="Critical" %}
+
+        <span class="badge bg-danger">
+
+            Critical
+
+        </span>
+
+        {% elif deviation.severity=="Major" %}
+
+        <span class="badge bg-warning text-dark">
+
+            Major
+
+        </span>
+
+        {% else %}
+
+        <span class="badge bg-info">
+
+            Minor
+
+        </span>
+
+        {% endif %}
+
+    </td>
+
+    <td>
+
+        {% if deviation.status=="Closed" %}
+
+        <span class="badge bg-success">
+
+            Closed
+
+        </span>
+
+        {% elif deviation.status=="In Progress" %}
+
+        <span class="badge bg-secondary text-white">
+
+            In Progress
+
+        </span>
+
+        {% else %}
+
+        <span class="badge bg-danger">
+
+            Open
+
+        </span>
+
+        {% endif %}
+
+    </td>
+
+    <td>
+
+        {{ deviation.reported_by }}
+
+    </td>
+
+    <td>
+
+        {{ deviation.reported_date.strftime("%d %b %Y") }}
+
+    </td>
+
+    <td>
+
+        {% if deviation.closed_date %}
+
+            {{ deviation.closed_date.strftime("%d %b %Y") }}
+
+        {% else %}
+
+            -
+
+        {% endif %}
+
+    </td>
+    <td>
+
+<div class="d-inline-flex gap-1">
+
+<a
+
+href="{{ url_for(
+
+'main.view_deviation',
+
+deviation_id=deviation.id
+
+) }}"
+
+class="btn btn-primary"
+
+>
+
+<i class="bi bi-eye"></i>
+
+</a>
+
+<a
+
+href="{{ url_for(
+
+'main.edit_deviation',
+
+deviation_id=deviation.id
+
+) }}"
+
+class="btn btn-warning"
+
+>
+
+<i class="bi bi-pencil"></i>
+
+</a>
+
+</div>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+{% if not deviations %}
+
+<tr>
+
+<td colspan="9" class="text-center py-5">
+
+<i class="bi bi-inbox display-4 text-muted"></i>
+
+<h5 class="mt-3">
+
+No deviations found.
+
+</h5>
+
+</td>
+
+</tr>
+
+{% endif %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+
+{% include "components/report_pagination.html" %}
+
+
+{% endblock %}
+
+{% block scripts %}
+
+{{ super() }}
+
+<script>
+
+new Chart(
+
+document.getElementById("statusChart"),
+
+{
+
+type:"pie",
+
+data:{
+
+labels:{{ status_chart["labels"]|tojson }},
+
+datasets:[{
+
+data:{{ status_chart["values"]|tojson }},
+
+backgroundColor:[
+
+"#dc3545",
+
+"#808080",
+
+"#198754"
+
+]
+
+}]
+
+},
+
+options:{
+
+responsive:true
+
+}
+
+}
+
+);
+
+
+
+new Chart(
+
+document.getElementById("severityChart"),
+
+{
+
+type:"bar",
+
+data:{
+
+labels:{{ severity_chart["labels"]|tojson }},
+
+datasets:[{
+
+label:"Count",
+
+data:{{ severity_chart["values"]|tojson }},
+
+backgroundColor:[
+
+"#0dcaf0",
+
+"#ffc107",
+
+"#dc3545"
+
+]
+
+}]
+
+},
+
+options:{
+
+responsive:true,
+
+plugins:{
+
+legend:{
+
+display:false
+
+}
+
+}
+
+}
+
+}
+
+);
+
+</script>
+
+{% endblock %}
+

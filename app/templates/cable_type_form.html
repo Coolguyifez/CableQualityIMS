@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+
+{% block title %}Cable Type{% endblock %}
+
+{% block content %}
+
+{% set title="Cable Type" %}
+{% set subtitle="Create or edit a cable specification." %}
+
+{% include "partials/page_header.html" %}
+
+<div class="card shadow-sm">
+
+    <div class="card-body">
+
+        <form method="POST">
+
+            {{ form.hidden_tag() }}
+
+            <div class="row">
+
+
+                <div class="col-md-6 mb-3">
+                    {{ form.pair_count.label }}
+                    {{ form.pair_count(class="form-select") }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.conductor_size.label }}
+                    {{ form.conductor_size(class="form-select") }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.voltage_rating.label }}
+                    {{ form.voltage_rating(class="form-select") }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.drain_configuration.label }}
+                    {{ form.drain_configuration(class="form-select") }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.conductor_material.label }}
+                    {{ form.conductor_material(class="form-select") }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.insulation_material.label }}
+                    {{ form.insulation_material(class="form-select") }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.fire_resistant_material.label }}
+                    {{ form.fire_resistant_material(class="form-select") }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.inner_sheath_material.label }}
+                    {{ form.inner_sheath_material(class="form-select") }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.armour_type.label }}
+                    {{ form.armour_type(class="form-select") }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.outer_sheath_material.label }}
+                    {{ form.outer_sheath_material(class="form-select") }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.flame_retardant.label }}
+                    {{ form.flame_retardant(class="form-select") }}
+                </div>
+
+                <div class="col-12">
+                    {{ form.application.label }}
+                    {{ form.application(class="form-control", rows=3) }}
+                </div>
+
+            </div>
+
+            <br>
+
+            <div class="d-flex justify-content-between">
+
+           
+
+            <a href="{{ url_for('main.cable_types') }}"
+               class="btn btn-secondary">
+                Cancel
+            </a>
+
+            
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

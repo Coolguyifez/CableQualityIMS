@@ -1,0 +1,667 @@
+{% extends "base.html" %}
+
+{% from "components/report_table_header.html" import sortable %}
+
+{% block title %}
+
+CAPA Report
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+<div class="d-flex flex-wrap gap-2 justify-content-end mb-3">
+
+<a href="{{ url_for('main.reports') }}"
+
+class="btn btn-outline-secondary">
+
+Back
+
+</a>
+
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+<div>
+
+<h2 class="fw-bold">
+
+CAPA Report
+
+</h2>
+
+<p class="text-muted">
+
+Corrective and Preventive Action Summary
+
+</p>
+
+</div>
+
+{% set excel_endpoint = "main.export_capa_excel" %}
+
+{% set pdf_endpoint = "main.export_capa_pdf" %}
+
+{% include "components/report_export_buttons.html" %}
+
+</div>
+
+<div class="row">
+
+<div class="col-md-6 mb-3">
+
+<div class="card shadow-sm">
+
+<div class="card-body">
+
+<small>Total CAPA</small>
+
+<h2>{{ total }}</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<div class="card border-success shadow-sm">
+
+<div class="card-body">
+
+<small>Open</small>
+
+<h2 class="text-success">
+
+{{ open_count }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<div class="card border-warning shadow-sm">
+
+<div class="card-body">
+
+<small>In Progress</small>
+
+<h2 class="text-warning">
+
+{{ progress }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<div class="card border-danger shadow-sm">
+
+<div class="card-body">
+
+<small>Overdue</small>
+
+<h2 class="text-danger">
+
+{{ overdue }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="row">
+
+<div class="col-md-6 mb-3">
+
+<div class="card shadow-sm">
+
+<div class="card-header">
+
+CAPA Status
+
+</div>
+
+<div class="card-body">
+
+<canvas id="statusChart"></canvas>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<div class="card shadow-sm">
+
+<div class="card-header">
+
+Effectiveness
+
+</div>
+
+<div class="card-body">
+
+<canvas id="effectivenessChart"></canvas>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<form method="GET" class="card shadow-sm mb-4">
+
+<div class="card-body">
+
+<div class="row g-3">
+
+<div class="col-md-3">
+
+<label>Status</label>
+
+<select
+
+name="status"
+
+class="form-select">
+
+<option value="">All</option>
+
+<option value="Open">Open</option>
+
+<option value="In Progress">In Progress</option>
+
+<option value="Closed">Closed</option>
+
+</select>
+
+</div>
+
+<div class="col-md-3">
+
+<label>Effectiveness</label>
+
+<select
+
+name="effectiveness"
+
+class="form-select">
+
+<option value="">All</option>
+
+<option value="Pending">Pending</option>
+
+<option value="Effective">Effective</option>
+
+<option value="Ineffective">Ineffective</option>
+
+</select>
+
+</div>
+
+<div class="col-md-3">
+
+<label>Assigned To</label>
+
+<input
+
+type="text"
+
+name="assigned_to"
+
+class="form-control">
+
+</div>
+
+<div class="col-md-3">
+
+<label>Due From</label>
+
+<input
+
+type="date"
+
+name="date_from"
+
+class="form-control">
+
+</div>
+
+<div class="col-md-3">
+
+<label>Due To</label>
+
+<input
+
+type="date"
+
+name="date_to"
+
+class="form-control">
+
+</div>
+
+<div class="col-12">
+
+<button class="btn btn-primary">
+
+Search
+
+</button>
+
+<a
+
+href="{{ url_for('main.capa_report') }}"
+
+class="btn btn-secondary">
+
+Reset
+
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+</form>
+<div class="card shadow-sm">
+
+<div class="card-body p-0">
+
+<div class="table-responsive">
+
+<table class="table table-hover table-striped align-middle mb-0">
+
+<thead class="table">
+
+<tr>
+
+<th>
+
+{{ sortable("CAPA ID","id") }}
+
+</th>
+
+<th>
+
+Deviation
+
+</th>
+
+<th>
+
+Assigned To
+
+</th>
+
+<th>
+
+Status
+
+</th>
+
+<th>
+
+Effectiveness
+
+</th>
+
+<th>
+
+Due Date
+
+</th>
+
+<th>
+
+Completion
+
+</th>
+
+<th class="text-center">
+
+Action
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for capa in capas %}
+
+<tr>
+
+<td>
+
+<strong>
+
+#{{ capa.id }}
+
+</strong>
+
+</td>
+
+<td>
+
+{{ capa.deviation.deviation_number }}
+
+</td>
+
+<td>
+
+{{ capa.assigned_to }}
+
+</td>
+
+<td>
+{% if capa.status == "Closed" %}
+
+<span class="badge bg-success">
+
+Closed
+
+</span>
+
+{% elif capa.status == "Overdue" %}
+
+<span class="badge bg-danger">
+
+Overdue
+
+({{ capa.days_overdue }} day{% if capa.days_overdue != 1 %}s{% endif %})
+
+</span>
+
+{% elif capa.status == "In Progress" %}
+
+<span class="badge bg-warning text-dark">
+
+In Progress
+
+</span>
+
+{% elif capa.status == "Completed" %}
+
+<span class="badge bg-primary">
+
+Completed
+
+</span>
+
+{% else %}
+
+<span class="badge bg-secondary">
+
+Open
+
+</span>
+
+{% endif %}
+
+</td>
+
+<td>
+
+{% if capa.effectiveness=="Effective" %}
+
+<span class="badge bg-success">
+
+Effective
+
+</span>
+
+{% elif capa.effectiveness=="Pending" %}
+
+<span class="badge bg-warning text-dark">
+
+Pending
+
+</span>
+
+{% else %}
+
+<span class="badge bg-danger">
+
+Not Effective
+
+</span>
+
+{% endif %}
+
+</td>
+
+<td>
+
+{% if capa.due_date %}
+
+{{ capa.due_date.strftime("%d %b %Y") }}
+
+{% else %}
+
+-
+
+{% endif %}
+
+</td>
+
+<td>
+
+{% if capa.completion_date %}
+
+{{ capa.completion_date.strftime("%d %b %Y") }}
+
+{% else %}
+
+-
+
+{% endif %}
+
+</td>
+
+<td>
+
+<div class="d-inline-flex gap-1">
+
+<a
+
+href="{{ url_for(
+
+'main.view_capa',
+
+capa_id=capa.id
+
+) }}"
+
+class="btn btn-primary">
+
+<i class="bi bi-eye"></i>
+
+</a>
+
+<a
+
+href="{{ url_for(
+
+'main.edit_capa',
+
+capa_id=capa.id
+
+) }}"
+
+class="btn btn-warning">
+
+<i class="bi bi-pencil"></i>
+
+</a>
+
+</div>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+{% if not capas %}
+
+<tr>
+
+<td colspan="8" class="text-center py-5">
+
+<i class="bi bi-inbox display-4 text-muted"></i>
+
+<h5 class="mt-3">
+
+No CAPA records found.
+
+</h5>
+
+</td>
+
+</tr>
+
+{% endif %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+{% include "components/report_pagination.html" %}
+
+{% endblock %}
+
+{% block scripts %}
+
+{{ super() }}
+<script>
+
+new Chart(
+
+document.getElementById("statusChart"),
+
+{
+
+type:"pie",
+
+data:{
+
+labels:{{ status_chart["labels"]|tojson }},
+
+datasets:[{
+
+data:{{ status_chart["data"]|tojson }},
+
+backgroundColor:[
+
+"#8D8D8F",
+
+"#ffc107",
+
+"#2727E8",
+
+"#dc3545",
+
+"#198754"
+
+
+
+]
+
+}]
+
+}
+
+}
+
+);
+
+
+new Chart(
+
+document.getElementById("effectivenessChart"),
+
+{
+
+type:"bar",
+
+data:{
+
+labels:{{ effectiveness_chart["labels"]|tojson }},
+
+datasets:[{
+
+label:"Count",
+
+data:{{ effectiveness_chart["data"]|tojson }},
+
+backgroundColor:[
+
+"#ffc107",
+
+"#198754",
+
+"#dc3545"
+
+]
+
+}]
+
+},
+
+options:{
+
+responsive:true,
+
+plugins:{
+
+legend:{
+
+display:false
+
+}
+
+}
+
+}
+
+}
+
+);
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Quality Metrics{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="fw">
+                Quality Metrics
+            </h2>
+
+            <p class="text-muted mb-0">
+                Manage every quality measurements.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="card shadow-sm">
+
+        <div class="card-header">
+
+            <div class="row align-items-center">
+
+                <div class="col-md-4">
+
+                    <input
+                        type="text"
+                        id="qualityMetricSearch"
+                        class="form-control"
+                        placeholder="Search by inspection, metric, batch, result...">
+
+                </div>
+
+                <div class="col-md-8 text-md-end mt-3 mt-md-0">
+
+                <span class="text-muted">
+
+                    Total Metrics:
+
+                    <strong>{{ metrics|length }}</strong>
+
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="table-responsive">
+
+            <table
+                class="table table-hover align-middle mb-0"
+                id="qualityMetricTable"
+            >
+
+                <thead class="table">
+
+                <tr>
+
+                    <th>Inspection</th>
+
+                    <th>Batch</th>
+
+                    <th>Metric</th>
+
+                    <th>Measured</th>
+
+                    <th>Requirement</th>
+
+                    <th>Result</th>
+
+                    <th class="text-center">
+                        Actions
+                    </th>
+
+                </tr>
+
+                </thead>
+
+                <tbody>
+
+                {% for metric in metrics %}
+
+                <tr>
+
+                    <td>
+
+                        {{ metric.inspection.inspection_number }}
+
+                    </td>
+
+                    <td>
+
+                        {{ metric.inspection.batch.batch_number }}
+
+                    </td>
+
+                    <td>
+
+                        {{ metric.specification.metric_name }}
+
+                    </td>
+
+                    <td>
+
+                        {{ metric.measured_value }}
+
+                        {{ metric.specification.unit }}
+
+                    </td>
+
+                    <td>
+
+                        {% if metric.specification.requirement %}
+
+                                {{ metric.specification.requirement }}
+
+                            {% elif metric.specification.validation_type == "any" %}
+
+                                Accept Any Value
+
+                            {% elif metric.specification.validation_type == "minimum" %}
+
+                                {{ metric.specification.minimum_value }} (Min)
+
+                            {% elif metric.specification.validation_type == "maximum" %}
+
+                                {{ metric.specification.maximum_value }} (Max)
+
+                            {% elif metric.specification.validation_type == "range" %}
+
+                                {{ metric.specification.minimum_value }}
+                                -
+                                {{ metric.specification.maximum_value }}
+
+                            {% elif metric.specification.validation_type == "text" %}
+
+                                {{ metric.specification.expected_result }}
+
+                            {% else %}
+
+                                -
+
+                            {% endif %}
+
+                    </td>
+
+                    <td>
+
+                        {% if metric.result=="Pass" %}
+
+                        <span class="badge bg-success">
+
+                            PASS
+
+                        </span>
+
+                        {% else %}
+
+                        <span class="badge bg-danger">
+
+                            FAIL
+
+                        </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+
+                        <div class="d-inline-flex gap-1">
+
+                        <a
+
+                            href="{{ url_for('main.edit_quality_metric', metric_id=metric.id) }}"
+
+                            class="btn btn-sm btn-warning"
+
+                        >
+
+                            <i class="bi bi-pencil"></i>
+
+                        </a>
+
+                        <a
+
+                            href="{{ url_for('main.delete_quality_metric', metric_id=metric.id) }}"
+
+                            class="btn btn-sm btn-danger"
+
+                            onclick="return confirm('Delete this metric?')"
+
+                        >
+
+                            <i class="bi bi-trash"></i>
+
+                        </a>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+
+                    <td colspan="7" class="text-center py-5">
+
+                        <i class="bi bi-graph-up-arrow display-4 text-secondary"></i>
+
+                        <h5 class="mt-3">
+
+                            No Quality Metrics Found
+
+                        </h5>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

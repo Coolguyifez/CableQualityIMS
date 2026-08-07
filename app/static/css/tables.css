@@ -1,0 +1,41 @@
+.table{
+
+    margin-bottom:0;
+
+}
+
+.table thead{
+
+    background:#F8FAFC;
+
+}
+
+.table th{
+
+    font-weight:600;
+
+    color:#475569;
+
+    padding:16px;
+
+}
+
+.table td{
+
+    padding:16px;
+
+    vertical-align:middle;
+
+}
+
+.table tbody tr{
+
+    transition:.25s;
+
+}
+
+.table tbody tr:hover{
+
+    background:#F8FAFC;
+
+}

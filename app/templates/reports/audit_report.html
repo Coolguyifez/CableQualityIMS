@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% from "components/report_table_header.html" import sortable %}
+
+{% block title %}
+
+Audit Trail Report
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+     <div class="d-flex flex-wrap gap-6 justify-content-end mb-3">
+        <a href="{{ url_for('main.reports') }}"
+            class="btn btn-outline-secondary">
+
+            Back
+
+        </a>
+    </div>  
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+<div>
+
+<h2 class="fw-bold">
+
+Audit Trail Report
+
+</h2>
+
+<p class="text-muted">
+
+Track all system activities and user actions.
+
+</p>
+
+</div>
+
+{% set excel_endpoint = "main.export_audit_excel" %}
+
+{% set pdf_endpoint = "main.export_audit_pdf" %}
+
+{% include "components/report_export_buttons.html" %}
+
+</div>
+
+<div class="row">
+
+<div class="col-md-6 mb-3">
+
+<div class="card shadow-sm">
+
+<div class="card-body">
+
+<small>Total Activities</small>
+
+<h2>{{ total }}</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<div class="card border-primary shadow-sm">
+
+<div class="card-body">
+
+<small>Modules</small>
+
+<h2 class="text-primary">
+
+{{ modules }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<div class="card border-success shadow-sm">
+
+<div class="card-body">
+
+<small>Actions</small>
+
+<h2 class="text-success">
+
+{{ actions }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<div class="card border-warning shadow-sm">
+
+<div class="card-body">
+
+<small>Users</small>
+
+<h2 class="text-warning">
+
+{{ users }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="card shadow-sm mb-4">
+
+<div class="card-header">
+
+Activity By Module
+
+</div>
+
+<div class="card-body">
+
+<canvas id="auditChart"></canvas>
+
+</div>
+
+</div>
+<form method="GET" class="card shadow-sm mb-4">
+
+<div class="card-body">
+
+<div class="row g-3">
+
+<div class="col-md-3">
+
+<label>Module</label>
+
+<input
+
+type="text"
+
+name="module"
+
+value="{{ request.args.get('module','') }}"
+
+class="form-control">
+
+</div>
+
+<div class="col-md-3">
+
+<label>Action</label>
+
+<input
+
+type="text"
+
+name="action"
+
+value="{{ request.args.get('action','') }}"
+
+class="form-control">
+
+</div>
+
+<div class="col-md-3">
+
+<label>User</label>
+
+<input
+
+type="text"
+
+name="user"
+
+value="{{ request.args.get('user','') }}"
+
+class="form-control">
+
+</div>
+
+<div class="col-md-3">
+
+<label>Date From</label>
+
+<input
+
+type="date"
+
+name="date_from"
+
+value="{{ request.args.get('date_from','') }}"
+
+class="form-control">
+
+</div>
+
+<div class="col-md-3">
+
+<label>Date To</label>
+
+<input
+
+type="date"
+
+name="date_to"
+
+value="{{ request.args.get('date_to','') }}"
+
+class="form-control">
+
+</div>
+
+<div class="col-12">
+
+<button class="btn btn-primary">
+
+Search
+
+</button>
+
+<a
+
+href="{{ url_for('main.audit_report') }}"
+
+class="btn btn-secondary">
+
+Reset
+
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+</form>
+<div class="card shadow-sm">
+
+<div class="card-body p-0">
+
+<div class="table-responsive">
+
+<table class="table table-hover mb-0">
+
+<thead class="table">
+
+<tr>
+
+<th>
+
+{{ sortable("Date","created_at") }}
+
+</th>
+
+<th>
+
+User
+
+</th>
+
+<th>
+
+{{ sortable("Module","module") }}
+
+</th>
+
+<th>
+
+{{ sortable("Action","action") }}
+
+</th>
+
+<th>
+
+Description
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for log in logs %}
+
+<tr>
+
+<td>
+
+{{ log.created_at.strftime("%d-%m-%Y %H:%M") }}
+
+</td>
+
+<td>
+
+{{ log.user.full_name if log.user else "-" }}
+
+</td>
+
+<td>
+
+<span class="badge bg-primary">
+
+{{ log.module }}
+
+</span>
+
+</td>
+
+<td>
+
+<span class="badge bg-success">
+
+{{ log.action }}
+
+</span>
+
+</td>
+
+<td>
+
+{{ log.description }}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+{% if not logs %}
+
+<tr>
+
+<td colspan="5" class="text-center py-5">
+
+<i class="bi bi-clock-history display-4 text-muted"></i>
+
+<h5 class="mt-3">
+
+No audit records found.
+
+</h5>
+
+</td>
+
+</tr>
+
+{% endif %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+{% include "components/report_pagination.html" %}
+
+{% endblock %}
+
+{% block scripts %}
+
+{{ super() }}
+
+<script>
+
+new Chart(
+
+document.getElementById("auditChart"),
+
+{
+
+type:"bar",
+
+data:{
+
+labels:{{ chart["labels"]|tojson }},
+
+datasets:[{
+
+label:"Activities",
+
+data:{{ chart["data"]|tojson }},
+
+backgroundColor:"#0d6efd"
+
+}]
+
+},
+
+options:{
+
+responsive:true,
+
+plugins:{
+
+legend:{
+
+display:false
+
+}
+
+},
+
+scales:{
+
+y:{
+
+beginAtZero:true
+
+}
+
+}
+
+}
+
+}
+
+);
+
+</script>
+
+{% endblock %}

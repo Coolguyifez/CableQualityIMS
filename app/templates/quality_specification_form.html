@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if form.metric_name.data %}
+Edit Quality Specification
+{% else %}
+New Quality Specification
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+
+    <div class="col-lg-8">
+
+        <div class="card shadow-sm border-0">
+
+            <div class="card-header d-flex justify-content-between align-items-center">
+
+                <h4 class="mb-0">
+
+                    {% if form.metric_name.data %}
+                        Edit Quality Specification
+                    {% else %}
+                        New Quality Specification
+                    {% endif %}
+
+                </h4>
+
+                
+
+            </div>
+
+            <div class="card-body">
+
+                <form method="POST">
+
+                    {{ form.hidden_tag() }}
+
+                    <!-- Cable Type -->
+
+                    <div class="mb-3">
+
+                        {{ form.cable_type_id.label(class="form-label fw-semibold") }}
+
+                        {{ form.cable_type_id(class="form-select") }}
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Voltage Rating
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="voltage_rating"
+                            readonly>
+
+                    </div>
+
+
+                    <!-- Metric -->
+
+                    <div class="mb-3">
+
+                        {{ form.metric_name.label(class="form-label fw-semibold") }}
+
+                        {{ form.metric_name(class="form-select", id="metric_name") }}
+
+                    </div>
+
+                    <!-- Unit -->
+
+                    <div class="mb-3">
+
+                        {{ form.unit.label(class="form-label fw-semibold") }}
+
+                        {{ form.unit(class="form-control", id="unit", readonly=True) }}
+
+                    </div>
+
+                    <!-- Validation Type -->
+
+                    <div class="mb-4">
+
+                        {{ form.validation_type.label(class="form-label fw-semibold") }}
+
+                        {{ form.validation_type(class="form-select", id="validation_type") }}
+
+                    </div>
+
+                    <!-- Numeric Limits -->
+
+                    <div class="row" id="numberFields">
+
+                        <div class="col-md-6 mb-3">
+
+                            {{ form.minimum_value.label(class="form-label fw-semibold") }}
+
+                            {{ form.minimum_value(class="form-control") }}
+
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+
+                            {{ form.maximum_value.label(class="form-label fw-semibold") }}
+
+                            {{ form.maximum_value(class="form-control") }}
+
+                        </div>
+
+                    </div>
+
+                    <!-- Expected Text -->
+
+                    <div class="mb-4" id="textField">
+
+                        {{ form.expected_result.label(class="form-label fw-semibold") }}
+
+                        {{ form.expected_result(
+                            class="form-control",
+                            placeholder="Example: Passed, No Breakdown Shall Occur, Withstood"
+                        ) }}
+
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+
+                        <a href="{{ url_for('main.quality_specifications') }}"
+                           class="btn btn-secondary">
+
+                            Cancel
+
+                        </a>
+
+                        {{ form.submit(class="btn btn-primary") }}
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+function toggleValidationFields(){
+
+    let type=document.getElementById("validation_type").value;
+
+    let numberFields=document.getElementById("numberFields");
+
+    let textField=document.getElementById("textField");
+
+    if(type==="text"){
+
+        numberFields.style.display="none";
+
+        textField.style.display="block";
+
+    }
+    else if(type==="any"){
+
+        numberFields.style.display="none";
+
+        textField.style.display="none";
+
+    }
+    else{
+
+        numberFields.style.display="flex";
+
+        textField.style.display="none";
+
+    }
+
+}
+
+document.addEventListener("DOMContentLoaded",function(){
+
+    toggleValidationFields();
+
+    document.getElementById("validation_type")
+        .addEventListener("change",toggleValidationFields);
+
+});
+
+
+const voltageMap = {{ voltage_map|tojson }};
+
+const cableType = document.getElementById("cable_type_id");
+
+const voltage = document.getElementById("voltage_rating");
+
+function updateVoltage(){
+
+    voltage.value =
+        voltageMap[cableType.value] || "";
+
+}
+
+cableType.addEventListener(
+    "change",
+    updateVoltage
+);
+
+updateVoltage();
+
+
+
+</script>
+
+{% endblock %}

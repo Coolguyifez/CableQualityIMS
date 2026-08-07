@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Cable Batches{% endblock %}
+
+{% block content %}
+
+{% set title="Cable Batches" %}
+{% set subtitle="Track every cable produced." %}
+{% set action_url=url_for('main.new_batch') %}
+{% set action_text="Add New Batch" %}
+
+{% include "partials/page_header.html" %}
+
+<div class="card shadow-sm border-0">
+    <div class="card-header">
+
+        <div class="row align-items-center">
+
+            <div class="col-md-4">
+
+                <input
+                    type="text"
+                    id="batchSearch"
+                    class="form-control"
+                    placeholder="Search batches, cable code...">
+
+            </div>
+
+            <div class="col-md-8 text-md-end mt-3 mt-md-0">
+
+                <span class="text-muted">
+
+                    Total Cable Batches:
+
+                    <strong>{{ batches|length }}</strong>
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+<div class="table-responsive">
+
+<table class="table table-hover align-middle mb-0" id="batchTable">
+
+<thead class="table">
+
+<tr>
+
+<th>Batch No</th>
+
+<th>Cable Code</th>
+
+<th>Customer</th>
+
+<th>Cable Name</th>
+
+<th>Production line</th>
+
+<th>Production Date</th>
+
+<th>Length</th>
+
+<th>Status</th>
+
+<th class="text-center">Actions</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for batch in batches %}
+
+<tr>
+
+<td>
+
+<strong>
+
+{{ batch.batch_number }}
+
+</strong>
+
+</td>
+
+<td>
+
+<span class="badge bg-primary">
+
+    {{ batch.cable_code }}
+
+</span>
+
+</td>
+
+<td>
+
+{{ batch.customer.company_name }} {{batch.customer.address}}
+
+</td>
+
+<td>
+
+{{ batch.cable_type.pair_count }} × {{ batch.cable_type.conductor_size }} - {{ batch.cable_type.name }}
+
+</td>
+
+<td>
+
+{{ batch.production_line.line_name }}
+
+</td>
+
+<td>
+
+{{ batch.production_date.strftime("%d-%m-%Y") }}
+
+</td>
+
+ <td>
+
+{{ "%.0f"|format(batch.cable_length) }} m
+
+</td>
+
+<td>
+
+{% if batch.status=="Completed" %}
+
+<span class="badge bg-success">
+
+Completed
+
+</span>
+
+{% elif batch.status=="Rejected" %}
+
+<span class="badge bg-danger">
+
+Rejected
+
+</span>
+
+{% else %}
+
+<span class="badge bg-warning text-dark">
+
+Pending
+
+</span>
+
+{% endif %}
+
+</td>
+
+<td>
+
+<div class="d-inline-flex gap-1">   
+
+{% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager"] %}    
+
+<a href="{{ url_for('main.edit_batch', batch_id=batch.id) }}"
+    class="btn btn-warning btn-sm">
+    <i class="bi bi-pencil"></i>
+</a>
+{% endif %}
+
+<a href="{{ url_for('main.delete_batch', batch_id=batch.id) }}"
+    class="btn btn-danger btn-sm"
+    onclick="return confirm('Delete this cable batch?');">
+    <i class="bi bi-trash"></i>
+</a>
+
+</div>
+
+</td>
+
+</tr>
+
+{% else %}
+
+<tr>
+
+<td colspan="8" class="text-center py-5">
+
+<i class="bi bi-box display-4 text-secondary"></i>
+
+<h5 class="mt-3">
+
+    No Cable Batches Found
+
+</h5>
+
+<p class="text-muted">
+
+    Click "Add New Batches" to create your first cable batch produced.
+
+</p>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+{% endblock %}

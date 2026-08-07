@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Inspection{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+    <div>
+
+        <h2 class="fw-bold">
+
+            New Inspection
+
+        </h2>
+
+        <p class="text-muted">
+
+            Record cable quality inspection.
+
+        </p>
+
+    </div>
+
+</div>
+
+<div class="card shadow-sm border-0">
+
+<div class="card-body">
+
+<form method="POST">
+
+{{ form.hidden_tag() }}
+
+<div class="row">
+
+<div class="col-md-6 mb-3">
+{{ form.batch_id.label(class="form-label") }}
+{{ form.batch_id(class="form-select") }}
+</div>
+
+<div class="col-md-6 mb-3">
+{{ form.inspector.label(class="form-label") }}
+{{ form.inspector(class="form-control") }}
+</div>
+
+
+<div class="col-md-12 mb-3">
+{{ form.remarks.label(class="form-label") }}
+{{ form.remarks(class="form-control", rows="4") }}
+</div>
+
+<div class="col-md-6 mb-3">
+{{ form.inspection_date.label(class="form-label") }}
+{{ form.inspection_date(class="form-control") }}
+</div>
+
+</div>
+
+<div class="d-flex justify-content-between">
+
+
+
+<a href="{{ url_for('main.inspections') }}"
+class="btn btn-secondary">
+
+Cancel
+
+</a>
+
+{{ form.submit(class="btn btn-primary") }}
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+{% endblock %}

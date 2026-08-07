@@ -1,0 +1,562 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ title if title else "Cable Batch" }}
+{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+    <div>
+
+        <h2 class="fw-bold">
+            {{ title if title else "New Cable Batch" }}
+        </h2>
+
+        <p class="text-muted">
+            Create a production cable batch.
+        </p>
+
+    </div>
+
+</div>
+
+<form method="POST">
+
+{{ form.hidden_tag() }}
+
+<div class="row">
+
+    <!-- ============================= -->
+    <!-- Production Information -->
+    <!-- ============================= -->
+
+    <div class="col-lg-6">
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header fw-bold">
+
+                Production Information
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="mb-3">
+
+                    {{ form.customer_id.label(class="form-label") }}
+
+                    {{ form.customer_id(class="form-select") }}
+
+                </div>
+
+                <div class="mb-3">
+
+                    {{ form.production_line_id.label(class="form-label") }}
+
+                    {{ form.production_line_id(class="form-select") }}
+
+                </div>
+
+                <div class="mb-3">
+
+                    {{ form.production_date.label(class="form-label") }}
+
+                    {{ form.production_date(class="form-control") }}
+
+                </div>
+
+            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager"] %}    
+
+                <div class="mb-3">
+
+                    {{ form.status.label(class="form-label") }}
+
+                    {{ form.status(class="form-select") }}
+
+                </div>
+
+            {% endif %}    
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ============================= -->
+    <!-- Cable Information -->
+    <!-- ============================= -->
+
+    <div class="col-lg-6">
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header fw-bold">
+
+                Cable Information
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="mb-3">
+
+                    {{ form.cable_type_id.label(class="form-label") }}
+
+                    <select
+                        id="cable_type_id"
+                        name="cable_type_id"
+                        class="form-select">
+
+                        {% for cable in cable_types %}
+
+                        <option
+                            value="{{ cable.id }}"
+
+                            data-pair="{{ cable.pair_count }}"
+
+                            data-size="{{ cable.conductor_size }}"
+
+                            data-rating="{{ cable.voltage_rating }}"
+
+                            data-drain="{{ cable.drain_configuration }}"
+
+                            data-conductor="{{ cable.conductor_material }}"
+
+                            data-insulation="{{ cable.insulation_material }}"
+
+                            data-fire="{{ cable.fire_resistant_material }}"
+
+                            data-inner="{{ cable.inner_sheath_material }}"
+
+                            data-armour="{{ cable.armour_type }}"
+
+                            data-outer="{{ cable.outer_sheath_material }}"
+
+                            data-fr="{{ cable.flame_retardant }}"
+
+                            {% if form.cable_type_id.data == cable.id %}
+                            selected
+                            {% endif %}>
+
+                            {{ cable.name }}
+
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+
+                        <label class="form-label">
+
+                            Pair × Size
+
+                        </label>
+
+                        <input
+                            id="pair_size"
+                            class="form-control"
+                            readonly>
+
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+
+                        <label class="form-label">
+
+                            Voltage Rating
+
+                        </label>
+
+                        <input
+                            id="rating"
+                            class="form-control"
+                            readonly>
+
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+
+                        <label class="form-label">
+
+                            Drain Configuration
+
+                        </label>
+
+                        <input
+                            id="drain"
+                            class="form-control"
+                            readonly>
+
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+
+                        <label class="form-label">
+
+                            Construction
+
+                        </label>
+
+                        <textarea
+                            id="construction"
+                            class="form-control"
+                            rows="3"
+                            readonly></textarea>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="row">
+
+    <!-- ========================= -->
+    <!-- Batch -->
+    <!-- ========================= -->
+
+    <div class="col-lg-6">
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header fw-bold">
+
+                Batch Details
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+
+                        Batch Number
+
+                    </label>
+
+                    <input
+                        class="form-control"
+                        value="Automatically Generated"
+                        readonly>
+
+                </div>
+
+                <div class="mb-3">
+
+                    {{ form.drum_number.label(class="form-label") }}
+
+                    {{ form.drum_number(class="form-control") }}
+
+                </div>
+
+                <div class="mb-3">
+
+                    {{ form.cable_length.label(class="form-label") }}
+
+                    {{ form.cable_length(class="form-control") }}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ========================= -->
+    <!-- Cable Code -->
+    <!-- ========================= -->
+
+    <div class="col-lg-6">
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header fw-bold">
+
+                Cable Code
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="mb-3">
+
+                    {{ form.drain_wire_type.label(class="form-label") }}
+
+                    {{ form.drain_wire_type(class="form-select") }}
+
+                </div>
+
+                <div class="mb-3">
+
+                    {{ form.specialty.label(class="form-label") }}
+
+                    {{ form.specialty(class="form-select") }}
+
+                </div>
+
+                <div class="mb-3">
+
+                    {{ form.water_barrier.label(class="form-label") }}
+
+                    {{ form.water_barrier(class="form-select") }}
+
+                </div>
+
+                <div class="mb-3">
+
+                    {{ form.outer_sheath_colour.label(class="form-label") }}
+
+                    {{ form.outer_sheath_colour(class="form-select") }}
+
+                </div>
+
+                <div class="mb-3">
+
+                    {{ form.cable_code.label(class="form-label") }}
+
+                    {{ form.cable_code(
+                        class="form-control fw-bold",
+                        id="cable_code"
+                    ) }}
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="text-end">
+
+    
+
+    <a
+        href="{{ url_for('main.batches') }}"
+        class="btn btn-secondary">
+
+        Cancel
+
+    </a>
+
+    {{ form.submit(class="btn btn-primary") }}
+
+</div>
+
+</form>
+
+{% endblock %}
+{% block scripts %}
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const cableSelect = document.getElementById("cable_type_id");
+
+    const pairSize = document.getElementById("pair_size");
+
+    const rating = document.getElementById("rating");
+
+    const drain = document.getElementById("drain");
+
+    const construction = document.getElementById("construction");
+
+    const cableCode = document.getElementById("cable_code");
+
+    const drainWire = document.getElementById("drain_wire_type");
+
+    const specialty = document.getElementById("specialty");
+
+    const waterBarrier = document.getElementById("water_barrier");
+
+    const colour = document.getElementById("outer_sheath_colour");
+
+
+    function updateCableInformation() {
+
+        const option =
+            cableSelect.options[cableSelect.selectedIndex];
+
+        pairSize.value =
+            `${option.dataset.pair} × ${option.dataset.size}`;
+
+        rating.value =
+            option.dataset.rating;
+
+        drain.value =
+            option.dataset.drain;
+
+        construction.value =
+            `${option.dataset.conductor}/` +
+            `${option.dataset.insulation}/` +
+            `${option.dataset.fire}/` +
+            `${option.dataset.inner}/` +
+            `${option.dataset.armour}/` +
+            `${option.dataset.outer}`;
+
+        if (option.dataset.fr !== "NONE") {
+
+            construction.value +=
+                ` - ${option.dataset.fr}`;
+
+        }
+
+    }
+
+
+    function generateCableCode() {
+
+        const option =
+            cableSelect.options[cableSelect.selectedIndex];
+
+        //----------------------------------
+        // Pair
+        //----------------------------------
+
+        let pair = option.dataset.pair
+            .replace("P","")
+            .padStart(2,"0");
+
+        //----------------------------------
+        // Size
+        //----------------------------------
+
+        let sizeCode = "";
+
+        switch(option.dataset.size){
+
+            case "1.0mm":
+                sizeCode="C";
+                break;
+
+            case "1.5mm":
+                sizeCode="D";
+                break;
+
+            case "2.5mm":
+                sizeCode="E";
+                break;
+
+            case "4.0mm":
+                sizeCode="F";
+                break;
+
+        }
+
+        //----------------------------------
+        // Armour
+        //----------------------------------
+
+        let armourCode =
+            option.dataset.armour==="SWA"
+            ? "N"
+            : "P";
+
+        //----------------------------------
+        // Final Code
+        //----------------------------------
+
+        cableCode.value =
+
+            drainWire.value +
+
+            "-" +
+
+            specialty.value +
+
+            "-" +
+
+            pair +
+
+            "-" +
+
+            waterBarrier.value +
+
+            "-" +
+
+            armourCode +
+
+            "-" +
+
+            sizeCode +
+
+            "-" +
+
+            colour.value;
+
+    }
+
+    updateCableInformation();
+
+    cableSelect.addEventListener(
+
+        "change",
+
+        updateCableInformation
+
+    );
+
+    generateCableCode();
+
+    drainWire.addEventListener(
+
+        "change",
+
+        generateCableCode
+
+    );
+
+    specialty.addEventListener(
+
+        "change",
+
+        generateCableCode
+
+    );
+
+    waterBarrier.addEventListener(
+
+        "change",
+
+        generateCableCode
+
+    );
+
+    colour.addEventListener(
+
+        "change",
+
+        generateCableCode
+
+    );
+
+
+
+
+});
+
+</script>
+
+{% endblock %}

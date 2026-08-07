@@ -1,0 +1,44 @@
+/* ==========================
+   RESPONSIVE DESIGN
+========================== */
+
+/* Desktop */
+@media (min-width: 992px) {
+
+    
+
+    .sidebar {
+        position: relative;
+        left: 0;
+    }
+
+    .page {
+        flex: 1;
+    }
+
+}
+
+/* Tablet & Mobile */
+@media (max-width: 991px) {
+
+    .page {
+        width: 100%;
+    }
+
+    
+
+}
+
+/* Mobile Back Button */
+
+.mobile-back{
+    display:flex;
+}
+
+@media (max-width:768px){
+
+    .mobile-back{
+        display:block;
+    }
+
+}

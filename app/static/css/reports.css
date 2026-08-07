@@ -1,0 +1,47 @@
+.report-card{
+
+    border:none;
+
+    border-radius:18px;
+
+    transition:.3s;
+
+}
+
+.report-card:hover{
+
+    transform:translateY(-8px);
+
+    box-shadow:0 15px 35px rgba(0,0,0,.15);
+
+}
+
+.report-card i{
+
+    transition:.3s;
+
+}
+
+.report-card:hover i{
+
+    transform:scale(1.15);
+
+}
+
+.report-stat{
+
+    border-radius:18px;
+
+}
+
+.report-stat h3{
+
+    font-weight:700;
+
+}
+
+.report-stat i{
+
+    opacity:.8;
+
+}

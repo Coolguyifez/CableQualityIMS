@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}CAPA{% endblock %}
+
+{% block content %}
+
+<div class="card shadow">
+
+<div class="card-header d-flex justify-content-between align-items-center">
+
+<h3>
+
+Corrective & Preventive Action
+
+</h3>
+
+
+
+</div>
+
+<div class="card-body">
+
+<form method="POST">
+
+{{ form.hidden_tag() }}
+
+<table class="table table-bordered">
+
+<tr>
+
+<th width="30%">
+
+Deviation Number
+
+</th>
+
+<td>
+
+{{ deviation.deviation_number }}
+
+</td>
+
+</tr>
+
+<tr>
+
+<th>
+
+Inspection
+
+</th>
+
+<td>
+
+{{ deviation.inspection.inspection_number }}
+
+</td>
+
+</tr>
+
+<tr>
+
+<th>
+
+Customer
+
+</th>
+
+<td>
+    {{ deviation.inspection.batch.customer.company_name }}<br>
+    <small class="text-muted">
+        {{ deviation.inspection.batch.customer.address }}
+    </small>
+</td>
+
+</tr>
+
+<tr>
+
+<th>
+
+Cable Name
+
+</th>
+
+<td class="text-wrap" style="max-width:20px; white-space:normal;">
+{{ deviation.inspection.batch.cable_type.pair_count }} × {{ deviation.inspection.batch.cable_type.conductor_size }} - {{deviation.inspection.batch.cable_type.name }}
+
+</td>
+
+</tr>
+
+</table>
+
+<div class="mb-3">
+
+{{ form.corrective_action.label }}
+
+{{ form.corrective_action(class="form-control", rows=4) }}
+
+</div>
+
+<div class="mb-3">
+
+{{ form.preventive_action.label }}
+
+{{ form.preventive_action(class="form-control", rows=4) }}
+
+</div>
+
+<div class="mb-3">
+
+{{ form.assigned_to.label }}
+
+{{ form.assigned_to(class="form-control") }}
+
+</div>
+
+<div class="row">
+
+<div class="col">
+
+{{ form.due_date.label }}
+
+{{ form.due_date(class="form-control") }}
+
+</div>
+
+<div class="col">
+
+{{ form.completion_date.label }}
+
+{{ form.completion_date(class="form-control") }}
+
+</div>
+
+</div>
+
+<br>
+
+<div class="row">
+
+<div class="col">
+
+{{ form.status.label }}
+
+{{ form.status(class="form-select") }}
+
+</div>
+
+<div class="col">
+
+{{ form.effectiveness.label }}
+
+{{ form.effectiveness(class="form-select") }}
+
+</div>
+
+</div>
+
+<br>
+
+<div class="d-flex justify-content-between">
+
+
+<a href="{{ url_for('main.view_deviation', deviation_id=deviation.id) }}"
+class="btn btn-secondary">
+
+Cancel
+
+</a>
+
+{{ form.submit(class="btn btn-primary") }}
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+{% endblock %}

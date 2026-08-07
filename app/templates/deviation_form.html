@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Deviation{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+
+<div class="col-lg-8">
+
+<div class="card shadow-sm border-0">
+
+<div class="card-header">
+
+<h4>
+
+Deviation Form
+
+</h4>
+
+</div>
+
+<div class="card-body">
+
+<form method="POST">
+
+{{ form.hidden_tag() }}
+
+
+
+<div class="mb-3">
+
+{{ form.description.label(class="form-label") }}
+
+{{ form.description(class="form-control", rows=4) }}
+
+</div>
+
+<div class="row">
+
+<div class="col-md-6 mb-3">
+
+{{ form.severity.label(class="form-label") }}
+
+{{ form.severity(class="form-select") }}
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+{{ form.status.label(class="form-label") }}
+
+{{ form.status(class="form-select") }}
+
+</div>
+
+</div>
+
+<div class="mb-3">
+
+{{ form.root_cause.label(class="form-label") }}
+
+{{ form.root_cause(class="form-control", rows=3) }}
+
+</div>
+
+
+
+<div class="mb-3">
+
+{{ form.reported_by.label(class="form-label") }}
+
+{{ form.reported_by(class="form-control") }}
+
+</div>
+
+<div class="d-flex justify-content-between">
+
+<a href="{{ url_for('main.deviations') }}"
+class="btn btn-secondary">
+
+Cancel
+
+</a>
+
+{{ form.submit(class="btn btn-primary") }}
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}

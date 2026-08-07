@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Inspections{% endblock %}
+
+{% block content %}
+
+{% set title="Inspections" %}
+{% set subtitle="Manage every inspection carried out" %}
+{% set action_url=url_for('main.new_inspection') %}
+{% set action_text="Add New Inspection" %}
+
+{% include "partials/page_header.html" %}
+
+
+<div class="card shadow-sm">
+
+    <div class="card-header">
+
+        <div class="row align-items-center">
+
+            <div class="col-md-4">
+
+                <input
+                    type="text"
+                    id="inspectionSearch"
+                    class="form-control"
+                    placeholder="Search inspections...">
+
+            </div>
+
+            <div class="col-md-8 text-md-end mt-3 mt-md-0">
+
+                <span class="text-muted">
+
+                    Total Inspections:
+
+                    <strong>{{ inspections|length }}</strong>
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="table-responsive">
+
+        <table
+            class="table table-hover align-middle mb-0"
+            id="inspectionTable">
+
+            <thead class="table">
+
+                <tr>
+
+                    <th>#</th>
+
+                    <th>Inspection No.</th>
+
+                    <th>Batch</th>
+
+                    <th>Inspector</th>
+
+                    <th>Date</th>
+
+                    <th>Metrics</th>
+
+                    <th>Status</th>
+
+                    <th class="text-center">
+                        Actions
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+            {% for inspection in inspections %}
+
+                <tr>
+
+                    <td>{{ loop.index }}</td>
+
+                    <td>
+
+                        <strong>
+
+                            {{ inspection.inspection_number }}
+
+                        </strong>
+
+                    </td>
+
+                    <td>
+
+                        {{ inspection.batch.batch_number }}
+
+                    </td>
+
+                    <td>
+
+                        {{ inspection.inspector }}
+
+                    </td>
+
+                    <td>
+
+                        {{ inspection.inspection_date }}
+
+                    </td>
+
+                    <td>
+
+                        <span class="badge bg-info">
+
+                            {{ inspection.quality_metrics|length }}
+
+                        </span>
+
+                    </td>
+
+                    <td>
+
+                        {% if inspection.overall_result == "Pass" %}
+
+                            <span class="badge bg-success">
+
+                                PASS
+
+                            </span>
+
+                        {% elif inspection.overall_result == "Fail" %}
+
+                            <span class="badge bg-danger">
+
+                                FAIL
+
+                            </span>
+
+                        {% else %}
+
+                            <span class="badge bg-warning text-dark">
+
+                                PENDING
+
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td class="text-center">
+
+                        <div class="d-inline-flex gap-1">
+
+                            <a href="{{ url_for('main.view_inspection', inspection_id=inspection.id) }}"
+                               class="btn btn-primary btn-sm">
+
+                                <i class="bi bi-eye"></i>
+
+                            </a>
+
+                            <a href="{{ url_for('main.edit_inspection', inspection_id=inspection.id) }}"
+                               class="btn btn-warning btn-sm">
+
+                                <i class="bi bi-pencil"></i>
+
+                            </a>
+
+                            <a href="{{ url_for('main.delete_inspection', inspection_id=inspection.id) }}"
+                               class="btn btn-danger btn-sm"
+                               onclick="return confirm('Delete this inspection?')">
+
+                                <i class="bi bi-trash"></i>
+
+                            </a>
+                        </div>
+                        
+
+                    </td>
+
+                </tr>
+
+            {% else %}
+
+                <tr>
+
+                    <td colspan="8"
+                        class="text-center py-5">
+
+                        <i class="bi bi-clipboard2-x display-4 text-secondary"></i>
+
+                        <h5 class="mt-3">
+
+                            No inspections found
+
+                        </h5>
+
+                        <p class="text-muted">
+
+                            Click "Add New Inspection" to create your first inspection.
+
+                        </p>
+
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

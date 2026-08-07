@@ -1,0 +1,20 @@
+.navbar {
+    background: white;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+}
+
+.card-body h2 {
+    font-weight: bold;
+}
+
+footer {
+    
+}
+
+#productionChart{
+    height:300px !important;
+}
