@@ -2357,11 +2357,14 @@ def new_quality_metric(inspection_id):
 
         db.session.add(metric)
 
+        # Generate the metric ID before using it
         db.session.flush()
 
         # --------------------------------
         # Automatically create deviation
         # --------------------------------
+
+        deviation = None
 
         if metric.result == "Fail":
 
@@ -2370,18 +2373,25 @@ def new_quality_metric(inspection_id):
                 company_id=current_user.company_id
             ).first()
 
-            if not existing_deviation:
-                deviation = Deviation(
-                    company_id=current_user.company_id,
-                    deviation_number=generate_deviation_number(),
-                    inspection_id=inspection.id,
-                    quality_metric_id=metric.id,
-                    description=f"{specification.metric_name} failed inspection.",
-                    severity="Major",
-                    status="Open",
-                    reported_by=inspection.inspector
-                )
-
+            if existing_deviation: 
+                
+                deviation = existing_deviation 
+                
+            else: 
+                
+                deviation = Deviation( 
+                    company_id=current_user.company_id, 
+                    deviation_number=generate_deviation_number(), 
+                    inspection_id=inspection.id, 
+                    quality_metric_id=metric.id, 
+                    description=( 
+                        f"{specification.metric_name} " 
+                        f"failed inspection." ), 
+                    severity="Major", 
+                    status="Open", 
+                    reported_by=inspection.inspector 
+                ) 
+                
                 db.session.add(deviation)
 
         log_activity(
@@ -2397,7 +2407,8 @@ def new_quality_metric(inspection_id):
         db.session.commit()
 
         if (
-                current_user.notification_enabled
+                deviation is not None
+                and current_user.notification_enabled
                 and current_user.deviation_notification
         ):
 
