@@ -2416,7 +2416,7 @@ def new_quality_metric(inspection_id):
 
                 title="Failed Metrics",
 
-                message=f"A Deviation {deviation.deviation_number} was created for batch number {deviation.inspection.batch.batch_number}.",
+                message=f"A Deviation {deviation.deviation_number} was created for batch number {inspection.batch.batch_number}.",
 
                 category="Deviation",
 
