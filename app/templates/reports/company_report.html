@@ -1,0 +1,1384 @@
+{% extends "base.html" %}
+
+{% block title %}Company Report{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- ===================================================== -->
+    <!-- HEADER -->
+    <!-- ===================================================== -->
+
+    <div class="d-flex flex-wrap gap-2 justify-content-end mb-3">
+
+        <a href="{{ url_for('main.reports') }}"
+
+        class="btn btn-outline-secondary">
+
+        Back
+
+        </a>
+
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+        
+
+        <div>
+
+            <h2 class="fw-bold mb-1">
+
+                
+
+                Company Performance Report
+
+            </h2>
+
+            <p class="text-muted mb-0">
+
+                System-wide performance overview across all registered companies.
+
+            </p>
+
+        </div>
+
+ 
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+
+            <a href="{{ url_for('main.company_report_excel') }}"
+            class="btn btn-success">
+
+                <i class="bi bi-file-earmark-excel me-1"></i>
+                Export Excel
+            </a>
+
+            <a href="{{ url_for('main.company_report_pdf') }}"
+            class="btn btn-danger">
+
+                <i class="bi bi-file-earmark-pdf me-1"></i>
+                Export PDF
+            </a>
+
+        </div>
+
+
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- GLOBAL STATISTICS -->
+    <!-- ===================================================== -->
+
+    <div class="row g-4 mb-4">
+
+        <!-- Companies -->
+
+        <div class="col-xl-3 col-md-6">
+
+            <div class="card shadow-sm border-0 h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between">
+
+                        <div>
+
+                            <small class="text-muted">
+                                Companies
+                            </small>
+
+                            <h3 class="fw-bold">
+                                {{ total_companies }}
+                            </h3>
+
+                            <small class="text-success">
+                                {{ active_companies }} active
+                            </small>
+
+                        </div>
+
+                        <i class="bi bi-building fs-1 text-primary"></i>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Users -->
+
+        <div class="col-xl-3 col-md-6">
+
+            <div class="card shadow-sm border-0 h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between">
+
+                        <div>
+
+                            <small class="text-muted">
+                                Users
+                            </small>
+
+                            <h3 class="fw-bold">
+                                {{ total_users }}
+                            </h3>
+
+                            <small class="text-success">
+                                {{ active_users }} active
+                            </small>
+
+                        </div>
+
+                        <i class="bi bi-people fs-1 text-info"></i>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Production -->
+
+        <div class="col-xl-3 col-md-6">
+
+            <div class="card shadow-sm border-0 h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between">
+
+                        <div>
+
+                            <small class="text-muted">
+                                Production Batches
+                            </small>
+
+                            <h3 class="fw-bold">
+                                {{ total_batches }}
+                            </h3>
+
+                            <small class="text-success">
+                                {{ completed_batches }} completed
+                            </small>
+
+                        </div>
+
+                        <i class="bi bi-box-seam fs-1 text-success"></i>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Cable Length -->
+
+        <div class="col-xl-3 col-md-6">
+
+            <div class="card shadow-sm border-0 h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between">
+
+                        <div>
+
+                            <small class="text-muted">
+                                Cable Produced
+                            </small>
+
+                            <h3 class="fw-bold">
+                                {{ "{:,.2f}".format(total_cable_length) }}
+                            </h3>
+
+                            <small class="text-muted">
+                                metres
+                            </small>
+
+                        </div>
+
+                        <i class="bi bi-rulers fs-1 text-secondary"></i>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Inspections -->
+
+        <div class="col-xl-3 col-md-6">
+
+            <div class="card shadow-sm border-0 h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between">
+
+                        <div>
+
+                            <small class="text-muted">
+                                Inspections
+                            </small>
+
+                            <h3 class="fw-bold">
+                                {{ total_inspections }}
+                            </h3>
+
+                            <small class="text-success">
+                                {{ inspection_pass_rate }}% pass rate
+                            </small>
+
+                        </div>
+
+                        <i class="bi bi-clipboard-check fs-1 text-primary"></i>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Deviations -->
+
+        <div class="col-xl-3 col-md-6">
+
+            <div class="card shadow-sm border-0 h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between">
+
+                        <div>
+
+                            <small class="text-muted">
+                                Deviations
+                            </small>
+
+                            <h3 class="fw-bold">
+                                {{ total_deviations }}
+                            </h3>
+
+                            <small class="text-danger">
+                                {{ open_deviations }} open
+                            </small>
+
+                        </div>
+
+                        <i class="bi bi-exclamation-triangle fs-1 text-danger"></i>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- CAPA -->
+
+        <div class="col-xl-3 col-md-6">
+
+            <div class="card shadow-sm border-0 h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between">
+
+                        <div>
+
+                            <small class="text-muted">
+                                CAPA
+                            </small>
+
+                            <h3 class="fw-bold">
+                                {{ total_capa }}
+                            </h3>
+
+                            <small class="text-warning">
+                                {{ open_capa }} open
+                            </small>
+
+                        </div>
+
+                        <i class="bi bi-tools fs-1 text-warning"></i>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Inspection Results -->
+
+        <div class="col-xl-3 col-md-6">
+
+            <div class="card shadow-sm border-0 h-100">
+
+                <div class="card-body">
+
+                    <small class="text-muted">
+                        Inspection Results
+                    </small>
+
+                    <div class="mt-2">
+
+                        <span class="badge bg-success me-1">
+                            Pass {{ passed_inspections }}
+                        </span>
+
+                        <span class="badge bg-danger me-1">
+                            Fail {{ failed_inspections }}
+                        </span>
+
+                        <span class="badge bg-warning text-dark">
+                            Pending {{ pending_inspections }}
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- COMPANY COMPARISON -->
+    <!-- ===================================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header">
+
+            <h5 class="fw-bold mb-0">
+
+                
+                Company Performance Comparison
+
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table">
+
+                        <tr>
+
+                            <th>Company</th>
+
+                            <th>Users</th>
+
+                            <th>Production</th>
+
+                            <th>Cable Length</th>
+
+                            <th>Inspections</th>
+
+                            <th>Pass Rate</th>
+
+                            <th>Deviations</th>
+
+                            <th>Open Dev.</th>
+
+                            <th>CAPA</th>
+
+                            <th>Open CAPA</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for item in company_statistics %}
+
+                        <tr>
+
+                            <td>
+
+                                <strong>
+                                    {{ item.company.company_name }}
+                                </strong>
+
+                                <br>
+
+                                <small class="text-muted">
+                                    {{ item.company.company_code }}
+                                </small>
+
+                            </td>
+
+                            <td>
+
+                                {{ item.users }}
+
+                                <small class="text-success d-block">
+                                    {{ item.active_users }} active
+                                </small>
+
+                            </td>
+
+                            <td>
+
+                                {{ item.batches }}
+
+                                <small class="text-success d-block">
+                                    {{ item.completed_batches }} completed
+                                </small>
+
+                            </td>
+
+                            <td>
+
+                                {{ "{:,.2f}".format(item.cable_length) }}
+
+                                <small class="text-muted">
+                                    m
+                                </small>
+
+                            </td>
+
+                            <td>
+
+                                {{ item.inspections }}
+
+                            </td>
+
+                            <td>
+
+                                {% if item.inspection_pass_rate >= 90 %}
+
+                                    <span class="badge bg-success">
+                                        {{ item.inspection_pass_rate }}%
+                                    </span>
+
+                                {% elif item.inspection_pass_rate >= 70 %}
+
+                                    <span class="badge bg-warning text-dark">
+                                        {{ item.inspection_pass_rate }}%
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-danger">
+                                        {{ item.inspection_pass_rate }}%
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {{ item.deviations }}
+
+                            </td>
+
+                            <td>
+
+                                {% if item.open_deviations > 0 %}
+
+                                    <span class="badge bg-danger">
+
+                                        {{ item.open_deviations }}
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-success">
+                                        0
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {{ item.capa }}
+
+                            </td>
+
+                            <td>
+
+                                {% if item.open_capa > 0 %}
+
+                                    <span class="badge bg-warning text-dark">
+
+                                        {{ item.open_capa }}
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-success">
+                                        0
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+
+                            <td colspan="10"
+                                class="text-center text-muted py-4">
+
+                                No companies registered.
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- COMPANY DETAILS -->
+    <!-- ===================================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header">
+
+            <h5 class="fw-bold mb-0">
+
+               
+                Company Details
+
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table">
+
+                        <tr>
+
+                            <th>Company</th>
+                            <th>Code</th>
+                            <th>Address</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Status</th>
+                            <th>Created</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for company in companies %}
+
+                        <tr>
+
+                            <td>
+                                <strong>
+                                    {{ company.company_name }}
+                                </strong>
+                            </td>
+
+                            <td>
+                                {{ company.company_code }}
+                            </td>
+
+                            <td>
+                                {{ company.address or "—" }}
+                            </td>
+
+                            <td>
+                                {{ company.email or "—" }}
+                            </td>
+
+                            <td>
+                                {{ company.phone or "—" }}
+                            </td>
+
+                            <td>
+
+                                {% if company.is_active %}
+
+                                    <span class="badge bg-success">
+                                        Active
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-secondary">
+                                        Inactive
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {{ company.created_at.strftime("%d %b %Y")
+                                   if company.created_at else "—" }}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- USERS -->
+    <!-- ===================================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header ">
+
+            <h5 class="fw-bold mb-0">
+
+                
+                Users Across Companies
+
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table">
+
+                        <tr>
+
+                            <th>Company</th>
+                            <th>Name</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Created</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for user in users %}
+
+                        <tr>
+
+                            <td>
+                                {{ user.company.company_name }}
+                            </td>
+
+                            <td>
+                                <strong>
+                                    {{ user.full_name }}
+                                </strong>
+                            </td>
+
+                            <td>
+                                {{ user.username }}
+                            </td>
+
+                            <td>
+                                {{ user.email }}
+                            </td>
+
+                            <td>
+                                {{ user.role }}
+                            </td>
+
+                            <td>
+
+                                {% if user.is_active %}
+
+                                    <span class="badge bg-success">
+                                        Active
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-secondary">
+                                        Inactive
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {{ user.created_at.strftime("%d %b %Y")
+                                   if user.created_at else "—" }}
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+
+                            <td colspan="7"
+                                class="text-center text-muted">
+
+                                No users found.
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- PRODUCTION -->
+    <!-- ===================================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header">
+
+            <h5 class="fw-bold mb-0">
+
+            
+
+                Production Records
+
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table">
+
+                        <tr>
+
+                            <th>Company</th>
+                            <th>Batch</th>
+                            <th>Drum</th>
+                            <th>Customer</th>
+                            <th>Cable Type</th>
+                            <th>Production Line</th>
+                            <th>Date</th>
+                            <th>Length</th>
+                            <th>Status</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for batch in batches %}
+
+                        <tr>
+
+                            <td>
+                                {{ batch.company.company_name }}
+                            </td>
+
+                            <td>
+                                <strong>
+                                    {{ batch.batch_number }}
+                                </strong>
+                            </td>
+
+                            <td>
+                                {{ batch.drum_number }}
+                            </td>
+
+                            <td>
+                                {{ batch.customer.company_name
+                                   if batch.customer else "—" }}
+                            </td>
+
+                            <td>
+                                {{ batch.cable_type.name
+                                   if batch.cable_type else "—" }}
+                            </td>
+
+                            <td>
+                                {{ batch.production_line.line_name
+                                   if batch.production_line else "—" }}
+                            </td>
+
+                            <td>
+
+                                {{ batch.production_date.strftime("%d %b %Y")
+                                   if batch.production_date else "—" }}
+
+                            </td>
+
+                            <td>
+
+                                {{ "{:,.2f}".format(batch.cable_length or 0) }}
+                                m
+
+                            </td>
+
+                            <td>
+
+                                {% if batch.status == "Completed" %}
+
+                                    <span class="badge bg-success">
+                                        Completed
+                                    </span>
+
+                                {% elif batch.status == "Rejected" %}
+
+                                    <span class="badge bg-danger">
+                                        Rejected
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-warning text-dark">
+                                        {{ batch.status }}
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+
+                            <td colspan="9"
+                                class="text-center text-muted">
+
+                                No production records found.
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- INSPECTIONS -->
+    <!-- ===================================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header">
+
+            <h5 class="fw-bold mb-0">
+
+                
+
+                Inspection Records
+
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table">
+
+                        <tr>
+
+                            <th>Company</th>
+                            <th>Inspection</th>
+                            <th>Batch</th>
+                            <th>Inspector</th>
+                            <th>Date</th>
+                            <th>Result</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for inspection in inspections %}
+
+                        <tr>
+
+                            <td>
+                                {{ inspection.company.company_name }}
+                            </td>
+
+                            <td>
+                                <strong>
+                                    {{ inspection.inspection_number }}
+                                </strong>
+                            </td>
+
+                            <td>
+                                {{ inspection.batch.batch_number
+                                   if inspection.batch else "—" }}
+                            </td>
+
+                            <td>
+                                {{ inspection.inspector }}
+                            </td>
+
+                            <td>
+
+                                {{ inspection.inspection_date.strftime("%d %b %Y")
+                                   if inspection.inspection_date else "—" }}
+
+                            </td>
+
+                            <td>
+
+                                {% if inspection.overall_result == "Pass" %}
+
+                                    <span class="badge bg-success">
+                                        Pass
+                                    </span>
+
+                                {% elif inspection.overall_result == "Fail" %}
+
+                                    <span class="badge bg-danger">
+                                        Fail
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-warning text-dark">
+                                        Pending
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+
+                            <td colspan="6"
+                                class="text-center text-muted">
+
+                                No inspection records found.
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- DEVIATIONS -->
+    <!-- ===================================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header">
+
+            <h5 class="fw-bold mb-0">
+
+                
+
+                Deviation Records
+
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table">
+
+                        <tr>
+
+                            <th>Company</th>
+                            <th>Deviation</th>
+                            <th>Inspection</th>
+                            <th>Description</th>
+                            <th>Severity</th>
+                            <th>Status</th>
+                            <th>Reported By</th>
+                            <th>Date</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for deviation in deviations %}
+
+                        <tr>
+
+                            <td>
+                                {{ deviation.company.company_name }}
+                            </td>
+
+                            <td>
+                                <strong>
+                                    {{ deviation.deviation_number }}
+                                </strong>
+                            </td>
+
+                            <td>
+
+                                {{ deviation.inspection.inspection_number
+                                   if deviation.inspection else "—" }}
+
+                            </td>
+
+                            <td>
+
+                                {{ deviation.description }}
+
+                            </td>
+
+                            <td>
+
+                                {% if deviation.severity == "Critical" %}
+
+                                    <span class="badge bg-danger">
+                                        Critical
+                                    </span>
+
+                                {% elif deviation.severity == "Major" %}
+
+                                    <span class="badge bg-warning text-dark">
+                                        Major
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-secondary">
+                                        {{ deviation.severity }}
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if deviation.status == "Open" %}
+
+                                    <span class="badge bg-danger">
+                                        Open
+                                    </span>
+
+                                {% elif deviation.status == "Closed" %}
+
+                                    <span class="badge bg-success">
+                                        Closed
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-warning text-dark">
+                                        {{ deviation.status }}
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ deviation.reported_by }}
+                            </td>
+
+                            <td>
+
+                                {{ deviation.reported_date.strftime("%d %b %Y")
+                                   if deviation.reported_date else "—" }}
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+
+                            <td colspan="8"
+                                class="text-center text-muted">
+
+                                No deviations found.
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- CAPA -->
+    <!-- ===================================================== -->
+
+    <div class="card shadow-sm border-0 mb-5">
+
+        <div class="card-header">
+
+            <h5 class="fw-bold mb-0">
+
+               
+                CAPA Records
+
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table">
+
+                        <tr>
+
+                            <th>Company</th>
+                            <th>Deviation</th>
+                            <th>Assigned To</th>
+                            <th>Due Date</th>
+                            <th>Completion</th>
+                            <th>Effectiveness</th>
+                            <th>Status</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for capa in capas %}
+
+                        <tr>
+
+                            <td>
+                                {{ capa.company.company_name }}
+                            </td>
+
+                            <td>
+
+                                {{ capa.deviation.deviation_number
+                                   if capa.deviation else "—" }}
+
+                            </td>
+
+                            <td>
+                                {{ capa.assigned_to }}
+                            </td>
+
+                            <td>
+
+                                {{ capa.due_date.strftime("%d %b %Y")
+                                   if capa.due_date else "—" }}
+
+                            </td>
+
+                            <td>
+
+                                {{ capa.completion_date.strftime("%d %b %Y")
+                                   if capa.completion_date else "—" }}
+
+                            </td>
+
+                            <td>
+
+                                {% if capa.effectiveness == "Effective" %}
+
+                                    <span class="badge bg-success">
+                                        Effective
+                                    </span>
+
+                                {% elif capa.effectiveness == "Not Effective" %}
+
+                                    <span class="badge bg-danger">
+                                        Not Effective
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-secondary">
+                                        Pending
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if capa.status == "Completed" %}
+
+                                    <span class="badge bg-success">
+                                        Completed
+                                    </span>
+
+                                {% elif capa.status == "Open" %}
+
+                                    <span class="badge bg-danger">
+                                        Open
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-warning text-dark">
+                                        {{ capa.status }}
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+
+                            <td colspan="7"
+                                class="text-center text-muted">
+
+                                No CAPA records found.
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
