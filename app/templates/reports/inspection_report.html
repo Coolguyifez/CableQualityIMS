@@ -10,7 +10,7 @@ Inspection Report
 
 {% block content %}
 
-<div class="container-fluid py-4">
+<div class="container-fluid">
 
 
     <div class="d-flex flex-wrap gap-6 justify-content-end mb-3">
@@ -22,7 +22,7 @@ Inspection Report
         </a>
     </div>  
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
 
         <div>
 
@@ -40,11 +40,15 @@ Inspection Report
 
         </div>
 
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+
         {% set excel_endpoint = "main.export_inspection_excel" %}
 
         {% set pdf_endpoint = "main.export_inspection_pdf" %}
 
         {% include "components/report_export_buttons.html" %}
+
+        </div>
 
     </div>
 
