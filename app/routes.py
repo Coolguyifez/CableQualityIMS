@@ -24,6 +24,8 @@ from app.report_utils import (
     apply_customer_sort,
     apply_user_sort,
     apply_audit_sort,
+    export_all_companies_pdf,
+    export_all_companies_excel,
     paginate_query,
     get_inspection_statistics,
     get_capa_statistics,
@@ -5585,9 +5587,332 @@ def export_audit_pdf():
 @system_admin_required
 def company_report():
 
-    return render_template(
-        "reports/company_report.html"
+    # =========================================================
+    # ALL COMPANIES
+    # =========================================================
+
+    companies = Company.query.order_by(
+        Company.company_name
+    ).all()
+
+    # =========================================================
+    # ALL USERS
+    # =========================================================
+
+    users = User.query.order_by(
+        User.full_name
+    ).all()
+
+    # =========================================================
+    # ALL PRODUCTION
+    # =========================================================
+
+    batches = CableBatch.query.order_by(
+        CableBatch.production_date.desc()
+    ).all()
+
+    # =========================================================
+    # ALL INSPECTIONS
+    # =========================================================
+
+    inspections = Inspection.query.order_by(
+        Inspection.inspection_date.desc()
+    ).all()
+
+    # =========================================================
+    # ALL DEVIATIONS
+    # =========================================================
+
+    deviations = Deviation.query.order_by(
+        Deviation.reported_date.desc()
+    ).all()
+
+    # =========================================================
+    # ALL CAPA
+    # =========================================================
+
+    capas = CAPA.query.order_by(
+        CAPA.due_date.desc()
+    ).all()
+
+    # =========================================================
+    # COMPANY COUNTS
+    # =========================================================
+
+    total_companies = len(companies)
+
+    active_companies = sum(
+        1
+        for company in companies
+        if company.is_active
     )
+
+    # =========================================================
+    # USER COUNTS
+    # =========================================================
+
+    total_users = len(users)
+
+    active_users = sum(
+        1
+        for user in users
+        if user.is_active
+    )
+
+    # =========================================================
+    # PRODUCTION STATISTICS
+    # =========================================================
+
+    total_batches = len(batches)
+
+    completed_batches = sum(
+        1
+        for batch in batches
+        if batch.status == "Completed"
+    )
+
+    total_cable_length = sum(
+        (batch.cable_length or 0)
+        for batch in batches
+    )
+
+    # =========================================================
+    # INSPECTION STATISTICS
+    # =========================================================
+
+    total_inspections = len(inspections)
+
+    passed_inspections = sum(
+        1
+        for inspection in inspections
+        if inspection.overall_result == "Pass"
+    )
+
+    failed_inspections = sum(
+        1
+        for inspection in inspections
+        if inspection.overall_result == "Fail"
+    )
+
+    pending_inspections = sum(
+        1
+        for inspection in inspections
+        if inspection.overall_result
+        not in ["Pass", "Fail"]
+    )
+
+    if total_inspections > 0:
+
+        inspection_pass_rate = round(
+            (passed_inspections / total_inspections) * 100,
+            2
+        )
+
+    else:
+
+        inspection_pass_rate = 0
+
+    # =========================================================
+    # DEVIATION STATISTICS
+    # =========================================================
+
+    total_deviations = len(deviations)
+
+    open_deviations = sum(
+        1
+        for deviation in deviations
+        if deviation.status == "Open"
+    )
+
+    # =========================================================
+    # CAPA STATISTICS
+    # =========================================================
+
+    total_capa = len(capas)
+
+    open_capa = sum(
+        1
+        for capa in capas
+        if capa.status == "Open"
+    )
+
+    # =========================================================
+    # COMPANY-BY-COMPANY STATISTICS
+    # =========================================================
+
+    company_statistics = []
+
+    for company in companies:
+
+        company_users = [
+            user
+            for user in users
+            if user.company_id == company.id
+        ]
+
+        company_batches = [
+            batch
+            for batch in batches
+            if batch.company_id == company.id
+        ]
+
+        company_inspections = [
+            inspection
+            for inspection in inspections
+            if inspection.company_id == company.id
+        ]
+
+        company_deviations = [
+            deviation
+            for deviation in deviations
+            if deviation.company_id == company.id
+        ]
+
+        company_capas = [
+            capa
+            for capa in capas
+            if capa.company_id == company.id
+        ]
+
+        company_passed = sum(
+            1
+            for inspection in company_inspections
+            if inspection.overall_result == "Pass"
+        )
+
+        company_inspection_count = len(
+            company_inspections
+        )
+
+        if company_inspection_count > 0:
+
+            company_pass_rate = round(
+                (
+                    company_passed
+                    / company_inspection_count
+                ) * 100,
+                2
+            )
+
+        else:
+
+            company_pass_rate = 0
+
+        company_statistics.append({
+
+            "company": company,
+
+            "users": len(company_users),
+
+            "active_users": sum(
+                1
+                for user in company_users
+                if user.is_active
+            ),
+
+            "batches": len(company_batches),
+
+            "completed_batches": sum(
+                1
+                for batch in company_batches
+                if batch.status == "Completed"
+            ),
+
+            "cable_length": sum(
+                (batch.cable_length or 0)
+                for batch in company_batches
+            ),
+
+            "inspections": company_inspection_count,
+
+            "inspection_pass_rate": company_pass_rate,
+
+            "deviations": len(company_deviations),
+
+            "open_deviations": sum(
+                1
+                for deviation in company_deviations
+                if deviation.status == "Open"
+            ),
+
+            "capa": len(company_capas),
+
+            "open_capa": sum(
+                1
+                for capa in company_capas
+                if capa.status == "Open"
+            )
+        })
+
+    # =========================================================
+    # RENDER REPORT
+    # =========================================================
+
+    return render_template(
+        "reports/company_report.html",
+
+        companies=companies,
+
+        users=users,
+
+        batches=batches,
+
+        inspections=inspections,
+
+        deviations=deviations,
+
+        capas=capas,
+
+        company_statistics=company_statistics,
+
+        total_companies=total_companies,
+
+        active_companies=active_companies,
+
+        total_users=total_users,
+
+        active_users=active_users,
+
+        total_batches=total_batches,
+
+        completed_batches=completed_batches,
+
+        total_cable_length=total_cable_length,
+
+        total_inspections=total_inspections,
+
+        passed_inspections=passed_inspections,
+
+        failed_inspections=failed_inspections,
+
+        pending_inspections=pending_inspections,
+
+        inspection_pass_rate=inspection_pass_rate,
+
+        total_deviations=total_deviations,
+
+        open_deviations=open_deviations,
+
+        total_capa=total_capa,
+
+        open_capa=open_capa
+    )
+
+@main.route("/reports/company/excel")
+@login_required
+@system_admin_required
+def company_report_excel():
+
+    return export_all_companies_excel()
+
+@main.route("/reports/company/pdf")
+@login_required
+@system_admin_required
+def company_report_pdf():
+
+
+    return export_all_companies_pdf()
+
 
 @main.route("/settings")
 @login_required
