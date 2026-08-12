@@ -2361,3 +2361,1052 @@ def get_audit_chart(query):
         ]
     }
 
+def export_all_companies_excel():
+
+    """
+    Generate a complete system-wide Excel report.
+
+    Sheets:
+    1. Company Overview
+    2. Users
+    3. Production
+    4. Inspections
+    5. Deviations
+    6. CAPA
+    """
+
+    workbook = Workbook()
+
+    # =========================================================
+    # COMMON STYLING
+    # =========================================================
+
+    header_fill = PatternFill(
+        start_color="1F4E78",
+        end_color="1F4E78",
+        fill_type="solid"
+    )
+
+    header_font = Font(
+        bold=True,
+        color="FFFFFF"
+    )
+
+    title_font = Font(
+        bold=True,
+        size=14
+    )
+
+    def style_header(worksheet):
+
+        for cell in worksheet[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+
+    def auto_width(worksheet):
+
+        for column_cells in worksheet.columns:
+
+            max_length = 0
+
+            column_letter = column_cells[0].column_letter
+
+            for cell in column_cells:
+
+                if cell.value is not None:
+
+                    max_length = max(
+                        max_length,
+                        len(str(cell.value))
+                    )
+
+            worksheet.column_dimensions[
+                column_letter
+            ].width = min(
+                max_length + 4,
+                50
+            )
+
+    # =========================================================
+    # GET ALL DATA
+    # =========================================================
+
+    companies = Company.query.order_by(
+        Company.company_name
+    ).all()
+
+    users = User.query.order_by(
+        User.full_name
+    ).all()
+
+    batches = CableBatch.query.order_by(
+        CableBatch.production_date.desc()
+    ).all()
+
+    inspections = Inspection.query.order_by(
+        Inspection.inspection_date.desc()
+    ).all()
+
+    deviations = Deviation.query.order_by(
+        Deviation.reported_date.desc()
+    ).all()
+
+    capas = CAPA.query.order_by(
+        CAPA.due_date.desc()
+    ).all()
+
+    # =========================================================
+    # 1. COMPANY OVERVIEW
+    # =========================================================
+
+    worksheet = workbook.active
+
+    worksheet.title = "Company Overview"
+
+    worksheet["A1"] = "CableQIMS System-Wide Company Report"
+
+    worksheet["A1"].font = title_font
+
+    worksheet["A3"] = "Total Companies"
+    worksheet["B3"] = len(companies)
+
+    worksheet["A4"] = "Active Companies"
+
+    worksheet["B4"] = sum(
+        1 for company in companies
+        if company.is_active
+    )
+
+    worksheet["A5"] = "Inactive Companies"
+
+    worksheet["B5"] = sum(
+        1 for company in companies
+        if not company.is_active
+    )
+
+    worksheet["A6"] = "Total Users"
+    worksheet["B6"] = len(users)
+
+    worksheet["A7"] = "Total Production Batches"
+    worksheet["B7"] = len(batches)
+
+    worksheet["A8"] = "Total Inspections"
+    worksheet["B8"] = len(inspections)
+
+    worksheet["A9"] = "Total Deviations"
+    worksheet["B9"] = len(deviations)
+
+    worksheet["A10"] = "Total CAPA"
+    worksheet["B10"] = len(capas)
+
+    worksheet["A12"] = "COMPANIES"
+    worksheet["A12"].font = title_font
+
+    worksheet.append([
+        "Company Name",
+        "Company Code",
+        "Address",
+        "Email",
+        "Phone",
+        "Status",
+        "Created"
+    ])
+
+    for company in companies:
+
+        worksheet.append([
+            company.company_name,
+            company.company_code,
+            company.address or "",
+            company.email or "",
+            company.phone or "",
+            "Active"
+            if company.is_active
+            else "Inactive",
+            company.created_at.strftime("%d-%m-%Y")
+            if company.created_at
+            else ""
+        ])
+
+    style_header(worksheet)
+    auto_width(worksheet)
+
+    # =========================================================
+    # 2. USERS
+    # =========================================================
+
+    worksheet = workbook.create_sheet(
+        "Users"
+    )
+
+    worksheet.append([
+        "Company",
+        "Company Code",
+        "Full Name",
+        "Username",
+        "Email",
+        "Role",
+        "Status",
+        "Created Date"
+    ])
+
+    for user in users:
+
+        worksheet.append([
+            user.company.company_name
+            if user.company else "",
+
+            user.company.company_code
+            if user.company else "",
+
+            user.full_name,
+            user.username,
+            user.email,
+            user.role,
+
+            "Active"
+            if user.is_active
+            else "Inactive",
+
+            user.created_at.strftime("%d-%m-%Y")
+            if user.created_at
+            else ""
+        ])
+
+    style_header(worksheet)
+    auto_width(worksheet)
+
+    # =========================================================
+    # 3. PRODUCTION
+    # =========================================================
+
+    worksheet = workbook.create_sheet(
+        "Production"
+    )
+
+    worksheet.append([
+        "Company",
+        "Company Code",
+        "Batch Number",
+        "Drum Number",
+        "Customer",
+        "Cable Type",
+        "Production Line",
+        "Production Date",
+        "Cable Length",
+        "Status"
+    ])
+
+    for batch in batches:
+
+        worksheet.append([
+            batch.company.company_name
+            if batch.company else "",
+
+            batch.company.company_code
+            if batch.company else "",
+
+            batch.batch_number,
+            batch.drum_number,
+
+            batch.customer.company_name
+            if batch.customer
+            else "",
+
+            batch.cable_type.name
+            if batch.cable_type
+            else "",
+
+            batch.production_line.line_name
+            if batch.production_line
+            else "",
+
+            batch.production_date.strftime(
+                "%d-%m-%Y"
+            )
+            if batch.production_date
+            else "",
+
+            batch.cable_length or 0,
+
+            batch.status
+        ])
+
+    style_header(worksheet)
+    auto_width(worksheet)
+
+    # =========================================================
+    # 4. INSPECTIONS
+    # =========================================================
+
+    worksheet = workbook.create_sheet(
+        "Inspections"
+    )
+
+    worksheet.append([
+        "Company",
+        "Company Code",
+        "Inspection Number",
+        "Batch Number",
+        "Inspector",
+        "Inspection Date",
+        "Result",
+        "Remarks"
+    ])
+
+    for inspection in inspections:
+
+        worksheet.append([
+            inspection.company.company_name
+            if inspection.company
+            else "",
+
+            inspection.company.company_code
+            if inspection.company
+            else "",
+
+            inspection.inspection_number,
+
+            inspection.batch.batch_number
+            if inspection.batch
+            else "",
+
+            inspection.inspector,
+
+            inspection.inspection_date.strftime(
+                "%d-%m-%Y"
+            )
+            if inspection.inspection_date
+            else "",
+
+            inspection.overall_result,
+
+            inspection.remarks or ""
+        ])
+
+    style_header(worksheet)
+    auto_width(worksheet)
+
+    # =========================================================
+    # 5. DEVIATIONS
+    # =========================================================
+
+    worksheet = workbook.create_sheet(
+        "Deviations"
+    )
+
+    worksheet.append([
+        "Company",
+        "Company Code",
+        "Deviation Number",
+        "Inspection",
+        "Description",
+        "Severity",
+        "Status",
+        "Reported By",
+        "Reported Date",
+        "Closed Date"
+    ])
+
+    for deviation in deviations:
+
+        worksheet.append([
+            deviation.company.company_name
+            if deviation.company
+            else "",
+
+            deviation.company.company_code
+            if deviation.company
+            else "",
+
+            deviation.deviation_number,
+
+            deviation.inspection.inspection_number
+            if deviation.inspection
+            else "",
+
+            deviation.description,
+
+            deviation.severity,
+            deviation.status,
+            deviation.reported_by,
+
+            deviation.reported_date.strftime(
+                "%d-%m-%Y"
+            )
+            if deviation.reported_date
+            else "",
+
+            deviation.closed_date.strftime(
+                "%d-%m-%Y"
+            )
+            if deviation.closed_date
+            else ""
+        ])
+
+    style_header(worksheet)
+    auto_width(worksheet)
+
+    # =========================================================
+    # 6. CAPA
+    # =========================================================
+
+    worksheet = workbook.create_sheet(
+        "CAPA"
+    )
+
+    worksheet.append([
+        "Company",
+        "Company Code",
+        "CAPA ID",
+        "Deviation",
+        "Corrective Action",
+        "Preventive Action",
+        "Assigned To",
+        "Due Date",
+        "Completion Date",
+        "Effectiveness",
+        "Status"
+    ])
+
+    for capa in capas:
+
+        worksheet.append([
+            capa.company.company_name
+            if capa.company
+            else "",
+
+            capa.company.company_code
+            if capa.company
+            else "",
+
+            capa.id,
+
+            capa.deviation.deviation_number
+            if capa.deviation
+            else "",
+
+            capa.corrective_action,
+            capa.preventive_action,
+            capa.assigned_to,
+
+            capa.due_date.strftime(
+                "%d-%m-%Y"
+            )
+            if capa.due_date
+            else "",
+
+            capa.completion_date.strftime(
+                "%d-%m-%Y"
+            )
+            if capa.completion_date
+            else "",
+
+            capa.effectiveness,
+            capa.status
+        ])
+
+    style_header(worksheet)
+    auto_width(worksheet)
+
+    # =========================================================
+    # CREATE FILE
+    # =========================================================
+
+    output = BytesIO()
+
+    workbook.save(output)
+
+    output.seek(0)
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name="CableQIMS_All_Companies_Report.xlsx",
+        mimetype=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        )
+    )
+
+
+def export_all_companies_pdf():
+
+    # Get every company
+    companies = Company.query.order_by(
+        Company.company_name
+    ).all()
+
+    # Get all records
+    users = User.query.order_by(
+        User.full_name
+    ).all()
+
+    batches = CableBatch.query.order_by(
+        CableBatch.production_date.desc()
+    ).all()
+
+    inspections = Inspection.query.order_by(
+        Inspection.inspection_date.desc()
+    ).all()
+
+    deviations = Deviation.query.order_by(
+        Deviation.reported_date.desc()
+    ).all()
+
+    capas = CAPA.query.order_by(
+        CAPA.due_date.desc()
+    ).all()
+
+    buffer = BytesIO()
+
+    document = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(A4),
+        rightMargin=25,
+        leftMargin=25,
+        topMargin=25,
+        bottomMargin=25
+    )
+
+    styles = getSampleStyleSheet()
+
+    title_style = styles["Title"]
+    title_style.alignment = TA_CENTER
+
+    heading_style = styles["Heading2"]
+
+    elements = []
+
+    # =========================================================
+    # TITLE
+    # =========================================================
+
+    elements.append(
+        Paragraph(
+            "CableQIMS System-Wide Company Report",
+            title_style
+        )
+    )
+
+    elements.append(
+        Spacer(1, 0.2 * inch)
+    )
+
+    elements.append(
+        Paragraph(
+            "System Administrator Report — All Companies",
+            heading_style
+        )
+    )
+
+    elements.append(
+        Spacer(1, 0.2 * inch)
+    )
+
+    # =========================================================
+    # SUMMARY
+    # =========================================================
+
+    total_companies = len(companies)
+
+    active_companies = sum(
+        1 for company in companies
+        if company.is_active
+    )
+
+    total_users = len(users)
+
+    active_users = sum(
+        1 for user in users
+        if user.is_active
+    )
+
+    total_batches = len(batches)
+
+    completed_batches = sum(
+        1 for batch in batches
+        if batch.status == "Completed"
+    )
+
+    total_cable_length = sum(
+        (batch.cable_length or 0)
+        for batch in batches
+    )
+
+    total_inspections = len(inspections)
+
+    passed_inspections = sum(
+        1 for inspection in inspections
+        if inspection.overall_result == "Pass"
+    )
+
+    failed_inspections = sum(
+        1 for inspection in inspections
+        if inspection.overall_result == "Fail"
+    )
+
+    pending_inspections = (
+        total_inspections
+        - passed_inspections
+        - failed_inspections
+    )
+
+    inspection_pass_rate = (
+        round(
+            (passed_inspections / total_inspections) * 100,
+            2
+        )
+        if total_inspections
+        else 0
+    )
+
+    total_deviations = len(deviations)
+
+    open_deviations = sum(
+        1 for deviation in deviations
+        if deviation.status == "Open"
+    )
+
+    total_capa = len(capas)
+
+    open_capa = sum(
+        1 for capa in capas
+        if capa.status == "Open"
+    )
+
+    summary_data = [
+        ["Metric", "Value"],
+
+        ["Companies", total_companies],
+
+        ["Active Companies", active_companies],
+
+        ["Users", total_users],
+
+        ["Active Users", active_users],
+
+        ["Production Batches", total_batches],
+
+        ["Completed Batches", completed_batches],
+
+        [
+            "Cable Produced",
+            f"{total_cable_length:,.2f} metres"
+        ],
+
+        ["Inspections", total_inspections],
+
+        ["Passed Inspections", passed_inspections],
+
+        ["Failed Inspections", failed_inspections],
+
+        ["Pending Inspections", pending_inspections],
+
+        [
+            "Inspection Pass Rate",
+            f"{inspection_pass_rate}%"
+        ],
+
+        ["Deviations", total_deviations],
+
+        ["Open Deviations", open_deviations],
+
+        ["CAPA", total_capa],
+
+        ["Open CAPA", open_capa],
+    ]
+
+    summary_table = Table(
+        summary_data,
+        colWidths=[4 * inch, 2.5 * inch]
+    )
+
+    summary_table.setStyle(
+        TableStyle([
+            (
+                "BACKGROUND",
+                (0, 0),
+                (-1, 0),
+                colors.HexColor("#1F4E78")
+            ),
+            (
+                "TEXTCOLOR",
+                (0, 0),
+                (-1, 0),
+                colors.white
+            ),
+            (
+                "FONTNAME",
+                (0, 0),
+                (-1, 0),
+                "Helvetica-Bold"
+            ),
+            (
+                "GRID",
+                (0, 0),
+                (-1, -1),
+                0.5,
+                colors.grey
+            ),
+            (
+                "FONTSIZE",
+                (0, 0),
+                (-1, -1),
+                8
+            ),
+            (
+                "VALIGN",
+                (0, 0),
+                (-1, -1),
+                "TOP"
+            )
+        ])
+    )
+
+    elements.append(summary_table)
+
+    elements.append(
+        Spacer(1, 0.3 * inch)
+    )
+
+    # =========================================================
+    # GENERIC SECTION
+    # =========================================================
+
+    def add_section(title, headers, rows):
+
+        elements.append(
+            Paragraph(
+                title,
+                heading_style
+            )
+        )
+
+        elements.append(
+            Spacer(1, 0.08 * inch)
+        )
+
+        if not rows:
+
+            elements.append(
+                Paragraph(
+                    "No records found.",
+                    styles["Normal"]
+                )
+            )
+
+            elements.append(
+                Spacer(1, 0.2 * inch)
+            )
+
+            return
+
+        table = Table(
+            [headers] + rows,
+            repeatRows=1
+        )
+
+        table.setStyle(
+            TableStyle([
+                (
+                    "BACKGROUND",
+                    (0, 0),
+                    (-1, 0),
+                    colors.HexColor("#1F4E78")
+                ),
+                (
+                    "TEXTCOLOR",
+                    (0, 0),
+                    (-1, 0),
+                    colors.white
+                ),
+                (
+                    "FONTNAME",
+                    (0, 0),
+                    (-1, 0),
+                    "Helvetica-Bold"
+                ),
+                (
+                    "GRID",
+                    (0, 0),
+                    (-1, -1),
+                    0.4,
+                    colors.grey
+                ),
+                (
+                    "FONTSIZE",
+                    (0, 0),
+                    (-1, -1),
+                    6.5
+                ),
+                (
+                    "VALIGN",
+                    (0, 0),
+                    (-1, -1),
+                    "TOP"
+                )
+            ])
+        )
+
+        elements.append(table)
+
+        elements.append(
+            Spacer(1, 0.3 * inch)
+        )
+
+    # =========================================================
+    # COMPANIES
+    # =========================================================
+
+    company_rows = []
+
+    for company in companies:
+
+        company_rows.append([
+            company.company_name,
+            company.company_code,
+            company.address or "",
+            company.email or "",
+            company.phone or "",
+            "Active"
+            if company.is_active
+            else "Inactive",
+            company.created_at.strftime("%d-%m-%Y")
+            if company.created_at
+            else ""
+        ])
+
+    add_section(
+        "Companies",
+        [
+            "Company",
+            "Code",
+            "Address",
+            "Email",
+            "Phone",
+            "Status",
+            "Created"
+        ],
+        company_rows
+    )
+
+    # =========================================================
+    # USERS
+    # =========================================================
+
+    user_rows = []
+
+    for user in users:
+
+        user_rows.append([
+            user.company.company_name
+            if user.company
+            else "",
+            user.full_name,
+            user.username,
+            user.email,
+            user.role,
+            "Active"
+            if user.is_active
+            else "Inactive"
+        ])
+
+    add_section(
+        "Users",
+        [
+            "Company",
+            "Full Name",
+            "Username",
+            "Email",
+            "Role",
+            "Status"
+        ],
+        user_rows
+    )
+
+    # =========================================================
+    # PRODUCTION
+    # =========================================================
+
+    production_rows = []
+
+    for batch in batches:
+
+        production_rows.append([
+            batch.company.company_name
+            if batch.company
+            else "",
+            batch.batch_number,
+            batch.drum_number,
+            batch.customer.company_name
+            if batch.customer
+            else "",
+            batch.cable_type.name
+            if batch.cable_type
+            else "",
+            batch.production_line.line_name
+            if batch.production_line
+            else "",
+            batch.production_date.strftime("%d-%m-%Y")
+            if batch.production_date
+            else "",
+            f"{batch.cable_length or 0:,.2f}",
+            batch.status
+        ])
+
+    add_section(
+        "Production",
+        [
+            "Company",
+            "Batch",
+            "Drum",
+            "Customer",
+            "Cable Type",
+            "Production Line",
+            "Date",
+            "Length",
+            "Status"
+        ],
+        production_rows
+    )
+
+    # =========================================================
+    # INSPECTIONS
+    # =========================================================
+
+    inspection_rows = []
+
+    for inspection in inspections:
+
+        inspection_rows.append([
+            inspection.company.company_name
+            if inspection.company
+            else "",
+            inspection.inspection_number,
+            inspection.batch.batch_number
+            if inspection.batch
+            else "",
+            inspection.inspector,
+            inspection.inspection_date.strftime("%d-%m-%Y")
+            if inspection.inspection_date
+            else "",
+            inspection.overall_result
+        ])
+
+    add_section(
+        "Inspections",
+        [
+            "Company",
+            "Inspection",
+            "Batch",
+            "Inspector",
+            "Date",
+            "Result"
+        ],
+        inspection_rows
+    )
+
+    # =========================================================
+    # DEVIATIONS
+    # =========================================================
+
+    deviation_rows = []
+
+    for deviation in deviations:
+
+        deviation_rows.append([
+            deviation.company.company_name
+            if deviation.company
+            else "",
+            deviation.deviation_number,
+            deviation.inspection.inspection_number
+            if deviation.inspection
+            else "",
+            deviation.description,
+            deviation.severity,
+            deviation.status,
+            deviation.reported_by,
+            deviation.reported_date.strftime("%d-%m-%Y")
+            if deviation.reported_date
+            else ""
+        ])
+
+    add_section(
+        "Deviations",
+        [
+            "Company",
+            "Deviation",
+            "Inspection",
+            "Description",
+            "Severity",
+            "Status",
+            "Reported By",
+            "Date"
+        ],
+        deviation_rows
+    )
+
+    # =========================================================
+    # CAPA
+    # =========================================================
+
+    capa_rows = []
+
+    for capa in capas:
+
+        capa_rows.append([
+            capa.company.company_name
+            if capa.company
+            else "",
+            capa.deviation.deviation_number
+            if capa.deviation
+            else "",
+            capa.assigned_to,
+            capa.due_date.strftime("%d-%m-%Y")
+            if capa.due_date
+            else "",
+            capa.completion_date.strftime("%d-%m-%Y")
+            if capa.completion_date
+            else "",
+            capa.effectiveness,
+            capa.status
+        ])
+
+    add_section(
+        "CAPA",
+        [
+            "Company",
+            "Deviation",
+            "Assigned To",
+            "Due Date",
+            "Completion",
+            "Effectiveness",
+            "Status"
+        ],
+        capa_rows
+    )
+
+    # =========================================================
+    # BUILD PDF
+    # =========================================================
+
+    document.build(elements)
+
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name="CableQIMS_All_Companies_Report.pdf",
+        mimetype="application/pdf"
+    )
+
+
+
+
+
+
+
+
+
