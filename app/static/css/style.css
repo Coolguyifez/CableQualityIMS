@@ -64,7 +64,7 @@ body.dark{
 
 body{
 
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 
     background:var(--background);
 
