@@ -1018,6 +1018,66 @@ class AuditLog(db.Model):
 
 
 
+class PushSubscription(db.Model):
+    __tablename__ = "push_subscriptions"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=False
+    )
+
+    company_id = db.Column(
+        db.Integer,
+        db.ForeignKey("companies.id"),
+        nullable=False
+    )
+
+    endpoint = db.Column(
+        db.Text,
+        nullable=False,
+        unique=True
+    )
+
+    p256dh = db.Column(
+        db.Text,
+        nullable=False
+    )
+
+    auth = db.Column(
+        db.Text,
+        nullable=False
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow
+    )
+
+    user = db.relationship(
+        "User",
+        backref="push_subscriptions"
+    )
+
+    company = db.relationship(
+        "Company",
+        backref="push_subscriptions"
+    )
+
+    def __repr__(self):
+        return f"<PushSubscription {self.id}>"
+
+
+
+
+
+
+
 
 
 
