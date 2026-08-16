@@ -2,33 +2,55 @@ from flask_login import current_user
 
 from .extensions import db
 
-from .models import Notification, User
+from .models import (
+    Notification,
+    User,
+    PushSubscription
+)
+
+from .push_utils import send_push_notification
 
 
 def create_notification(
-
-        title,
-
-        message,
-
-        category="General",
-
-        priority="Normal",
-
-        user_id=None,
-
-        link=None
-
+    title,
+    message,
+    category="General",
+    priority="Normal",
+    user_id=None,
+    link=None
 ):
 
-    # Notification for one specific user
+    # ------------------------------------
+    # Determine recipients
+    # ------------------------------------
+
     if user_id is not None:
+
+        users = User.query.filter_by(
+            id=user_id,
+            company_id=current_user.company_id,
+            is_active=True
+        ).all()
+
+    else:
+
+        users = User.query.filter_by(
+            company_id=current_user.company_id,
+            is_active=True
+        ).all()
+
+
+    # ------------------------------------
+    # Create database notifications
+    # ------------------------------------
+
+    for user in users:
 
         notification = Notification(
 
             company_id=current_user.company_id,
 
-            user_id=user_id,
+            user_id=user.id,
 
             title=title,
 
@@ -44,38 +66,65 @@ def create_notification(
 
         db.session.add(notification)
 
-    # Notification for all active users in the company
-    else:
 
-        users = User.query.filter_by(
+    db.session.commit()
 
-            company_id=current_user.company_id,
 
-            is_active=True
+    # ------------------------------------
+    # Send browser/device push notifications
+    # ------------------------------------
+
+    for user in users:
+
+        # Master notification switch
+
+        if not user.notification_enabled:
+
+            continue
+
+
+        # Category preferences
+
+        if category == "Inspection":
+
+            if not user.inspection_notification:
+
+                continue
+
+        elif category == "Deviation":
+
+            if not user.deviation_notification:
+
+                continue
+
+        elif category == "CAPA":
+
+            if not user.capa_notification:
+
+                continue
+
+
+        subscriptions = PushSubscription.query.filter_by(
+
+            user_id=user.id,
+
+            company_id=user.company_id
 
         ).all()
 
-        for user in users:
 
-            notification = Notification(
+        for subscription in subscriptions:
 
-                company_id=current_user.company_id,
+            send_push_notification(
 
-                user_id=user.id,
+                subscription=subscription,
 
                 title=title,
 
                 message=message,
 
-                category=category,
+                link=link,
 
-                priority=priority,
-
-                link=link
+                priority=priority
 
             )
-
-            db.session.add(notification)
-
-    db.session.commit()
-
