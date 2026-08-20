@@ -463,10 +463,10 @@ class CableTypeForm(FlaskForm):
     conductor_size = SelectField(
         "Conductor Size",
         choices=[
-            ("1.0mm","1.0mm"),
-            ("1.5mm","1.5mm"),
-            ("2.5mm","2.5mm"),
-            ("4.0mm","4.0mm")
+            ("1.0mm²","1.0mm²"),
+            ("1.5mm²","1.5mm²"),
+            ("2.5mm²","2.5mm²"),
+            ("4.0mm²","4.0mm²")
         ],
         validators=[DataRequired()]
     )
