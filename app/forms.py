@@ -411,7 +411,8 @@ class CableBatchForm(FlaskForm):
             ("Pending", "Pending"),
             ("Completed", "Completed"),
             ("Rejected", "Rejected")
-        ]
+        ],
+        default ="Pending"
     )
 
     submit = SubmitField("Save Batch")
