@@ -837,9 +837,10 @@
 
                             <th>Company</th>
                             <th>Batch</th>
+                            <th>Cable Code</th>
                             <th>Drum</th>
                             <th>Customer</th>
-                            <th>Cable Type</th>
+                            <th>Cable Name</th>
                             <th>Production Line</th>
                             <th>Supervisor</th>
                             <th>Date</th>
@@ -864,6 +865,10 @@
                                 <strong>
                                     {{ batch.batch_number }}
                                 </strong>
+                            </td>
+
+                            <td>
+                                <span class="badge bg-primary">{{batch.cable_code }}</span>
                             </td>
 
                             <td>
