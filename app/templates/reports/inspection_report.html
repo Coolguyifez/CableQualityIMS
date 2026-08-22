@@ -180,7 +180,7 @@ Inspection Report
 
                     <th>
 
-                        Cable Type
+                        Cable Name
 
                     </th>
 
@@ -292,9 +292,9 @@ Inspection Report
                             <strong>{{ inspection.inspection_number }}</strong>
                         </td>
 
-                        <!-- Cable Type -->
+                        <!-- Cable Name -->
                         <td>
-                           {{inspection.batch.cable_type.pair_count}} x {{inspection.batch.cable_type.conductor_size}} - {{ inspection.batch.cable_type.name }}
+                           {{inspection.batch.cable_type.pair_count}} x {{inspection.batch.cable_type.conductor_size}} - <small class="text-muted">{{ inspection.batch.cable_type.name }}</small>
                         </td>
 
                         <!-- Voltage Rating -->
@@ -314,7 +314,7 @@ Inspection Report
 
                         <!-- Project Name -->
                         <td>
-                            {{ inspection.batch.customer.company_name }} {{inspection.batch.customer.address}}
+                            {{ inspection.batch.customer.company_name }} <br> <small class="text-muted">{{inspection.batch.customer.address}}
                         </td>
 
                         <!-- Batch Number -->
