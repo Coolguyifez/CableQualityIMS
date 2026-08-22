@@ -156,9 +156,13 @@ Audit Trail
                 <tr>
 
                     <td>
-
-                        {{ log.created_at.strftime("%d %b %Y %H:%M") }}
-
+                        <span
+                            class="local-time"
+                            data-utc="{{ log.created_at.isoformat() }}">
+                            
+                            {{ log.created_at.strftime("%d-%m-%Y %H:%M") }}
+                        
+                        </span>
                     </td>
 
                     <td>
