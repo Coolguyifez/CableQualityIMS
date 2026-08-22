@@ -99,17 +99,15 @@
                                  <strong>
 
                                     {{ notification.title }} 
-                                    
-                                    <span
-                                        class="local-time"
+                                </strong>
+
+                                    <small
+                                        class="local-time text-muted"
                                         data-utc="{{ notification.created_at.isoformat() }}">
                                                                     
                                         {{ notification.created_at.strftime("%d %b %Y %H:%M") }}
 
-                                    </span>    
-
-                                </strong>
-
+                                    </small>  
 
                                 <br>
 
