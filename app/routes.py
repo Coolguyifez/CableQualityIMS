@@ -4183,7 +4183,7 @@ def export_inspection_pdf():
 
             f"{batch.cable_length} m",
 
-            f"{batch.customer.company_name}\n{batch.customer.address}",
+            f"{batch.customer.company_name}",
 
             batch.batch_number,
 
@@ -4929,7 +4929,7 @@ def export_production_excel():
 
             f"{batch.customer.company_name} \n{batch.customer.address}",
 
-            f"{batch.cable_type.pair_count} x {batch.cable_type.conductor_size} -\n {batch.cable_type.name}",
+            f"{batch.cable_type.pair_count} x {batch.cable_type.conductor_size} - \n{batch.cable_type.name}",
 
             batch.production_line.line_name,
 
