@@ -1,4 +1,3 @@
-from flask import current_app
 from flask_migrate import upgrade
 from app import create_app
 from app.extensions import db
@@ -9,7 +8,8 @@ app = create_app()
 with app.app_context():
 
     # Run database migrations
-    upgrade
+    upgrade()
+
     print("Database migrations completed successfully.")
 
     # Create system company
@@ -18,6 +18,7 @@ with app.app_context():
     ).first()
 
     if not company:
+
         company = Company(
             company_name="CableQIMS",
             company_code="SYS",
@@ -30,12 +31,17 @@ with app.app_context():
 
         print("Platform company created.")
 
+    else:
+
+        print("Platform company already exists.")
+
     # Create system administrator
     admin = User.query.filter_by(
         username="superadmin"
     ).first()
 
     if not admin:
+
         admin = User(
             company_id=company.id,
             full_name="System Administrator",
@@ -53,4 +59,5 @@ with app.app_context():
         print("System Administrator created.")
 
     else:
+
         print("System Administrator already exists.")
