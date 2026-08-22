@@ -572,7 +572,13 @@ Recent Activities
 
 <td>
 
+<span
+class="local-time"
+data-utc="{{ log.created_at.isoformat() }}">    
+
 {{ log.created_at.strftime("%d-%m-%Y %H:%M") }}
+
+</span>
 
 </td>
 
