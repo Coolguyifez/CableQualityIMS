@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session
 from .forms import CustomerForm, CableTypeForm, ProductionLineForm, CableBatchForm, InspectionForm, QualityMetricForm,  QualitySpecificationForm, DeviationForm, CAPAForm, CompanyForm, ThemeSettingsForm, AccountSettingsForm, NotificationSettingsForm
-from .models import Customer, User, CableType, ProductionLine, CableBatch, Inspection, QualityMetric, QualitySpecification, Deviation, CAPA, Notification, Company, AuditLog
+from .models import Customer, User, CableType, ProductionLine, CableBatch, Inspection, QualityMetric, QualitySpecification, Deviation, CAPA, Notification, Company, AuditLog, PushSubscription
 from .extensions import db, bcrypt
 from datetime import datetime
 from datetime import date
@@ -102,7 +102,7 @@ from .decorators import (
     roles_required
 )
 
-
+from .push_utils import get_vapid_public_key
 
 
 main = Blueprint("main", __name__)
@@ -6243,6 +6243,108 @@ def live_search():
         })
 
     return jsonify(results)
+
+
+
+@main.route("/push/subscribe", methods=["POST"])
+@login_required
+def push_subscribe():
+
+    data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "success": False,
+            "message": "No subscription data received."
+        }), 400
+
+    endpoint = data.get("endpoint")
+    keys = data.get("keys", {})
+
+    p256dh = keys.get("p256dh")
+    auth = keys.get("auth")
+
+    if not endpoint or not p256dh or not auth:
+
+        return jsonify({
+            "success": False,
+            "message": "Invalid push subscription."
+        }), 400
+
+    existing = PushSubscription.query.filter_by(
+        endpoint=endpoint
+    ).first()
+
+    if existing:
+
+        existing.user_id = current_user.id
+        existing.company_id = current_user.company_id
+        existing.p256dh = p256dh
+        existing.auth = auth
+
+    else:
+
+        subscription = PushSubscription(
+
+            user_id=current_user.id,
+
+            company_id=current_user.company_id,
+
+            endpoint=endpoint,
+
+            p256dh=p256dh,
+
+            auth=auth
+
+        )
+
+        db.session.add(subscription)
+
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "message": "Push notifications enabled."
+    })
+
+@main.route("/push/unsubscribe", methods=["POST"])
+@login_required
+def push_unsubscribe():
+
+    data = request.get_json()
+
+    endpoint = data.get("endpoint") if data else None
+
+    if not endpoint:
+
+        return jsonify({
+            "success": False,
+            "message": "Endpoint is required."
+        }), 400
+
+    subscription = PushSubscription.query.filter_by(
+        endpoint=endpoint,
+        user_id=current_user.id
+    ).first()
+
+    if subscription:
+
+        db.session.delete(subscription)
+        db.session.commit()
+
+    return jsonify({
+        "success": True
+    })
+
+@main.route("/push/public-key")
+@login_required
+def push_public_key():
+
+    return jsonify({
+        "publicKey": get_vapid_public_key()
+    })
+
+
 
 
 
