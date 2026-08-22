@@ -211,9 +211,9 @@ def generate_cable_code(
     )
 
     armour = (
-        "N"
+        "P"
         if cable_type.armour_type == "SWA"
-        else "P"
+        else "N"
     )
 
     return (
