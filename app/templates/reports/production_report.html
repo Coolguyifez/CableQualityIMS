@@ -286,6 +286,12 @@ Reset
 
 <th>
 
+Cable Code    
+
+</th>
+
+<th>
+
 Drum
 
 </th>
@@ -305,6 +311,12 @@ Cable Name
 <th>
 
 Production Line
+
+</th>
+
+<th>
+
+Supervisor
 
 </th>
 
@@ -344,13 +356,19 @@ Production Line
 
 <td>
 
+<span class="badge bg-primary">{{batch.cable_code }}</span>
+
+</td>
+
+<td>
+
 {{ batch.drum_number }}
 
 </td>
 
 <td>
 
-{{batch.customer.company_name}} {{batch.customer.address}}
+{{batch.customer.company_name}} <br> <small class="text-muted">{{batch.customer.address}}</small>
 
             
 
@@ -358,13 +376,19 @@ Production Line
 
 <td>
 
-    {{batch.cable_type.pair_count}} x {{batch.cable_type.conductor_size}} - {{batch.cable_type.name}}
+    {{batch.cable_type.pair_count}} x {{batch.cable_type.conductor_size}} - <small class="text-muted">{{batch.cable_type.name}}</small>
 
 </td>
 
 <td>
 
 {{ batch.production_line.line_name }}
+
+</td>
+
+<td>
+
+{{batch.production_line.supervisor}}
 
 </td>
 
