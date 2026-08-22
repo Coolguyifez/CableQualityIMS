@@ -144,7 +144,12 @@
 
                     <td>
 
-                        {{ company.created_at.strftime("%d %b %Y") }}
+                        <span
+                            class="local-time"
+                            data-utc="{{ company.created_at.isoformat() }}">
+
+                            {{ company.created_at.strftime("%d %b %Y") }}
+                        </span>    
 
                     </td>
 
