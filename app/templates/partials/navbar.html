@@ -96,11 +96,20 @@
 
                             href="{{ notification.link if notification.link else '#' }}">
 
-                                <strong>
+                                 <strong>
 
-                                    {{ notification.title }} {{ notification.created_at.strftime("%d %b %Y %H:%M") }}
+                                    {{ notification.title }} 
+                                    
+                                    <span
+                                        class="local-time"
+                                        data-utc="{{ notification.created_at.isoformat() }}">
+                                                                    
+                                        {{ notification.created_at.strftime("%d %b %Y %H:%M") }}
+
+                                    </span>    
 
                                 </strong>
+
 
                                 <br>
 
