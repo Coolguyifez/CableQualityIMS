@@ -841,6 +841,7 @@
                             <th>Customer</th>
                             <th>Cable Type</th>
                             <th>Production Line</th>
+                            <th>Supervisor</th>
                             <th>Date</th>
                             <th>Length</th>
                             <th>Status</th>
@@ -875,13 +876,20 @@
                             </td>
 
                             <td>
-                                {{ batch.cable_type.name
-                                   if batch.cable_type else "—" }}
-                            </td>
+                                {{batch.cable_type.pair_count}} x {{batch.cable_type.conductor_size}} - <small class="text-muted">{{ batch.cable_type.name
+                                   if batch.cable_type else "—" }}</small>
+
+                                   
 
                             <td>
                                 {{ batch.production_line.line_name
                                    if batch.production_line else "—" }}
+                            </td>
+
+                            <td>
+
+                                {{batch.production_line.supervisor 
+                                    if batch.production_line else "—" }}
                             </td>
 
                             <td>
