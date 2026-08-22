@@ -145,8 +145,13 @@ Inactive
 </td>
 
 <td>
+<span
+class="local-time"
+data-utc="{{ user.created_at.isoformat() }}">
 
 {{ user.created_at.strftime("%d-%b-%Y") }}
+
+</span>
 
 </td>
 
