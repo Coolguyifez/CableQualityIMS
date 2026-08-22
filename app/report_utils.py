@@ -51,7 +51,8 @@ from .models import (
     CAPA,
     QualityMetric,
     User,
-    AuditLog
+    AuditLog,
+    Company
 
 )
 
@@ -2296,31 +2297,25 @@ def apply_audit_sort(query):
 
 def get_audit_statistics(query):
 
-    total = query.order_by(None).count()
+    total = query.count()
 
-    modules = (
-        query
-        .order_by(None)
-        .with_entities(AuditLog.module)
-        .distinct()
-        .count()
-    )
+    modules = query.with_entities(
 
-    actions = (
-        query
-        .order_by(None)
-        .with_entities(AuditLog.action)
-        .distinct()
-        .count()
-    )
+        AuditLog.module
 
-    users = (
-        query
-        .order_by(None)
-        .with_entities(AuditLog.user_id)
-        .distinct()
-        .count()
-    )
+    ).distinct().count()
+
+    actions = query.with_entities(
+
+        AuditLog.action
+
+    ).distinct().count()
+
+    users = query.with_entities(
+
+        AuditLog.user_id
+
+    ).distinct().count()
 
     return {
 
@@ -2336,29 +2331,38 @@ def get_audit_statistics(query):
 
 def get_audit_chart(query):
 
-    results = (
-        query
-        .order_by(None)
-        .with_entities(
-            AuditLog.module,
-            func.count(AuditLog.id)
+    data = query.all()
+
+    counts = {}
+
+    for log in data:
+
+        counts[log.module] = (
+
+            counts.get(
+
+                log.module,
+
+                0
+
+            ) + 1
+
         )
-        .group_by(
-            AuditLog.module
-        )
-        .order_by(
-            func.count(AuditLog.id).desc()
-        )
-        .all()
-    )
 
     return {
-        "labels": [
-            row[0] for row in results
-        ],
-        "data": [
-            row[1] for row in results
-        ]
+
+        "labels": list(
+
+            counts.keys()
+
+        ),
+
+        "data": list(
+
+            counts.values()
+
+        )
+
     }
 
 def export_all_companies_excel():
@@ -2588,10 +2592,12 @@ def export_all_companies_excel():
         "Company",
         "Company Code",
         "Batch Number",
+        "Cable Code",
         "Drum Number",
         "Customer",
-        "Cable Type",
+        "Cable Name",
         "Production Line",
+        "Supervisor",
         "Production Date",
         "Cable Length",
         "Status"
@@ -2607,17 +2613,22 @@ def export_all_companies_excel():
             if batch.company else "",
 
             batch.batch_number,
+            batch.cable_code,
             batch.drum_number,
 
-            batch.customer.company_name
+            f"{batch.customer.company_name} \n {batch.customer.address}"
             if batch.customer
             else "",
 
-            batch.cable_type.name
+            f"{batch.cable_type.pair_count} x {batch.cable_type.conductor_size} - \n{batch.cable_type.name}"
             if batch.cable_type
             else "",
 
             batch.production_line.line_name
+            if batch.production_line
+            else "",
+
+            batch.production_line.supervisor
             if batch.production_line
             else "",
 
@@ -3238,14 +3249,18 @@ def export_all_companies_pdf():
             if batch.company
             else "",
             batch.batch_number,
+            batch.cable_code,
             batch.drum_number,
             batch.customer.company_name
             if batch.customer
             else "",
-            batch.cable_type.name
+            f"{batch.cable_type.pair_count} x {batch.cable_type.conductor_size} - \n{batch.cable_type.name}"
             if batch.cable_type
             else "",
             batch.production_line.line_name
+            if batch.production_line
+            else "",
+            batch.production_line.supervisor
             if batch.production_line
             else "",
             batch.production_date.strftime("%d-%m-%Y")
@@ -3260,10 +3275,12 @@ def export_all_companies_pdf():
         [
             "Company",
             "Batch",
+            "Cable Code",
             "Drum",
             "Customer",
-            "Cable Type",
+            "Cable Name",
             "Production Line",
+            "Supervisor",
             "Date",
             "Length",
             "Status"
@@ -3401,9 +3418,6 @@ def export_all_companies_pdf():
         download_name="CableQIMS_All_Companies_Report.pdf",
         mimetype="application/pdf"
     )
-
-
-
 
 
 
