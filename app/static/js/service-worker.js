@@ -11,7 +11,7 @@ self.addEventListener("push", function(event) {
     const options = {
         body: data.message || "",
         icon: "/static/icons/cableqims.png",
-        badge: "/static/icons/cqims-badge.png",
+        badge: "/static/icons/cableqims.png",
         data: {
             link: data.link || "/notifications"
         },
