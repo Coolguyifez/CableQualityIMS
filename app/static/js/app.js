@@ -310,3 +310,369 @@ document.addEventListener("DOMContentLoaded", function () {
     loadSpecification();
 
 });
+
+
+async function registerPushNotifications() {
+
+    if (!("serviceWorker" in navigator)) {
+
+        console.log(
+            "Service workers are not supported."
+        );
+
+        return null;
+    }
+
+
+    if (!("PushManager" in window)) {
+
+        console.log(
+            "Push notifications are not supported."
+        );
+
+        return null;
+    }
+
+
+    try {
+
+        const registration =
+            await navigator.serviceWorker.register(
+                "/static/js/service-worker.js"
+            );
+
+        console.log(
+            "Service worker registered:",
+            registration
+        );
+
+        return registration;
+
+    } catch (error) {
+
+        console.error(
+            "Service worker registration failed:",
+            error
+        );
+
+        return null;
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Automatically request notification permission
+|--------------------------------------------------------------------------
+*/
+
+async function setupAutomaticPushNotifications() {
+
+    try {
+
+        // Register service worker first
+        const registration =
+            await registerPushNotifications();
+
+
+        if (!registration) {
+
+            return;
+        }
+
+
+        /*
+        Check current notification permission.
+        */
+
+        let permission =
+            Notification.permission;
+
+
+        /*
+        If user previously blocked notifications,
+        don't keep asking.
+        */
+
+        if (permission === "denied") {
+
+            console.log(
+                "CQIMS notifications are blocked."
+            );
+
+            return;
+        }
+
+
+        /*
+        If permission has not been decided yet,
+        ask the browser.
+        */
+
+        if (permission === "default") {
+
+            permission =
+                await Notification.requestPermission();
+        }
+
+
+        /*
+        User allowed notifications.
+        */
+
+        if (permission === "granted") {
+
+            await subscribeToPush(
+                registration
+            );
+
+        } else {
+
+            console.log(
+                "CQIMS notification permission was not granted."
+            );
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Automatic push setup failed:",
+            error
+        );
+
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Subscribe device to push notifications
+|--------------------------------------------------------------------------
+*/
+
+async function subscribeToPush(registration) {
+
+    try {
+
+        /*
+        Check whether the device is already subscribed.
+        */
+
+        let subscription =
+            await registration.pushManager.getSubscription();
+
+
+        /*
+        If not subscribed, create a new subscription.
+        */
+
+        if (!subscription) {
+
+            const response =
+                await fetch(
+                    "/push/public-key"
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Could not retrieve VAPID public key."
+                );
+            }
+
+
+            const data =
+                await response.json();
+
+
+            const publicKey =
+                data.publicKey;
+
+
+            if (!publicKey) {
+
+                throw new Error(
+                    "VAPID public key was not returned."
+                );
+            }
+
+
+            const applicationServerKey =
+                urlBase64ToUint8Array(
+                    publicKey
+                );
+
+
+            subscription =
+                await registration.pushManager.subscribe({
+
+                    userVisibleOnly: true,
+
+                    applicationServerKey:
+                        applicationServerKey
+
+                });
+
+        }
+
+
+        /*
+        Convert subscription to JSON.
+        */
+
+        const subscriptionJSON =
+            subscription.toJSON();
+
+
+        /*
+        Send subscription to Flask.
+        */
+
+        const response =
+            await fetch(
+                "/push/subscribe",
+                {
+
+                    method: "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json"
+
+                    },
+
+                    body: JSON.stringify({
+
+                        endpoint:
+                            subscriptionJSON.endpoint,
+
+                        keys:
+                            subscriptionJSON.keys
+
+                    })
+
+                }
+            );
+
+
+        const result =
+            await response.json();
+
+
+        if (!response.ok || !result.success) {
+
+            throw new Error(
+                result.message ||
+                "Failed to save push subscription."
+            );
+        }
+
+
+        console.log(
+            "CQIMS push notifications enabled."
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Push subscription failed:",
+            error
+        );
+
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Base64 → Uint8Array
+|--------------------------------------------------------------------------
+*/
+
+function urlBase64ToUint8Array(base64String) {
+
+    const padding =
+        "=".repeat(
+            (4 - base64String.length % 4) % 4
+        );
+
+
+    const base64 =
+        (
+            base64String + padding
+        )
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+
+
+    const rawData =
+        window.atob(base64);
+
+
+    return Uint8Array.from(
+        [...rawData].map(
+            char => char.charCodeAt(0)
+        )
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Start automatic notification setup
+|--------------------------------------------------------------------------
+*/
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        /*
+        Small delay gives CQIMS time to finish
+        loading the authenticated page.
+        */
+
+        setTimeout(
+            setupAutomaticPushNotifications,
+            1500
+        );
+
+    }
+);
+
+
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    document.querySelectorAll(".local-time").forEach(function (element) {
+
+        const utcString = element.dataset.utc;
+
+        if (!utcString) return;
+
+        // Tell JavaScript that the database timestamp is UTC
+        const utcDate = new Date(
+            utcString.endsWith("Z")
+                ? utcString
+                : utcString + "Z"
+        );
+
+        if (isNaN(utcDate.getTime())) return;
+
+        element.textContent = new Intl.DateTimeFormat(
+            undefined,
+            {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false
+            }
+        ).format(utcDate);
+
+    });
+
+});
