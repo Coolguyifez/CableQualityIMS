@@ -2297,73 +2297,65 @@ def apply_audit_sort(query):
 
 def get_audit_statistics(query):
 
-    total = query.count()
+    total = query.order_by(None).count()
 
-    modules = query.with_entities(
+    modules = (
+        query
+        .order_by(None)
+        .with_entities(AuditLog.module)
+        .distinct()
+        .count()
+    )
 
-        AuditLog.module
+    actions = (
+        query
+        .order_by(None)
+        .with_entities(AuditLog.action)
+        .distinct()
+        .count()
+    )
 
-    ).distinct().count()
-
-    actions = query.with_entities(
-
-        AuditLog.action
-
-    ).distinct().count()
-
-    users = query.with_entities(
-
-        AuditLog.user_id
-
-    ).distinct().count()
+    users = (
+        query
+        .order_by(None)
+        .with_entities(AuditLog.user_id)
+        .distinct()
+        .count()
+    )
 
     return {
-
         "total": total,
-
         "modules": modules,
-
         "actions": actions,
-
         "users": users
-
     }
-
 def get_audit_chart(query):
 
-    data = query.all()
-
-    counts = {}
-
-    for log in data:
-
-        counts[log.module] = (
-
-            counts.get(
-
-                log.module,
-
-                0
-
-            ) + 1
-
+    results = (
+        query
+        .order_by(None)
+        .with_entities(
+            AuditLog.module,
+            func.count(AuditLog.id)
         )
+        .group_by(
+            AuditLog.module
+        )
+        .order_by(
+            func.count(AuditLog.id).desc()
+        )
+        .all()
+    )
 
     return {
-
-        "labels": list(
-
-            counts.keys()
-
-        ),
-
-        "data": list(
-
-            counts.values()
-
-        )
-
+        "labels": [
+            row[0] for row in results
+        ],
+        "data": [
+            row[1] for row in results
+        ]
     }
+
 
 def export_all_companies_excel():
 
