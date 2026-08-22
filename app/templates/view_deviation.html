@@ -83,7 +83,7 @@ Cable Name
 
 <td class="text-wrap" style="max-width:20px; white-space:normal;">
 
-{{ deviation.inspection.batch.cable_type.pair_count }} × {{ deviation.inspection.batch.cable_type.conductor_size }} - {{deviation.inspection.batch.cable_type.name }}
+{{ deviation.inspection.batch.cable_type.pair_count }} × {{ deviation.inspection.batch.cable_type.conductor_size }} - <small class="text-muted">{{deviation.inspection.batch.cable_type.name }}</small>
 
 
 </td>
@@ -158,6 +158,48 @@ Customer
             {{ deviation.quality_metric.specification.unit }}
         {% endif %}
     </td>
+
+</tr>
+
+<tr>
+    <th>Requirement</th>
+
+    <td>
+
+        {% if deviation.quality_metric.specification.requirement %}
+
+            {{ deviation.quality_metric.specification.requirement }}
+
+        {% elif deviation.quality_metric.specification.validation_type == "any" %}
+
+            Accept Any Value
+
+        {% elif deviation.quality_metric.specification.validation_type == "minimum" %}
+
+            {{ deviation.quality_metric.specification.minimum_value }} (Min)
+
+        {% elif deviation.quality_metric.specification.validation_type == "maximum" %}
+
+            {{ deviation.quality_metric.specification.maximum_value }} (Max)
+
+        {% elif deviation.quality_metric.specification.validation_type == "range" %}
+
+            {{ deviation.quality_metric.specification.minimum_value }}
+            -
+            {{ deviation.quality_metric.specification.maximum_value }}
+
+        {% elif deviation.quality_metric.specification.validation_type == "text" %}
+
+            {{ deviation.quality_metric.specification.expected_result }}
+
+        {% else %}
+
+            -
+
+        {% endif %}
+
+    </td>
+
 
 </tr>
 
