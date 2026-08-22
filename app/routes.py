@@ -185,10 +185,10 @@ def generate_cable_code(
     """
 
     SIZE_CODES = {
-        "1.0mm": "C",
-        "1.5mm": "D",
-        "2.5mm": "E",
-        "4.0mm": "F"
+        "1.0mm²": "C",
+        "1.5mm²": "D",
+        "2.5mm²": "E",
+        "4.0mm²": "F"
     }
 
     PAIR_CODES = {
