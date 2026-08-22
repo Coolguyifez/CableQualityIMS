@@ -179,10 +179,10 @@ def generate_cable_code(
         outer_colour
 ):
     """
-    Example:
+        Example:
 
-    P-A-05-R-N-C-BK
-    """
+        P-A-05-R-N-C-BK
+        """
 
     SIZE_CODES = {
         "1.0mm²": "C",
@@ -201,19 +201,23 @@ def generate_cable_code(
     }
 
     pair = PAIR_CODES.get(
-        cable_type.pair_count,
+        str(cable_type.pair_count).strip(),
         "00"
     )
 
+    conductor_size = str(
+        cable_type.conductor_size
+    ).strip()
+
     size = SIZE_CODES.get(
-        cable_type.conductor_size,
+        conductor_size,
         "X"
     )
 
     armour = (
-        "P"
-        if cable_type.armour_type == "SWA"
-        else "N"
+        "N"
+        if str(cable_type.armour_type).strip().upper() == "SWA"
+        else "P"
     )
 
     return (
@@ -1770,6 +1774,21 @@ def new_batch():
 
     if form.validate_on_submit():
 
+        # Get selected cable type
+        cable_type = CableType.query.filter_by(
+            id=form.cable_type_id.data,
+            company_id=current_user.company_id
+        ).first_or_404()
+
+        # Generate cable code from the actual cable type
+        cable_code = generate_cable_code(
+            cable_type=cable_type,
+            drain_wire_type=form.drain_wire_type.data,
+            specialty=form.specialty.data,
+            water_barrier=form.water_barrier.data,
+            outer_colour=form.outer_sheath_colour.data
+        )
+
         batch = CableBatch(
 
             company_id=current_user.company_id,
@@ -1800,8 +1819,8 @@ def new_batch():
 
             outer_sheath_colour=form.outer_sheath_colour.data,
 
-            cable_code = form.cable_code.data
-
+            # Use generated code
+            cable_code=cable_code
         )
 
         try:
@@ -1809,13 +1828,9 @@ def new_batch():
             db.session.add(batch)
 
             log_activity(
-
                 module="Cable Batch",
-
                 action="Create",
-
                 description=f"Created batch '{batch.batch_number}'"
-
             )
 
             db.session.commit()
@@ -1829,29 +1844,20 @@ def new_batch():
                 url_for("main.batches")
             )
 
-
-
         except IntegrityError:
 
             db.session.rollback()
 
             flash(
-
                 "Unable to create batch. Please try again.",
-
                 "danger"
-
             )
+
     return render_template(
-
         "batch_form.html",
-
         form=form,
-
         cable_types=cable_types,
-
         title="New Cable Batch"
-
     )
 
 
@@ -1863,33 +1869,49 @@ def new_batch():
 @permission_required("manage_batches")
 def edit_batch(batch_id):
 
+    # -----------------------------------------
+    # Get batch belonging to current company
+    # -----------------------------------------
     batch = CableBatch.query.filter_by(
-
         id=batch_id,
-
         company_id=current_user.company_id
-
     ).first_or_404()
 
+    # -----------------------------------------
+    # Create form
+    # -----------------------------------------
     form = CableBatchForm(obj=batch)
 
+    # -----------------------------------------
+    # Load customers
+    # -----------------------------------------
     customers = Customer.query.filter_by(
         company_id=current_user.company_id
     ).order_by(
         Customer.company_name
     ).all()
 
+    # -----------------------------------------
+    # Load cable types
+    # -----------------------------------------
     cable_types = CableType.query.filter_by(
         company_id=current_user.company_id
     ).order_by(
         CableType.name
     ).all()
 
+    # -----------------------------------------
+    # Load production lines
+    # -----------------------------------------
     production_lines = ProductionLine.query.filter_by(
         company_id=current_user.company_id
     ).order_by(
         ProductionLine.line_name
     ).all()
+
+    # -----------------------------------------
+    # Populate form choices
+    # -----------------------------------------
 
     form.customer_id.choices = [
         (c.id, c.company_name)
@@ -1906,65 +1928,136 @@ def edit_batch(batch_id):
         for p in production_lines
     ]
 
+    # -----------------------------------------
+    # Process form submission
+    # -----------------------------------------
     if form.validate_on_submit():
 
-        batch.drum_number = form.drum_number.data.strip()
+        # -----------------------------------------
+        # Get the selected cable type
+        # -----------------------------------------
+        cable_type = CableType.query.filter_by(
+            id=form.cable_type_id.data,
+            company_id=current_user.company_id
+        ).first_or_404()
 
-        batch.customer_id = form.customer_id.data
+        # -----------------------------------------
+        # Generate cable code automatically
+        # -----------------------------------------
+        cable_code = generate_cable_code(
+            cable_type=cable_type,
+            drain_wire_type=form.drain_wire_type.data,
+            specialty=form.specialty.data,
+            water_barrier=form.water_barrier.data,
+            outer_colour=form.outer_sheath_colour.data
+        )
 
-        batch.cable_type_id = form.cable_type_id.data
+        # -----------------------------------------
+        # Update batch information
+        # -----------------------------------------
 
-        batch.production_line_id = form.production_line_id.data
+        batch.drum_number = (
+            form.drum_number.data.strip()
+        )
 
-        batch.production_date = form.production_date.data
+        batch.customer_id = (
+            form.customer_id.data
+        )
 
-        batch.cable_length = form.cable_length.data
+        batch.cable_type_id = (
+            form.cable_type_id.data
+        )
 
-        batch.status = form.status.data
+        batch.production_line_id = (
+            form.production_line_id.data
+        )
 
-        batch.drain_wire_type = form.drain_wire_type.data
+        batch.production_date = (
+            form.production_date.data
+        )
 
-        batch.specialty = form.specialty.data
+        batch.cable_length = (
+            form.cable_length.data
+        )
 
-        batch.water_barrier = form.water_barrier.data
+        batch.status = (
+            form.status.data
+        )
 
-        batch.outer_sheath_colour = form.outer_sheath_colour.data
+        batch.drain_wire_type = (
+            form.drain_wire_type.data
+        )
 
-        batch.cable_code = form.cable_code.data
+        batch.specialty = (
+            form.specialty.data
+        )
+
+        batch.water_barrier = (
+            form.water_barrier.data
+        )
+
+        batch.outer_sheath_colour = (
+            form.outer_sheath_colour.data
+        )
+
+        # -----------------------------------------
+        # IMPORTANT:
+        # Save generated cable code
+        # instead of form.cable_code.data
+        # -----------------------------------------
+
+        batch.cable_code = cable_code
+
+        # -----------------------------------------
+        # Log activity
+        # -----------------------------------------
 
         log_activity(
-
             module="Cable Batch",
-
             action="Update",
-
-            description=f"Updated batch '{batch.batch_number}'"
-
+            description=(
+                f"Updated batch '{batch.batch_number}' "
+                f"with cable code '{batch.cable_code}'"
+            )
         )
 
-        db.session.commit()
+        # -----------------------------------------
+        # Save changes
+        # -----------------------------------------
 
-        flash(
-            "Batch updated successfully.",
-            "success"
-        )
+        try:
 
-        return redirect(
-            url_for("main.batches")
-        )
+            db.session.commit()
+
+            flash(
+                "Batch updated successfully.",
+                "success"
+            )
+
+            return redirect(
+                url_for("main.batches")
+            )
+
+        except IntegrityError:
+
+            db.session.rollback()
+
+            flash(
+                "Unable to update batch. "
+                "Please check the information and try again.",
+                "danger"
+            )
+
+    # -----------------------------------------
+    # Display edit page
+    # -----------------------------------------
 
     return render_template(
-
         "batch_form.html",
-
         form=form,
-
         cable_types=cable_types,
-
         title="Edit Cable Batch"
-
     )
-
 
 @main.route(
     "/batches/<int:batch_id>/delete"
