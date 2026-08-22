@@ -72,7 +72,27 @@
 
                 <tr>
 
-                    <td><strong>{{ cable.pair_count }} × {{ cable.conductor_size }} - {{ cable.name }}</strong></td>
+                    <td>
+
+                        <strong>
+
+                            {{cable.pair_count }}
+                            x
+                            {{cable.conductor_size }}
+
+                        </strong>
+
+                        -
+
+                        <br>
+
+                        <small class="text-muted">
+
+                        {{cable.name }}
+
+                        </small>
+
+                    </td>
 
 
                     <td>{{ cable.voltage_rating }}</td>
