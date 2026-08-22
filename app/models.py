@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from flask_login import UserMixin
 from .extensions import login_manager
 from .extensions import db
@@ -83,8 +83,9 @@ class User(UserMixin, db.Model):
     )
 
     created_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
     )
 
     company = db.relationship(
@@ -179,8 +180,9 @@ class Company(db.Model):
     )
 
     created_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
     )
 
     users = db.relationship(
@@ -273,8 +275,9 @@ class CableBatch(db.Model):
     )
 
     created_at = db.Column(
-        db.DateTime,
-        default=db.func.current_timestamp()
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
     )
 
     company = db.relationship(
@@ -329,8 +332,9 @@ class Customer(db.Model):
     address = db.Column(db.Text)
 
     created_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
     )
 
     company = db.relationship(
@@ -381,8 +385,9 @@ class ProductionLine(db.Model):
     )
 
     created_at = db.Column(
-        db.DateTime,
-        default=db.func.current_timestamp()
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
     )
 
     company = db.relationship(
@@ -482,8 +487,9 @@ class CableType(db.Model):
     )
 
     created_at = db.Column(
-        db.DateTime,
-        default=db.func.current_timestamp()
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
     )
 
     company = db.relationship(
@@ -544,8 +550,9 @@ class Inspection(db.Model):
     remarks = db.Column(db.Text)
 
     created_at = db.Column(
-        db.DateTime,
-        default=db.func.current_timestamp()
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
     )
 
 
@@ -715,8 +722,9 @@ class QualitySpecification(db.Model):
     )
 
     created_at = db.Column(
-        db.DateTime,
-        default=db.func.current_timestamp()
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
     )
 
     company = db.relationship(
@@ -791,7 +799,7 @@ class Deviation(db.Model):
 
     reported_date = db.Column(
         db.Date,
-        default=datetime.utcnow
+        default=lambda: datetime.now(timezone.utc).date()
     )
 
     closed_date = db.Column(
@@ -880,8 +888,9 @@ class CAPA(db.Model):
     )
 
     created_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
     )
 
 
@@ -947,8 +956,9 @@ class Notification(db.Model):
     )
 
     created_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
     )
 
     company = db.relationship(
@@ -1001,8 +1011,9 @@ class AuditLog(db.Model):
     )
 
     created_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
     )
 
     company = db.relationship(
@@ -1015,7 +1026,6 @@ class AuditLog(db.Model):
 
     def __repr__(self):
         return f"<AuditLog {self.module} - {self.action}>"
-
 
 
 class PushSubscription(db.Model):
@@ -1055,8 +1065,9 @@ class PushSubscription(db.Model):
     )
 
     created_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
     )
 
     user = db.relationship(
@@ -1071,13 +1082,6 @@ class PushSubscription(db.Model):
 
     def __repr__(self):
         return f"<PushSubscription {self.id}>"
-
-
-
-
-
-
-
 
 
 
