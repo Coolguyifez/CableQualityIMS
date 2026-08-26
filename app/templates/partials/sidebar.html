@@ -4,10 +4,9 @@
 
     <h4 class="fw-bold mb-1">
 
-        <img src="{{ url_for('static', filename='icons/cableqims.png') }}" class="img-fluid" alt="CableQIMS Logo" style="max-height: 90px;">
+        <img src="{{ url_for('static', filename='icons/cableqims.png') }}" class="img-fluid" alt="CableQIMS Logo" style="max-height: 105px;">
 
-        <a href="{{url_for('main.home')}}" style="text-decoration: none;" class="text-light">CableQIMS</a>
-
+        CableQIMS
 
     </h4>
 
@@ -15,7 +14,11 @@
 
     <div class="small fw-bold text-primary">
 
+        <a href="{{url_for('main.home')}}" style="text-decoration: none;">
+
         {{ current_user.company.company_name }}
+
+        </a>
 
     </div>
 
