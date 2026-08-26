@@ -130,7 +130,32 @@ Administrator Account
 
 {{ form.password.label(class="form-label") }}
 
-{{ form.password(class="form-control") }}
+<div class="position-relative">
+
+{{ form.password(class="form-control", id="password") }}
+
+    <button
+            type="button"
+            id="togglePassword"
+            class="btn position-absolute top-50 end-0 translate-middle-y d-none"
+            style="border: none; background: transparent;"
+            aria-label="Show password">
+
+            <i id="passwordIcon" class="bi bi-eye"></i>
+
+        </button>
+
+    </div>
+
+    {% for error in form.password.errors %}
+
+        <div class="text-danger">
+            {{ error }}
+        </div>
+
+    {% endfor %}
+
+
 
 </div>
 
@@ -175,5 +200,85 @@ Login
 </div>
 
 </div>
+
+{% endblock %}
+{% block scripts %}
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const password = document.getElementById("password");
+    const togglePassword = document.getElementById("togglePassword");
+    const passwordIcon = document.getElementById("passwordIcon");
+
+
+    // Show/hide eye icon depending on whether password has text
+    function updateEyeVisibility() {
+
+        if (password.value.length > 0) {
+
+            togglePassword.classList.remove("d-none");
+
+        } else {
+
+            togglePassword.classList.add("d-none");
+
+            // Make sure password is hidden when field becomes empty
+            password.type = "password";
+
+            passwordIcon.classList.remove("bi-eye-slash");
+            passwordIcon.classList.add("bi-eye");
+
+        }
+
+    }
+
+
+    // Toggle password visibility
+    togglePassword.addEventListener("click", function () {
+
+        if (password.type === "password") {
+
+            password.type = "text";
+
+            passwordIcon.classList.remove("bi-eye");
+            passwordIcon.classList.add("bi-eye-slash");
+
+            togglePassword.setAttribute(
+                "aria-label",
+                "Hide password"
+            );
+
+        } else {
+
+            password.type = "password";
+
+            passwordIcon.classList.remove("bi-eye-slash");
+            passwordIcon.classList.add("bi-eye");
+
+            togglePassword.setAttribute(
+                "aria-label",
+                "Show password"
+            );
+
+        }
+
+    });
+
+
+    // Detect typing
+    password.addEventListener(
+        "input",
+        updateEyeVisibility
+    );
+
+
+    // Check initially
+    updateEyeVisibility();
+
+});
+
+</script>
 
 {% endblock %}
