@@ -13,7 +13,6 @@
     <!--logo-->
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/cableqims.png') }}">
 
-
     <!--manifest-->
     <link rel="manifest"
       href="{{ url_for('static', filename='manifest.json') }}">
@@ -40,13 +39,200 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
     <link rel="stylesheet"href="{{ url_for('static', filename='css/reports.css') }}">
+<script>
+(function () {
+
+    const serverTheme =
+        "{{ current_user.theme if current_user.is_authenticated else '' }}";
+
+    const storedTheme =
+        localStorage.getItem("cqims-theme");
+
+    /*
+     * The saved QIMS preference has priority.
+     *
+     * If the logged-in user has a saved preference,
+     * use that. Otherwise use localStorage.
+     */
+    const selectedTheme =
+        serverTheme || storedTheme || "system";
+
+
+    /*
+     * Get the actual operating-system theme.
+     */
+    function getSystemTheme() {
+
+        return window.matchMedia(
+            "(prefers-color-scheme: dark)"
+        ).matches
+            ? "dark"
+            : "light";
+
+    }
+
+
+    /*
+     * Apply the theme everywhere.
+     */
+    function applyCQIMSTheme(theme) {
+
+        const actualTheme =
+            theme === "system"
+                ? getSystemTheme()
+                : theme;
+
+
+        /*
+         * HTML / Bootstrap theme
+         */
+        document.documentElement.setAttribute(
+            "data-bs-theme",
+            actualTheme
+        );
+
+
+        /*
+         * Store the user's preference.
+         *
+         * IMPORTANT:
+         * Store "system", "light", or "dark".
+         * Never replace "system" with "light"/"dark".
+         */
+        localStorage.setItem(
+            "cqims-theme",
+            theme
+        );
+
+
+        /*
+         * Store both the selected theme
+         * and the resolved theme.
+         */
+        document.documentElement.setAttribute(
+            "data-cqims-theme",
+            theme
+        );
+
+        document.documentElement.setAttribute(
+            "data-cqims-actual-theme",
+            actualTheme
+        );
+
+
+        /*
+         * Body may not exist yet because this script
+         * is located in <head>.
+         *
+         * Therefore we safely wait for it.
+         */
+        function updateBody() {
+
+            if (!document.body) {
+                return;
+            }
+
+            document.body.classList.remove(
+                "light",
+                "dark",
+                "system"
+            );
+
+            document.body.classList.add(
+                actualTheme
+            );
+
+
+            /*
+             * Additional classes that make it easier
+             * for your existing CSS to react.
+             */
+            document.body.classList.toggle(
+                "light-mode",
+                actualTheme === "light"
+            );
+
+            document.body.classList.toggle(
+                "dark-mode",
+                actualTheme === "dark"
+            );
+
+        }
+
+
+        if (document.body) {
+
+            updateBody();
+
+        } else {
+
+            document.addEventListener(
+                "DOMContentLoaded",
+                updateBody,
+                { once: true }
+            );
+
+        }
+
+    }
+
+
+    /*
+     * Make the function available to app.js
+     */
+    window.applyCQIMSTheme =
+        applyCQIMSTheme;
+
+
+    /*
+     * Apply initial theme.
+     */
+    applyCQIMSTheme(
+        selectedTheme
+    );
+
+
+    /*
+     * Watch the operating-system theme.
+     */
+    const mediaQuery =
+        window.matchMedia(
+            "(prefers-color-scheme: dark)"
+        );
+
+
+    mediaQuery.addEventListener(
+        "change",
+        function () {
+
+            const currentTheme =
+                localStorage.getItem(
+                    "cqims-theme"
+                ) || selectedTheme;
+
+
+            /*
+             * Only follow the OS when QIMS
+             * is actually set to SYSTEM.
+             */
+            if (currentTheme === "system") {
+
+                applyCQIMSTheme("system");
+
+            }
+
+        }
+    );
+
+
+})();
+</script>
 
 </head>
 
 
 
-<body class="{{ current_user.theme }}" style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;">
-
+<body>
 <div class="wrapper">
 
     <!-- Sidebar -->
@@ -71,8 +257,7 @@
 
         </main>
 
-        <!-- Footer -->
-        {% include 'partials/footer.html' %}
+        
 
     </div>
 
@@ -88,51 +273,9 @@
 <!-- Custom JS -->
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
-<script src="{{ url_for('static', filename='js/service-worker.js') }}"></script>    
-    
-<script>
-(function () {
+<script src="{{ url_for('static', filename='js/service-worker.js') }}"></script>
 
-    let savedTheme = "{{ current_user.theme if current_user.is_authenticated else 'system' }}";
 
-    function applyTheme(theme) {
-
-        if (theme === "system") {
-
-            const prefersDark = window.matchMedia(
-                "(prefers-color-scheme: dark)"
-            ).matches;
-
-            document.documentElement.setAttribute(
-                "data-bs-theme",
-                prefersDark ? "dark" : "light"
-            );
-
-        } else {
-
-            document.documentElement.setAttribute(
-                "data-bs-theme",
-                theme
-            );
-
-        }
-
-    }
-
-    applyTheme(savedTheme);
-
-    // Automatically update if the user changes Windows/macOS theme
-    window.matchMedia("(prefers-color-scheme: dark)")
-        .addEventListener("change", function () {
-
-            if (savedTheme === "system") {
-                applyTheme("system");
-            }
-
-        });
-
-})();
-</script>
 
 <script>
 if ("serviceWorker" in navigator) {
