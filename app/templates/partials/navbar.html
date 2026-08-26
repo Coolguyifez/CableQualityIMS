@@ -14,13 +14,16 @@
 
         <!-- Company Name -->
         <div class="navbar-brand-title ms-3 fw-bold text-primary">
+            
             {% if current_user.is_authenticated %}
+            <a href="{{url_for('main.home')}}" style="text-decoration: none;">
                 {{ current_user.company.company_name }}
             {% else %}
                 CableQIMS
+            </a>    
             {% endif %}
         </div>
-
+        
         <div class="ms-auto navbar-right">
 
             <!-- Search -->
