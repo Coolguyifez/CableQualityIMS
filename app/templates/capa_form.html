@@ -90,7 +90,45 @@ Cable Name
 
 </tr>
 
+<tr>
+
+<th>
+
+Description
+
+</th>
+
+<td>
+
+{{ deviation.description }} Measured or seen as 
+{{ deviation.quality_metric.measured_value }}
+        {% if deviation.quality_metric.specification.unit %}
+            {{ deviation.quality_metric.specification.unit }}
+        {% endif %} which triggered a non-conformance block.
+
+</td>
+ 
+</tr>
+
+<tr>
+
+<th>
+
+Root Cause by Inspector
+
+</th>
+
+<td>
+
+{{ deviation.root_cause or "-" }}
+
+</td>
+ 
+</tr>
+
 </table>
+
+{% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager"] %}    
 
 <div class="mb-3">
 
@@ -99,6 +137,8 @@ Cable Name
 {{ form.corrective_action(class="form-control", rows=4) }}
 
 </div>
+
+{% endif %} 
 
 <div class="mb-3">
 
