@@ -158,13 +158,13 @@ Description
 <td>
 
 {{ capa.deviation.description }} Measured or seen as 
-{{ capa.deviation.quality_metric.measured_value }}
+' {{ capa.deviation.quality_metric.measured_value }}
         {% if capa.deviation.quality_metric.specification.unit %}
             {{ capa.deviation.quality_metric.specification.unit }}
-        {% endif %}. 
+        {% endif %}'. 
          Where the requirement is 
         
-        {% if capa.deviation.quality_metric.specification.requirement %}
+        '{% if capa.deviation.quality_metric.specification.requirement %}
 
             {{ capa.deviation.quality_metric.specification.requirement }}
 
@@ -194,7 +194,7 @@ Description
 
             -
 
-        {% endif %},
+        {% endif %}',
         
          which triggered a non-conformance block.
 
