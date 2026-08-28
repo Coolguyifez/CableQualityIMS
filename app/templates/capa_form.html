@@ -104,7 +104,41 @@ Description
 {{ deviation.quality_metric.measured_value }}
         {% if deviation.quality_metric.specification.unit %}
             {{ deviation.quality_metric.specification.unit }}
-        {% endif %} which triggered a non-conformance block.
+        {% endif %}. Where the requirement is 
+        
+        {% if deviation.quality_metric.specification.requirement %}
+
+            {{ deviation.quality_metric.specification.requirement }}
+
+        {% elif deviation.quality_metric.specification.validation_type == "any" %}
+
+            Accept Any Value
+
+        {% elif deviation.quality_metric.specification.validation_type == "minimum" %}
+
+            {{ deviation.quality_metric.specification.minimum_value }} (Min)
+
+        {% elif deviation.quality_metric.specification.validation_type == "maximum" %}
+
+            {{ deviation.quality_metric.specification.maximum_value }} (Max)
+
+        {% elif deviation.quality_metric.specification.validation_type == "range" %}
+
+            {{ deviation.quality_metric.specification.minimum_value }}
+            -
+            {{ deviation.quality_metric.specification.maximum_value }}
+
+        {% elif deviation.quality_metric.specification.validation_type == "text" %}
+
+            {{ deviation.quality_metric.specification.expected_result }}
+
+        {% else %}
+
+            -
+
+        {% endif %},
+        
+        which triggered a non-conformance block.
 
 </td>
  
