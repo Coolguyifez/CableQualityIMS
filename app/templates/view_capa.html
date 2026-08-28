@@ -176,11 +176,11 @@ Description
 
             {{ capa.deviation.quality_metric.specification.minimum_value }} (Min)
 
-        {% elif deviation.quality_metric.specification.validation_type == "maximum" %}
+        {% elif capa.deviation.quality_metric.specification.validation_type == "maximum" %}
 
             {{ capa.deviation.quality_metric.specification.maximum_value }} (Max)
 
-        {% elif deviation.quality_metric.specification.validation_type == "range" %}
+        {% elif capa.deviation.quality_metric.specification.validation_type == "range" %}
 
             {{ capa.eviation.quality_metric.specification.minimum_value }}
             -
