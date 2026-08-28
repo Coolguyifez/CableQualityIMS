@@ -116,6 +116,20 @@ Voltage Rating
 
 </tr>
 
+
+<tr>
+
+<th>
+Production Line/Supervisor
+
+</th>
+
+<td>
+    {{capa.deviation.inspection.batch.production_line.line_name}}-{{ capa.deviation.inspection.batch.production_line.supervisor}}
+</td>
+
+</tr>
+
 <tr>
 
 <th>
@@ -131,6 +145,42 @@ Customer
     </small>
 </td>
 
+</tr>
+
+<tr>
+
+<th>
+
+Description
+
+</th>
+
+<td>
+
+{{ capa.deviation.description }} Measured or seen as 
+{{ capa.deviation.quality_metric.measured_value }}
+        {% if capa.deviation.quality_metric.specification.unit %}
+            {{ capa.deviation.quality_metric.specification.unit }}
+        {% endif %} which triggered a non-conformance block.
+
+</td>
+ 
+</tr>
+
+<tr>
+
+<th>
+
+Root Cause by Inspector
+
+</th>
+
+<td>
+
+{{ capa.deviation.root_cause or "-" }}
+
+</td>
+ 
 </tr>
 
 <tr>
