@@ -161,7 +161,42 @@ Description
 {{ capa.deviation.quality_metric.measured_value }}
         {% if capa.deviation.quality_metric.specification.unit %}
             {{ capa.deviation.quality_metric.specification.unit }}
-        {% endif %} which triggered a non-conformance block.
+        {% endif %}. 
+         Where the requirement is 
+        
+        {% if capa.deviation.quality_metric.specification.requirement %}
+
+            {{ capa.deviation.quality_metric.specification.requirement }}
+
+        {% elif capa.deviation.quality_metric.specification.validation_type == "any" %}
+
+            Accept Any Value
+
+        {% elif capa.deviation.quality_metric.specification.validation_type == "minimum" %}
+
+            {{ capa.deviation.quality_metric.specification.minimum_value }} (Min)
+
+        {% elif deviation.quality_metric.specification.validation_type == "maximum" %}
+
+            {{ capa.deviation.quality_metric.specification.maximum_value }} (Max)
+
+        {% elif deviation.quality_metric.specification.validation_type == "range" %}
+
+            {{ capa.eviation.quality_metric.specification.minimum_value }}
+            -
+            {{ capa.deviation.quality_metric.specification.maximum_value }}
+
+        {% elif capa.deviation.quality_metric.specification.validation_type == "text" %}
+
+            {{ capa.deviation.quality_metric.specification.expected_result }}
+
+        {% else %}
+
+            -
+
+        {% endif %},
+        
+         which triggered a non-conformance block.
 
 </td>
  
