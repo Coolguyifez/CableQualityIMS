@@ -3404,7 +3404,7 @@ def new_capa(deviation_id):
 
                 title="New CAPA",
 
-                message=f"CAPA created for {capa.deviation.deviation_number}.",
+                message=f"CAPA created for {capa.deviation.deviation_number}, and assigned to {capa.deviation.inspection.batch.production_line.supervisor}.",
 
                 category="CAPA",
 
