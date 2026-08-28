@@ -811,7 +811,8 @@ class CAPAForm(FlaskForm):
 
     preventive_action = TextAreaField(
         "Preventive Action",
-        validators=[DataRequired()]
+        validators=[DataRequired()],
+        default="-"
     )
 
     assigned_to = StringField(
