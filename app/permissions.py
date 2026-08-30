@@ -124,6 +124,8 @@ ROLE_PERMISSIONS = {
 
         "manage_inspections",
 
+        "manage_deviations",
+        
         "manage_capa",
         
         "manage_notifications"
