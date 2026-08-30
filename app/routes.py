@@ -3138,6 +3138,7 @@ def deviations():
 
 @main.route("/deviations/<int:deviation_id>")
 @login_required
+@permission_required("manage_deviations")
 def view_deviation(deviation_id):
     deviation = Deviation.query.filter_by(
         id=deviation_id,
@@ -3404,7 +3405,7 @@ def new_capa(deviation_id):
 
                 title="New CAPA",
 
-                message=f"CAPA created for {capa.deviation.deviation_number}, and assigned to {capa.deviation.inspection.batch.production_line.supervisor}.",
+                message=f"CAPA created for {capa.deviation.deviation_number}, and assigned to {capa.assigned_to} under {capa.deviation.inspection.batch.production_line.line_name}.",
 
                 category="CAPA",
 
