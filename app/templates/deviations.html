@@ -183,12 +183,16 @@
 
                         </a>
 
+                        {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Quality Inspector"] %}    
+
                         <a href="{{ url_for('main.edit_deviation', deviation_id=deviation.id) }}"
                            class="btn btn-warning btn-sm">
 
                             <i class="bi bi-pencil"></i>
 
                         </a>
+
+                        {% endif %}
                         </div>
 
                     </td>
