@@ -34,7 +34,11 @@ class UserForm(FlaskForm):
     )
 
     password = PasswordField(
-        "Password"
+        "Password",
+        validators=[
+            DataRequired(),
+            Length(min=8, message="Password must be at least 8 characters.")
+        ]
     )
 
     role = SelectField(
@@ -153,7 +157,7 @@ class CompanyForm(FlaskForm):
 
     admin_password = PasswordField(
         "Temporary Password",
-        validators=[DataRequired()]
+        validators=[DataRequired(), Length(min=8, message="Password must be at least 8 characters.")]
     )
 
     is_active = BooleanField(
@@ -298,7 +302,7 @@ class ChangePasswordForm(FlaskForm):
         "New Password",
         validators=[
             DataRequired(),
-            Length(min=6)
+            Length(min=8)
         ]
     )
 
@@ -846,7 +850,6 @@ class CAPAForm(FlaskForm):
             ("Open","Open"),
             ("In Progress","In Progress"),
             ("Completed", "Completed"),
-            ("Overdue", "Overdue"),
             ("Closed","Closed")
         ]
     )
