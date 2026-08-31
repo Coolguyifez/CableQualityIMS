@@ -3603,24 +3603,147 @@ def notifications():
 @main.route("/notifications/<int:notification_id>/read")
 @login_required
 def read_notification(notification_id):
+
     notification = Notification.query.filter_by(
         id=notification_id,
         company_id=current_user.company_id,
         user_id=current_user.id
     ).first_or_404()
 
+    # Mark notification as read
     notification.is_read = True
 
     db.session.commit()
 
-    if notification.link:
+    # No link
+    if not notification.link:
+        return redirect(
+            url_for("main.notifications")
+        )
 
-        return redirect(notification.link)
+    # =========================================================
+    # CAPA
+    # =========================================================
+
+    if "/capa/" in notification.link:
+
+        try:
+            capa_id = int(
+                notification.link.rstrip("/").split("/")[-1]
+            )
+
+            capa = CAPA.query.filter_by(
+                id=capa_id,
+                company_id=current_user.company_id
+            ).first()
+
+            if not capa:
+
+                flash(
+                    "This CAPA has been deleted and is no longer available.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("main.notifications")
+                )
+
+        except (ValueError, TypeError):
+
+            flash(
+                "This CAPA notification is no longer valid.",
+                "warning"
+            )
+
+            return redirect(
+                url_for("main.notifications")
+            )
+
+
+    # =========================================================
+    # INSPECTION
+    # =========================================================
+
+    if "/inspections/" in notification.link:
+
+        try:
+            inspection_id = int(
+                notification.link.rstrip("/").split("/")[-1]
+            )
+
+            inspection = Inspection.query.filter_by(
+                id=inspection_id,
+                company_id=current_user.company_id
+            ).first()
+
+            if not inspection:
+
+                flash(
+                    "This inspection has been deleted and is no longer available.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("main.notifications")
+                )
+
+        except (ValueError, TypeError):
+
+            flash(
+                "This inspection notification is no longer valid.",
+                "warning"
+            )
+
+            return redirect(
+                url_for("main.notifications")
+            )
+
+
+    # =========================================================
+    # DEVIATION
+    # =========================================================
+
+    if "/deviations/" in notification.link:
+
+        try:
+            deviation_id = int(
+                notification.link.rstrip("/").split("/")[-1]
+            )
+
+            deviation = Deviation.query.filter_by(
+                id=deviation_id,
+                company_id=current_user.company_id
+            ).first()
+
+            if not deviation:
+
+                flash(
+                    "This deviation has been deleted and is no longer available.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("main.notifications")
+                )
+
+        except (ValueError, TypeError):
+
+            flash(
+                "This deviation notification is no longer valid.",
+                "warning"
+            )
+
+            return redirect(
+                url_for("main.notifications")
+            )
+
+
+    # =========================================================
+    # RECORD STILL EXISTS
+    # =========================================================
 
     return redirect(
-
-        url_for("main.notifications")
-
+        notification.link
     )
 
 @main.route("/notifications/read-all")
