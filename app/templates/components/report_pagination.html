@@ -1,74 +1,159 @@
+
 {% if pagination.pages > 1 %}
 
-{% set args = request.args.to_dict() %}
-{% set _ = args.pop("page", None) %}
+<div class="card-footer">
 
-<nav class="mt-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
 
-    <ul class="pagination justify-content-center">
+        <!-- Page Information -->
 
-        {% if pagination.has_prev %}
+        <small class="text-muted">
 
-        <li class="page-item">
+            Showing
 
-            <a
-                class="page-link"
-                href="{{ url_for(request.endpoint, page=pagination.prev_num, **args) }}">
+            <strong>
+                {{ pagination.first }}
+            </strong>
 
-                Previous
+            to
 
-            </a>
+            <strong>
+                {{ pagination.last }}
+            </strong>
 
-        </li>
+            of
 
-        {% endif %}
+            <strong>
+                {{ pagination.total }}
+            </strong>
 
-        {% for page in pagination.iter_pages() %}
+        </small>
 
-            {% if page %}
 
-            <li class="page-item {% if page == pagination.page %}active{% endif %}">
+        <!-- Pagination -->
 
-                <a
-                    class="page-link"
-                    href="{{ url_for(request.endpoint, page=page, **args) }}">
+        <nav aria-label="Pagination">
 
-                    {{ page }}
+            <ul class="pagination mb-0">
 
-                </a>
+                <!-- Previous -->
 
-            </li>
+                <li class="page-item
+                    {% if not pagination.has_prev %}disabled{% endif %}">
 
-            {% else %}
+                    {% if pagination.has_prev %}
 
-            <li class="page-item disabled">
+                        <a
+                            class="page-link"
+                            href="{{ url_for(
+                                request.endpoint,
+                                page=pagination.prev_num
+                            ) }}"
+                        >
 
-                <span class="page-link">...</span>
+                            <i class="bi bi-chevron-left"></i>
 
-            </li>
+                        </a>
 
-            {% endif %}
+                    {% else %}
 
-        {% endfor %}
+                        <span class="page-link">
 
-        {% if pagination.has_next %}
+                            <i class="bi bi-chevron-left"></i>
 
-        <li class="page-item">
+                        </span>
 
-            <a
-                class="page-link"
-                href="{{ url_for(request.endpoint, page=pagination.next_num, **args) }}">
+                    {% endif %}
 
-                Next
+                </li>
 
-            </a>
 
-        </li>
+                <!-- Page Numbers -->
 
-        {% endif %}
+                {% for page_num in pagination.iter_pages(
+                    left_edge=1,
+                    left_current=1,
+                    right_current=1,
+                    right_edge=1
+                ) %}
 
-    </ul>
+                    {% if page_num %}
 
-</nav>
+                        <li class="page-item
+                            {% if page_num == pagination.page %}
+                                active
+                            {% endif %}"
+                        >
+
+                            <a
+                                class="page-link"
+                                href="{{ url_for(
+                                    request.endpoint,
+                                    page=page_num
+                                ) }}"
+                            >
+
+                                {{ page_num }}
+
+                            </a>
+
+                        </li>
+
+                    {% else %}
+
+                        <li class="page-item disabled">
+
+                            <span class="page-link">
+
+                                …
+
+                            </span>
+
+                        </li>
+
+                    {% endif %}
+
+                {% endfor %}
+
+
+                <!-- Next -->
+
+                <li class="page-item
+                    {% if not pagination.has_next %}disabled{% endif %}">
+
+                    {% if pagination.has_next %}
+
+                        <a
+                            class="page-link"
+                            href="{{ url_for(
+                                request.endpoint,
+                                page=pagination.next_num
+                            ) }}"
+                        >
+
+                            <i class="bi bi-chevron-right"></i>
+
+                        </a>
+
+                    {% else %}
+
+                        <span class="page-link">
+
+                            <i class="bi bi-chevron-right"></i>
+
+                        </span>
+
+                    {% endif %}
+
+                </li>
+
+            </ul>
+
+        </nav>
+
+    </div>
+
+</div>
 
 {% endif %}
+
