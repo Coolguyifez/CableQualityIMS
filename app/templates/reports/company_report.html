@@ -1172,7 +1172,7 @@
 
                                 {% else %}
 
-                                    <span class="badge bg-secondary">
+                                    <span class="badge bg-info">
                                         {{ deviation.severity }}
                                     </span>
 
@@ -1196,7 +1196,7 @@
 
                                 {% else %}
 
-                                    <span class="badge bg-warning text-dark">
+                                    <span class="badge bg-secondary">
                                         {{ deviation.status }}
                                     </span>
 
@@ -1333,7 +1333,7 @@
 
                                 {% else %}
 
-                                    <span class="badge bg-secondary">
+                                    <span class="badge bg-warning text-dark">
                                         Pending
                                     </span>
 
@@ -1342,26 +1342,46 @@
                             </td>
 
                             <td>
+                            {% if capa.status == "Closed" %}
 
-                                {% if capa.status == "Completed" %}
+                            <span class="badge bg-success">
 
-                                    <span class="badge bg-success">
-                                        Completed
-                                    </span>
+                            Closed
 
-                                {% elif capa.status == "Open" %}
+                            </span>
 
-                                    <span class="badge bg-danger">
-                                        Open
-                                    </span>
+                            {% elif capa.status == "Overdue" %}
 
-                                {% else %}
+                            <span class="badge bg-danger">
 
-                                    <span class="badge bg-warning text-dark">
-                                        {{ capa.status }}
-                                    </span>
+                            Overdue
+                            </span>
 
-                                {% endif %}
+                            {% elif capa.status == "In Progress" %}
+
+                            <span class="badge bg-warning text-dark">
+
+                            In Progress
+
+                            </span>
+
+                            {% elif capa.status == "Completed" %}
+
+                            <span class="badge bg-primary">
+
+                            Completed
+
+                            </span>
+
+                            {% else %}
+
+                            <span class="badge bg-secondary">
+
+                            Open
+
+                            </span>
+
+                            {% endif %}
 
                             </td>
 
