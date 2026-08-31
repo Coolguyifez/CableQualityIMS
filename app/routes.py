@@ -512,7 +512,9 @@ def home():
 
             company_id
 
-        )
+        ),
+
+        get_days_overdue=get_days_overdue
 
     )
 
@@ -4490,7 +4492,9 @@ def capa_report():
 
         status_chart=status_chart,
 
-        effectiveness_chart=effectiveness_chart
+        effectiveness_chart=effectiveness_chart,
+
+        get_days_overdue=get_days_overdue
 
     )
 
