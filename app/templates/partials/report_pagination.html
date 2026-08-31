@@ -1,0 +1,157 @@
+
+{% if pagination.pages > 1 %}
+
+<div class="card-footer">
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+        <!-- Page Information -->
+
+        <small class="text-muted">
+
+            Showing
+
+            <strong>
+                {{ pagination.first }}
+            </strong>
+
+            to
+
+            <strong>
+                {{ pagination.last }}
+            </strong>
+
+            of
+
+            <strong>
+                {{ pagination.total }}
+            </strong>
+
+        </small>
+
+
+        <!-- Pagination -->
+
+        <nav aria-label="Pagination">
+
+            <ul class="pagination mb-0">
+
+                <!-- Previous -->
+
+                <li class="page-item
+                    {% if not pagination.has_prev %}disabled{% endif %}">
+
+                    {% if pagination.has_prev %}
+
+                        <a
+                            class="page-link"
+                            href="{{ url_for(
+                                request.endpoint,
+                                **{page_param: pagination.prev_num}
+                            ) }}"
+                        >
+
+                            <i class="bi bi-chevron-left"></i>
+
+                        </a>
+
+                    {% else %}
+
+                        <span class="page-link">
+
+                            <i class="bi bi-chevron-left"></i>
+
+                        </span>
+
+                    {% endif %}
+
+                </li>
+
+
+                <!-- Page Numbers -->
+
+                {% for page_num in pagination.iter_pages(
+                    left_edge=1,
+                    left_current=1,
+                    right_current=1,
+                    right_edge=1
+                ) %}
+
+                    {% if page_num %}
+
+                        <li class="page-item
+                            {% if page_num == pagination.page %}
+                                active
+                            {% endif %}"
+                        >
+
+                            <a
+                                class="page-link"
+                                href="{{ url_for(
+                                    request.endpoint,
+                                    **{page_param: page_num}
+                                ) }}"
+                            >
+
+                                {{ page_num }}
+
+                            </a>
+
+                        </li>
+
+                    {% else %}
+
+                        <li class="page-item disabled">
+
+                            <span class="page-link">
+                                …
+                            </span>
+
+                        </li>
+
+                    {% endif %}
+
+                {% endfor %}
+
+
+                <!-- Next -->
+
+                <li class="page-item
+                    {% if not pagination.has_next %}disabled{% endif %}">
+
+                    {% if pagination.has_next %}
+
+                        <a
+                            class="page-link"
+                            href="{{ url_for(
+                                request.endpoint,
+                                **{page_param: pagination.next_num}
+                            ) }}"
+                        >
+
+                            <i class="bi bi-chevron-right"></i>
+
+                        </a>
+
+                    {% else %}
+
+                        <span class="page-link">
+
+                            <i class="bi bi-chevron-right"></i>
+
+                        </span>
+
+                    {% endif %}
+
+                </li>
+
+            </ul>
+
+        </nav>
+
+    </div>
+
+</div>
+
+{% endif %}
+
