@@ -684,6 +684,10 @@
 
         </div>
 
+        {% set pagination=companies_pagination %}
+        {% set page_param="companies_page" %}
+        {% include "partials/report_pagination.html" %}
+
     </div>
 
 
@@ -803,6 +807,10 @@
             </div>
 
         </div>
+
+        {% set pagination=users_pagination %}
+        {% set page_param="users_page" %}
+        {% include "partials/report_pagination.html" %}
 
     </div>
 
@@ -960,6 +968,10 @@
 
         </div>
 
+        {% set pagination=batches_pagination %}
+        {% set page_param="batches_page" %}
+        {% include "partials/report_pagination.html" %}
+
     </div>
 
 
@@ -1082,6 +1094,10 @@
             </div>
 
         </div>
+
+        {% set pagination=inspections_pagination %}
+        {% set page_param="inspections_page" %}
+        {% include "partials/report_pagination.html" %}
 
     </div>
 
@@ -1239,6 +1255,10 @@
             </div>
 
         </div>
+
+        {% set pagination=deviations_pagination %}
+        {% set page_param="deviations_page" %}
+        {% include "partials/report_pagination.html" %}
 
     </div>
 
@@ -1409,6 +1429,10 @@
             </div>
 
         </div>
+
+        {% set pagination=capas_pagination %}
+        {% set page_param="capas_page" %}
+        {% include "partials/report_pagination.html" %}
 
     </div>
 
