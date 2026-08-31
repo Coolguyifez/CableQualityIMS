@@ -37,10 +37,17 @@ Appearance Settings
 
                         </div>
 
-                        <div class="text-end">
+                        <div class="d-flex justify-content-between">
 
-                            {{ form.submit(class="btn btn-primary") }}
-
+                        <a href="{{ url_for('main.settings') }}"
+                        class="btn btn-secondary">
+                        
+                        
+                        Cancel
+                        
+                        </a>
+                        {{ form.submit(class="btn btn-primary") }}
+                        
                         </div>
 
                     </form>
