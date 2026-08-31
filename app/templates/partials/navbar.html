@@ -59,105 +59,119 @@
 
             <div class="dropdown">
 
-                <button
+            <button
+                class="btn btn-outline-secondary nav-icon position-relative"
+                data-bs-toggle="dropdown">
 
-                    class="btn btn-outline-secondary nav-icon position-relative"
+                <i class="bi bi-bell"></i>
 
-                    data-bs-toggle="dropdown">
+                {% if unread_notifications > 0 %}
 
-                    <i class="bi bi-bell"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
 
-                    {% if unread_notifications > 0 %} 
+                    {{ unread_notifications }}
 
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                </span>
 
-                        {{ unread_notifications }}
+                {% endif %}
 
-                    </span>
+            </button>
 
-                    {% endif %}
 
-                </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow notification-dropdown">
 
-                <ul class="dropdown-menu dropdown-menu-end shadow notification-dropdown">
+                <li class="dropdown-header fw-semibold">
 
-                    <li class="dropdown-header fw-semibold">
+                    Notifications
 
-                        Notifications
+                </li>
 
-                    </li>
 
-                    <li><hr class="dropdown-divider"></li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
 
-                    {% if latest_notifications %}
 
-                        {% for notification in latest_notifications %}
+                {% if latest_notifications %}
 
-                        <li>
-
-                            <a class="dropdown-item"
-
-                            href="{{ notification.link if notification.link else '#' }}">
-
-                                 <strong>
-
-                                    {{ notification.title }} 
-                                </strong>
-
-                                    <small
-                                        class="local-time text-muted"
-                                        data-utc="{{ notification.created_at.isoformat() }}">
-                                                                    
-                                        {{ notification.created_at.strftime("%d %b %Y %H:%M") }}
-
-                                    </small>  
-
-                                <br>
-
-                                <small>
-
-                                    {{ notification.message }}
-
-                                </small>
-
-                            </a>
-
-                        </li>
-
-                        {% endfor %}
-
-                    {% else %}
-
-                        <li>
-
-                            <span class="dropdown-item text-muted">
-
-                                No notifications
-
-                            </span>
-
-                        </li>
-
-                    {% endif %}
-
-                    <li><hr class="dropdown-divider"></li>
+                    {% for notification in latest_notifications %}
 
                     <li>
 
-                        <a class="dropdown-item text-center"
+                        <a
+                            class="dropdown-item"
+                            href="{{ url_for('main.read_notification', notification_id=notification.id) }}"
+                        >
 
-                        href="{{ url_for('main.notifications') }}">
+                            <strong>
 
-                            View All Notifications
+                                {{ notification.title }}
+
+                            </strong>
+
+
+                            <small
+                                class="local-time text-muted"
+                                data-utc="{{ notification.created_at.isoformat() }}"
+                            >
+
+                                {{ notification.created_at.strftime("%d %b %Y %H:%M") }}
+
+                            </small>
+
+
+                            <br>
+
+
+                            <small>
+
+                                {{ notification.message }}
+
+                            </small>
 
                         </a>
 
                     </li>
 
-                </ul>
+                    {% endfor %}
 
-            </div>
+                {% else %}
 
+                    <li>
+
+                        <span class="dropdown-item text-muted">
+
+                            No notifications
+
+                        </span>
+
+                    </li>
+
+                {% endif %}
+
+
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+
+
+                <li>
+
+                    <a
+                        class="dropdown-item text-center"
+                        href="{{ url_for('main.notifications') }}"
+                    >
+
+                        View All Notifications
+
+                    </a>
+
+                </li>
+
+            </ul>
+
+        </div>
+            
             <!-- User Dropdown -->
 
             {% if current_user.is_authenticated %}
