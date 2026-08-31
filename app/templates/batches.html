@@ -161,7 +161,7 @@ Pending
 
 <div class="d-inline-flex gap-1">   
 
-{% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager"] %}    
+{% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Production Supervisor"] %}    
 
 <a href="{{ url_for('main.edit_batch', batch_id=batch.id) }}"
     class="btn btn-warning btn-sm">
