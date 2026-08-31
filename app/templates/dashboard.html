@@ -474,7 +474,7 @@ Due:
 
     Overdue
 
-    ({{ capa.days_overdue }} day{% if capa.days_overdue != 1 %}s{% endif %})
+    ({{ get_days_overdue(capa) }} {{ 'day' if get_days_overdue(capa) == 1 else 'days' }})
 
 </span>
 
