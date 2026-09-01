@@ -302,8 +302,7 @@ Closed
 
 Overdue
 
-({{ capa.days_overdue }} day{% if capa.days_overdue != 1 %}s{% endif %})
-
+{{ capa.days_overdue }} {{ "day" if capa.days_overdue == 0 or capa.days_overdue == 1 else "days" }}
 </span>
 
 {% elif capa.display_status == "Completed" %}
