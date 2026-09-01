@@ -474,8 +474,8 @@ Due:
 
     Overdue
 
-    ({{ get_days_overdue(capa) }} {{ 'day' if get_days_overdue(capa) == 1 else 'days' }})
-
+    ({{ get_days_overdue(capa) }} {{ 'day' if get_days_overdue(capa) in [0, 1] else 'days' }})
+    
 </span>
 
 {% elif capa.status == "In Progress" %}
