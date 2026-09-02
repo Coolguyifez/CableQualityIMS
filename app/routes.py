@@ -2228,42 +2228,6 @@ def new_inspection():
             "success"
         )
 
-        if (
-            current_user.notification_enabled
-            and current_user.inspection_notification
-        ):
-        
-            try:
-        
-                create_notification(
-        
-                    title="Inspection pending",
-        
-                    message=(
-                        f"{inspection.inspection_number} "
-                        "is awaiting quality metric evaluation."
-                    ),
-        
-                    category="Inspection",
-        
-                    priority="Normal",
-        
-                    link=url_for(
-                        "main.view_inspection",
-                        inspection_id=inspection.id
-                    )
-        
-                )
-        
-            except Exception as e:
-        
-                current_app.logger.error(
-                    f"Inspection notification failed: {e}",
-                    exc_info=True
-                )
-        
-                db.session.rollback()
-
         return redirect(
             url_for("main.inspections")
         )
