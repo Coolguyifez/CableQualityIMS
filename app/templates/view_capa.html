@@ -300,9 +300,16 @@ Closed
 
 <span class="badge bg-danger">
 
-Overdue
+    Overdue
 
-{{ capa.days_overdue }} {{ "day" if capa.days_overdue == 0 or capa.days_overdue == 1 else "days" }}
+    ({% if capa.days_overdue == 0 %}
+        today
+    {% elif capa.days_overdue == 1 %}
+        1 day
+    {% else %}
+        {{ capa.days_overdue }} days
+    {% endif %})
+
 </span>
 
 {% elif capa.display_status == "Completed" %}
