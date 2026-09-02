@@ -146,7 +146,7 @@ def create_notification(
                 current_app.logger.error(
 
                     f"Push notification failed for "
-                    f"user {user.id}: {e}",
+                    f"for subscription {subscription.id}: {e}",
 
                     exc_info=True
 
@@ -157,3 +157,5 @@ def create_notification(
                 # in a broken state.
 
                 db.session.rollback()
+                
+                continue
