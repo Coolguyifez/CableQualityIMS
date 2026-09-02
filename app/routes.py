@@ -58,7 +58,7 @@ from .dashboard_utils import (
 
     inspection_chart,
 
-    monthly_inspection_chart,
+    inspection_chart_by_period,
 
     capa_chart,
 
@@ -102,7 +102,7 @@ from .decorators import (
     roles_required
 )
 
-from .push_utils import get_vapid_public_key
+
 
 
 main = Blueprint("main", __name__)
@@ -211,9 +211,9 @@ def generate_cable_code(
     )
 
     armour = (
-        "P"
+        "N"
         if cable_type.armour_type == "SWA"
-        else "N"
+        else "P"
     )
 
     return (
@@ -384,51 +384,75 @@ def generate_deviation_number():
     return f"DEV:{today}-{next_number:03d}"
 
 
-
 def get_capa_status(capa):
     """
-    Returns the current status of a CAPA.
+    Returns the current CAPA status based on its due date.
+
+    Rules:
+    - Closed CAPAs remain Closed.
+    - If today is the due date or past the due date,
+      the CAPA becomes Overdue.
+    - Otherwise, keep the manually assigned status.
     """
 
+    # Closed CAPAs should remain closed
     if capa.status == "Closed":
         return "Closed"
+
+    # Due today OR overdue
+    if capa.due_date and date.today() >= capa.due_date:
+        return "Overdue"
+
+    # Not yet due
+    return capa.status
+
+
+def get_days_overdue(capa):
+    """
+    Returns the number of days a CAPA is overdue.
+    """
 
     if (
         capa.due_date
         and date.today() > capa.due_date
+        and capa.status != "Closed"
     ):
-        return "Overdue"
-
-    return capa.status
-
-def get_days_overdue(capa):
-
-    if (
-        capa.due_date
-        and
-        date.today() > capa.due_date
-        and
-        capa.status != "Closed"
-    ):
-
         return (
             date.today() - capa.due_date
         ).days
 
     return 0
 
+
 def update_capa_status(capa):
+    """
+    Automatically updates the database status of a CAPA.
+    """
 
+    # Closed CAPAs remain closed
     if capa.status == "Closed":
-        return
+        return False
 
+    # Due today OR overdue
     if (
         capa.due_date
-        and date.today() > capa.due_date
+        and date.today() >= capa.due_date
         and capa.status != "Overdue"
     ):
 
         capa.status = "Overdue"
+
+        return True
+
+    return False
+
+def paginate_records(query, page=1, per_page=10):
+    return query.paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+
 
 @main.route("/")
 @login_required
@@ -437,10 +461,23 @@ def home():
     company_id = current_user.company_id
 
     stats = get_dashboard_statistics(
-
         company_id
-
     )
+
+    # Inspection chart period
+    # Default = monthly
+    inspection_period = request.args.get(
+        "inspection_period",
+        "monthly"
+    )
+
+    # Only allow valid periods
+    if inspection_period not in [
+        "daily",
+        "weekly",
+        "monthly"
+    ]:
+        inspection_period = "monthly"
 
     return render_template(
 
@@ -449,69 +486,51 @@ def home():
         stats=stats,
 
         inspection_chart=inspection_chart(
-
             company_id
-
         ),
 
-        monthly_chart=monthly_inspection_chart(
-
-            company_id
-
+        # Daily / Weekly / Monthly inspection trend
+        monthly_chart=inspection_chart_by_period(
+            company_id,
+            period=inspection_period
         ),
+
+        inspection_period=inspection_period,
 
         capa_chart=capa_chart(
-
             company_id
-
         ),
 
         deviation_chart=deviation_chart(
-
             company_id
-
         ),
 
         production_chart=production_line_chart(
-
             company_id
-
         ),
 
         pass_rate=pass_rate(
-
             company_id
-
         ),
 
         overdue_capas=overdue_capas(
-
             company_id
-
         ),
 
         todays_activities=todays_activities(
-
             company_id
-
         ),
 
         recent_inspections=recent_inspections(
-
             company_id
-
         ),
 
         recent_capas=recent_capas(
-
             company_id
-
         ),
 
         recent_audits=recent_audits(
-
             company_id
-
         ),
 
         get_days_overdue=get_days_overdue
@@ -612,11 +631,32 @@ def users():
 
     ).all()
 
+    page = request.args.get(
+        "page",
+        1,
+        type=int
+    )
+
+    pagination = paginate_records(
+
+        User.query.filter_by(
+            company_id=current_user.company_id
+        ).order_by(
+            User.full_name.asc()
+        ),
+
+        page=page,
+        per_page=10
+    )
+
+    users = pagination.items
+
     return render_template(
 
         "users.html",
 
-        users=users
+        users=users,
+        pagination=pagination
 
     )
 
@@ -970,6 +1010,28 @@ def companies():
 
     ).all()
 
+    page = request.args.get(
+        "page",
+        1,
+        type=int
+    )
+
+    pagination = paginate_records(
+        Company.query.order_by(
+            Company.company_name.asc()
+        ),
+        page=page,
+        per_page=10
+    )
+
+    companies = pagination.items
+
+    return render_template(
+        "companies.html",
+        companies=companies,
+        pagination=pagination
+    )
+
     return render_template(
 
         "companies.html",
@@ -1225,9 +1287,28 @@ def customers():
         Customer.company_name
     ).all()
 
+    page = request.args.get(
+        "page",
+        1,
+        type=int
+    )
+
+    pagination = paginate_records(
+        Customer.query.filter_by(
+            company_id=current_user.company_id
+        ).order_by(
+            Customer.company_name.asc()
+        ),
+        page=page,
+        per_page=10
+    )
+
+    customers = pagination.items
+
     return render_template(
         "customers.html",
-        customers=customers
+        customers=customers,
+        pagination=pagination
     )
 
 @main.route("/customers/new", methods=["GET", "POST"])
@@ -1360,15 +1441,29 @@ def delete_customer(customer_id):
 @permission_required("manage_cable_types")
 @login_required
 def cable_types():
-    cable_types = CableType.query.filter_by(
-        company_id=current_user.company_id
-    ).order_by(
-        CableType.name
-    ).all()
+
+    page = request.args.get(
+        "page",
+        1,
+        type=int
+    )
+
+    pagination = paginate_records(
+        CableType.query.filter_by(
+            company_id=current_user.company_id
+        ).order_by(
+            CableType.name.asc()
+        ),
+        page=page,
+        per_page=10
+    )
+
+    cable_types = pagination.items
 
     return render_template(
         "cable_types.html",
-        cable_types=cable_types
+        cable_types=cable_types,
+        pagination=pagination
     )
 
 
@@ -1569,15 +1664,29 @@ def delete_cable_type(id):
 @permission_required("manage_production_lines")
 @login_required
 def production_lines():
-    production_lines = ProductionLine.query.filter_by(
-        company_id=current_user.company_id
-    ).order_by(
-        ProductionLine.line_name
-    ).all()
+
+    page = request.args.get(
+        "page",
+        1,
+        type=int
+    )
+
+    pagination = paginate_records(
+        ProductionLine.query.filter_by(
+            company_id=current_user.company_id
+        ).order_by(
+            ProductionLine.line_name.asc()
+        ),
+        page=page,
+        per_page=10
+    )
+
+    production_lines = pagination.items
 
     return render_template(
         "production_lines.html",
-        production_lines=production_lines
+        production_lines=production_lines,
+        pagination=pagination
     )
 
 
@@ -1718,15 +1827,31 @@ def delete_production_line(id):
 @login_required
 def batches():
 
-    batches = CableBatch.query.filter_by(
-        company_id=current_user.company_id
-    ).order_by(
-        CableBatch.production_date.desc()
-    ).all()
+    page = request.args.get(
+        "page",
+        1,
+        type=int
+    )
+
+    pagination = paginate_records(
+
+        CableBatch.query.filter_by(
+            company_id=current_user.company_id
+        ).order_by(
+            CableBatch.production_date.desc()
+        ),
+
+        page=page,
+        per_page=5
+
+    )
+
+    batches = pagination.items
 
     return render_template(
         "batches.html",
-        batches=batches
+        batches=batches,
+        pagination=pagination
     )
 
 
@@ -2014,15 +2139,31 @@ def delete_batch(batch_id):
 @login_required
 def inspections():
 
-    inspections = Inspection.query.filter_by(
-        company_id=current_user.company_id
-    ).order_by(
-        Inspection.inspection_date.desc()
-    ).all()
+    page = request.args.get(
+        "page",
+        1,
+        type=int
+    )
+
+    pagination = paginate_records(
+
+        Inspection.query.filter_by(
+            company_id=current_user.company_id
+        ).order_by(
+            Inspection.inspection_date.desc()
+        ),
+
+        page=page,
+
+        per_page=10
+    )
+
+    inspections = pagination.items
 
     return render_template(
         "inspections.html",
-        inspections=inspections
+        inspections=inspections,
+        pagination=pagination
     )
 
 
@@ -2234,7 +2375,15 @@ def delete_inspection(inspection_id):
 @permission_required("manage_quality_metrics")
 @login_required
 def quality_metrics():
-    metrics = (
+
+    page = request.args.get(
+        "page",
+        1,
+        type=int
+    )
+
+    pagination = paginate_records(
+
         QualityMetric.query
         .filter_by(
             company_id=current_user.company_id
@@ -2242,13 +2391,19 @@ def quality_metrics():
         .join(Inspection)
         .order_by(
             Inspection.inspection_date.desc()
-        )
-        .all()
+        ),
+
+        page=page,
+        per_page=10
+
     )
+
+    metrics = pagination.items
 
     return render_template(
         "quality_metrics.html",
-        metrics=metrics
+        metrics=metrics,
+        pagination=pagination
     )
 
 
@@ -2259,7 +2414,6 @@ def quality_metrics():
 @login_required
 @permission_required("manage_quality_metrics")
 def new_quality_metric(inspection_id):
-
     inspection = Inspection.query.filter_by(
         id=inspection_id,
         company_id=current_user.company_id
@@ -2298,7 +2452,6 @@ def new_quality_metric(inspection_id):
         )
 
         if spec:
-
             form.unit.data = spec.unit
 
             form.minimum_value.data = spec.minimum_value
@@ -2321,7 +2474,6 @@ def new_quality_metric(inspection_id):
         ).first()
 
         if existing:
-
             flash(
                 "This quality metric has already been recorded.",
                 "warning"
@@ -2377,25 +2529,25 @@ def new_quality_metric(inspection_id):
                 company_id=current_user.company_id
             ).first()
 
-            if existing_deviation: 
-                
-                deviation = existing_deviation 
-                
-            else: 
-                
-                deviation = Deviation( 
-                    company_id=current_user.company_id, 
-                    deviation_number=generate_deviation_number(), 
-                    inspection_id=inspection.id, 
-                    quality_metric_id=metric.id, 
-                    description=( 
-                        f"{specification.metric_name} " 
-                        f"failed inspection." ), 
-                    severity="Major", 
-                    status="Open", 
-                    reported_by=inspection.inspector 
-                ) 
-                
+            if existing_deviation:
+
+                deviation = existing_deviation
+
+            else:
+
+                deviation = Deviation(
+                    company_id=current_user.company_id,
+                    deviation_number=generate_deviation_number(),
+                    inspection_id=inspection.id,
+                    quality_metric_id=metric.id,
+                    description=(
+                        f"{specification.metric_name} "
+                        f"failed inspection."),
+                    severity="Major",
+                    status="Open",
+                    reported_by=inspection.inspector
+                )
+
                 db.session.add(deviation)
 
         log_activity(
@@ -2415,7 +2567,6 @@ def new_quality_metric(inspection_id):
                 and current_user.notification_enabled
                 and current_user.deviation_notification
         ):
-
             create_notification(
 
                 title="Failed Metrics",
@@ -2457,7 +2608,6 @@ def new_quality_metric(inspection_id):
                         current_user.notification_enabled
                         and current_user.inspection_notification
                 ):
-
                     create_notification(
 
                         title="Inspection Passed",
@@ -2481,7 +2631,6 @@ def new_quality_metric(inspection_id):
                         current_user.notification_enabled
                         and current_user.inspection_notification
                 ):
-
                     create_notification(
 
                         title="Inspection Failed",
@@ -2872,7 +3021,15 @@ def quality_specification_json(id):
 @permission_required("manage_specifications")
 @login_required
 def quality_specifications():
-    specifications = (
+
+    page = request.args.get(
+        "page",
+        1,
+        type=int
+    )
+
+    pagination = paginate_records(
+
         QualitySpecification.query
         .join(CableType)
         .filter(
@@ -2881,13 +3038,18 @@ def quality_specifications():
         .order_by(
             CableType.name,
             QualitySpecification.metric_name
-        )
-        .all()
+        ),
+
+        page=page,
+        per_page=10
     )
+
+    specifications = pagination.items
 
     return render_template(
         "quality_specifications.html",
-        specifications=specifications
+        specifications=specifications,
+        pagination=pagination
     )
 
 @main.route(
@@ -3125,15 +3287,28 @@ def delete_quality_specification(id):
 @permission_required("manage_deviations")
 def deviations():
 
-    deviations = Deviation.query.filter_by(
-        company_id=current_user.company_id
-    ).order_by(
-        Deviation.reported_date.desc()
-    ).all()
+    page = request.args.get(
+        "page",
+        1,
+        type=int
+    )
+
+    pagination = paginate_records(
+        Deviation.query.filter_by(
+            company_id=current_user.company_id
+        ).order_by(
+            Deviation.reported_date.desc()
+        ),
+        page=page,
+        per_page=10
+    )
+
+    deviations = pagination.items
 
     return render_template(
         "deviations.html",
-        deviations=deviations
+        deviations=deviations,
+        pagination=pagination
     )
 
 
@@ -3286,13 +3461,21 @@ def delete_deviation(deviation_id):
     )
 
 
-
 @main.route("/capa")
 @permission_required("manage_capa")
 @login_required
 def capa():
 
-    capas = CAPA.query.filter_by(
+    # -----------------------------------------------------
+    # Get ALL CAPAs for this company
+    # -----------------------------------------------------
+    #
+    # We intentionally get all records first because the
+    # system must check every CAPA for overdue status,
+    # including CAPAs that are currently on page 2, 3, etc.
+    #
+
+    all_capas = CAPA.query.filter_by(
         company_id=current_user.company_id
     ).order_by(
         CAPA.created_at.desc()
@@ -3300,25 +3483,120 @@ def capa():
 
     changed = False
 
-    for c in capas:
+    # -----------------------------------------------------
+    # Automatically update overdue CAPAs
+    # -----------------------------------------------------
 
-        old_status = c.status
+    for c in all_capas:
 
-        update_capa_status(c)
+        status_changed = update_capa_status(c)
 
-        if old_status != c.status:
+        if status_changed:
+
             changed = True
 
-        c.display_status = c.status
+            # -------------------------------------------------
+            # Create notification only when CAPA JUST became
+            # overdue.
+            # -------------------------------------------------
+            if (
+                    c.status == "Overdue"
+                    and current_user.notification_enabled
+                    and current_user.capa_notification
+            ):
+
+                days = get_days_overdue(c)
+
+                if days == 0:
+                    overdue_text = "today"
+                elif days == 1:
+                    overdue_text = "1 day"
+                else:
+                    overdue_text = f"{days} days"
+
+                create_notification(
+
+                    title="Overdue CAPA",
+
+                    message=(
+                        f"CAPA {c.deviation.deviation_number} "
+                        f"is overdue {overdue_text}. "
+                        f"Production "
+                        f"{c.deviation.inspection.batch.production_line.line_name} "
+                        f"has been flagged for automatic lockdown "
+                        f"until the issue is resolved."
+                    ),
+
+                    category="CAPA",
+
+                    priority="High",
+
+                    link=url_for(
+                        "main.view_capa",
+                        capa_id=c.id
+                    )
+                )
+
+
+        # -------------------------------------------------
+        # Template display values
+        # -------------------------------------------------
+
+        c.display_status = get_capa_status(c)
+
         c.days_overdue = get_days_overdue(c)
+
+    # -----------------------------------------------------
+    # Save automatic status changes
+    # -----------------------------------------------------
 
     if changed:
         db.session.commit()
 
-    return render_template(
-        "capa.html",
-        capas=capas
+    # -----------------------------------------------------
+    # Pagination
+    # -----------------------------------------------------
+
+    page = request.args.get(
+        "page",
+        1,
+        type=int
     )
+
+    pagination = paginate_records(
+
+        CAPA.query.filter_by(
+            company_id=current_user.company_id
+        ).order_by(
+            CAPA.created_at.desc()
+        ),
+
+        page=page,
+
+        per_page=10
+    )
+
+    capas = pagination.items
+
+    # -----------------------------------------------------
+    # Recalculate values for current page
+    # -----------------------------------------------------
+
+    for c in capas:
+
+        c.display_status = get_capa_status(c)
+
+        c.days_overdue = get_days_overdue(c)
+
+    return render_template(
+
+        "capa.html",
+
+        capas=capas,
+
+        pagination=pagination
+    )
+
 
 @main.route(
     "/capa/new/<int:deviation_id>",
@@ -3328,10 +3606,18 @@ def capa():
 @permission_required("manage_capa")
 def new_capa(deviation_id):
 
+    # -----------------------------------------------------
+    # Get deviation belonging to current company
+    # -----------------------------------------------------
+
     deviation = Deviation.query.filter_by(
         id=deviation_id,
         company_id=current_user.company_id
     ).first_or_404()
+
+    # -----------------------------------------------------
+    # Prevent duplicate CAPA
+    # -----------------------------------------------------
 
     existing = CAPA.query.filter_by(
         deviation_id=deviation.id
@@ -3355,6 +3641,10 @@ def new_capa(deviation_id):
 
     if form.validate_on_submit():
 
+        # -------------------------------------------------
+        # Create CAPA
+        # -------------------------------------------------
+
         capa = CAPA(
 
             company_id=current_user.company_id,
@@ -3374,10 +3664,31 @@ def new_capa(deviation_id):
             effectiveness=form.effectiveness.data,
 
             status=form.status.data
-
         )
 
+        # -------------------------------------------------
+        # Automatically determine initial status
+        # -------------------------------------------------
+        #
+        # If the CAPA is created with today's date or an
+        # earlier due date, it immediately becomes Overdue.
+        #
+        # Closed is never changed to Overdue.
+        #
+
+        if (
+            capa.status != "Closed"
+            and capa.due_date
+            and date.today() >= capa.due_date
+        ):
+            capa.status = "Overdue"
+
         db.session.add(capa)
+
+        # -------------------------------------------------
+        # Audit Trail
+        # -------------------------------------------------
+
         log_activity(
 
             module="CAPA",
@@ -3386,42 +3697,92 @@ def new_capa(deviation_id):
 
             description=(
                 f"{current_user.full_name} created "
-                f"CAPA for deviation '{deviation.deviation_number}'"
+                f"CAPA for deviation "
+                f"'{deviation.deviation_number}'"
             )
-
         )
 
         db.session.commit()
+
+        # -------------------------------------------------
+        # Success message
+        # -------------------------------------------------
 
         flash(
             "CAPA created successfully.",
             "success"
         )
 
+        # -------------------------------------------------
+        # Notification
+        # -------------------------------------------------
+
         if (
-                current_user.notification_enabled
-                and current_user.capa_notification
+            current_user.notification_enabled
+            and current_user.capa_notification
         ):
 
-            create_notification(
+            if capa.status == "Overdue":
 
-                title="New CAPA",
+                days = get_days_overdue(capa)
 
-                message=f"CAPA created for {capa.deviation.deviation_number}, and assigned to {capa.assigned_to} under {capa.deviation.inspection.batch.production_line.line_name}.",
+                if days == 0:
 
-                category="CAPA",
+                    message = (
+                        f"CAPA {capa.deviation.deviation_number} "
+                        f"was created with a due date of today. "
+                        f"It is now Overdue."
+                    )
 
-                priority="Normal",
+                else:
 
-                link=url_for(
+                    message = (
+                        f"CAPA {capa.deviation.deviation_number} "
+                        f"was created with a due date that has "
+                        f"already passed. It is now Overdue "
+                        f"by {days} "
+                        f"{'day' if days == 1 else 'days'}."
+                    )
 
-                    "main.view_capa",
+                create_notification(
 
-                    capa_id=capa.id
+                    title="Overdue CAPA",
 
+                    message=message,
+
+                    category="CAPA",
+
+                    priority="High",
+
+                    link=url_for(
+                        "main.view_capa",
+                        capa_id=capa.id
+                    )
                 )
 
-            )
+            else:
+
+                create_notification(
+
+                    title="New CAPA",
+
+                    message=(
+                        f"CAPA created for "
+                        f"{capa.deviation.deviation_number}, "
+                        f"and assigned to "
+                        f"{capa.assigned_to} under "
+                        f"{capa.deviation.inspection.batch.production_line.line_name}."
+                    ),
+
+                    category="CAPA",
+
+                    priority="Normal",
+
+                    link=url_for(
+                        "main.view_capa",
+                        capa_id=capa.id
+                    )
+                )
 
         return redirect(
             url_for(
@@ -3446,18 +3807,68 @@ def view_capa(capa_id):
         company_id=current_user.company_id
     ).first_or_404()
 
-    capa.display_status = get_capa_status(
-        capa
-    )
+    # -----------------------------------------------------
+    # Automatically update status
+    # -----------------------------------------------------
 
-    capa.days_overdue = get_days_overdue(
-        capa
-    )
+    changed = update_capa_status(capa)
+
+    # -----------------------------------------------------
+    # If CAPA just became overdue, create notification
+    # -----------------------------------------------------
+
+    if changed and capa.status == "Overdue":
+
+        if (
+            current_user.notification_enabled
+            and current_user.capa_notification
+        ):
+
+            days = get_days_overdue(capa)
+
+            create_notification(
+
+                title="Overdue CAPA",
+
+                message=(
+                    f"CAPA {capa.deviation.deviation_number} "
+                    f"is overdue by {days} "
+                    f"{'day' if days == 1 else 'days'}. "
+                    f"Production "
+                    f"{capa.deviation.inspection.batch.production_line.line_name} "
+                    f"has been flagged for automatic lockdown "
+                    f"until the issue is resolved."
+                ),
+
+                category="CAPA",
+
+                priority="High",
+
+                link=url_for(
+                    "main.view_capa",
+                    capa_id=capa.id
+                )
+            )
+
+        db.session.commit()
+
+    # -----------------------------------------------------
+    # Display values
+    # -----------------------------------------------------
+
+    capa.display_status = get_capa_status(capa)
+
+    capa.days_overdue = get_days_overdue(capa)
 
     return render_template(
         "view_capa.html",
         capa=capa
     )
+
+
+# =========================================================
+# EDIT CAPA
+# =========================================================
 
 @main.route(
     "/capa/<int:capa_id>/edit",
@@ -3476,10 +3887,17 @@ def edit_capa(capa_id):
 
     if form.validate_on_submit():
 
-        # Store the previous status
-        old_status = capa.status
+        # -------------------------------------------------
+        # Store previous values
+        # -------------------------------------------------
 
+        old_status = capa.status
+        old_due_date = capa.due_date
+
+        # -------------------------------------------------
         # Update fields
+        # -------------------------------------------------
+
         capa.corrective_action = form.corrective_action.data
 
         capa.preventive_action = form.preventive_action.data
@@ -3494,7 +3912,39 @@ def edit_capa(capa_id):
 
         capa.effectiveness = form.effectiveness.data
 
+        # -------------------------------------------------
+        # Automatically determine status from new due date
+        # -------------------------------------------------
+        #
+        # This is important when an overdue CAPA is edited.
+        #
+        # Example:
+        #
+        # Old:
+        # Due date = 1 September
+        # Status   = Overdue
+        #
+        # User edits:
+        # Due date = 15 September
+        # Status   = In Progress
+        #
+        # It remains In Progress until 15 September.
+        #
+        # On 15 September, it automatically becomes Overdue.
+        #
+
+        if (
+            capa.status != "Closed"
+            and capa.due_date
+            and date.today() >= capa.due_date
+        ):
+
+            capa.status = "Overdue"
+
+        # -------------------------------------------------
         # Audit Trail
+        # -------------------------------------------------
+
         if old_status != "Closed" and capa.status == "Closed":
 
             log_activity(
@@ -3505,9 +3955,9 @@ def edit_capa(capa_id):
 
                 description=(
                     f"{current_user.full_name} closed "
-                    f"CAPA for deviation '{capa.deviation.deviation_number}'"
+                    f"CAPA for deviation "
+                    f"'{capa.deviation.deviation_number}'"
                 )
-
             )
 
         else:
@@ -3519,11 +3969,15 @@ def edit_capa(capa_id):
                 action="Update",
 
                 description=(
-                    f"{current_user.full_name} closed "
-                    f"CAPA for deviation '{capa.deviation.deviation_number}'"
+                    f"{current_user.full_name} updated "
+                    f"CAPA for deviation "
+                    f"'{capa.deviation.deviation_number}'"
                 )
-
             )
+
+        # -------------------------------------------------
+        # Save changes
+        # -------------------------------------------------
 
         db.session.commit()
 
@@ -3546,6 +4000,10 @@ def edit_capa(capa_id):
     )
 
 
+# =========================================================
+# DELETE CAPA
+# =========================================================
+
 @main.route("/capa/<int:capa_id>/delete")
 @login_required
 @permission_required("manage_capa")
@@ -3556,6 +4014,10 @@ def delete_capa(capa_id):
         company_id=current_user.company_id
     ).first_or_404()
 
+    # -----------------------------------------------------
+    # Audit Trail
+    # -----------------------------------------------------
+
     log_activity(
 
         module="CAPA",
@@ -3564,10 +4026,14 @@ def delete_capa(capa_id):
 
         description=(
             f"{current_user.full_name} deleted "
-            f"CAPA for deviation '{capa.deviation.deviation_number}'"
+            f"CAPA for deviation "
+            f"'{capa.deviation.deviation_number}'"
         )
-
     )
+
+    # -----------------------------------------------------
+    # Delete
+    # -----------------------------------------------------
 
     db.session.delete(capa)
 
@@ -3581,6 +4047,8 @@ def delete_capa(capa_id):
     return redirect(
         url_for("main.capa")
     )
+
+
 
 @main.route("/notifications")
 @permission_required("manage_notifications")
@@ -3819,62 +4287,98 @@ def delete_notification(notification_id):
 @main.route("/audit-trail")
 @permission_required("view_audit")
 @login_required
-
 def audit_trail():
+
+    # --------------------------------
+    # Base query
+    # --------------------------------
 
     logs = AuditLog.query
 
+    # --------------------------------
     # Search
-    search = request.args.get("search", "")
+    # --------------------------------
+
+    search = request.args.get(
+        "search",
+        "",
+        type=str
+    ).strip()
 
     if search:
 
         logs = logs.filter(
-
-            AuditLog.description.ilike(f"%{search}%")
-
+            AuditLog.description.ilike(
+                f"%{search}%"
+            )
         )
 
+    # --------------------------------
     # Module Filter
-    module = request.args.get("module", "")
+    # --------------------------------
+
+    module = request.args.get(
+        "module",
+        "",
+        type=str
+    ).strip()
 
     if module:
 
         logs = logs.filter(
-
             AuditLog.module == module
-
         )
 
+    # --------------------------------
     # Action Filter
-    action = request.args.get("action", "")
+    # --------------------------------
+
+    action = request.args.get(
+        "action",
+        "",
+        type=str
+    ).strip()
 
     if action:
 
         logs = logs.filter(
-
             AuditLog.action == action
-
         )
 
-    logs = logs.order_by(
+    # --------------------------------
+    # Pagination
+    # --------------------------------
 
-        AuditLog.created_at.desc()
+    page = request.args.get(
+        "page",
+        1,
+        type=int
+    )
 
-    ).all()
+    pagination = paginate_records(
+        logs.order_by(
+            AuditLog.created_at.desc()
+        ),
+        page=page,
+        per_page=10
+    )
+
+    # If your paginate_records() returns the
+    # Pagination object only:
+    logs = pagination.items
 
     return render_template(
-
         "audit_trail.html",
 
         logs=logs,
+
+        pagination=pagination,
 
         search=search,
 
         module=module,
 
         action=action
-
     )
 
 @main.route("/reports")
@@ -5057,7 +5561,7 @@ def export_production_excel():
 
             f"{batch.customer.company_name} \n{batch.customer.address}",
 
-            f"{batch.cable_type.pair_count} x {batch.cable_type.conductor_size} - \n{batch.cable_type.name}",
+            f"{batch.cable_type.pair_count} x {batch.cable_type.conductor_size} -\n {batch.cable_type.name}",
 
             batch.production_line.line_name,
 
@@ -5710,159 +6214,218 @@ def export_audit_pdf():
     )
 
 
+
 @main.route("/reports/company")
 @login_required
 @system_admin_required
 def company_report():
 
     # =========================================================
-    # ALL COMPANIES
+    # PAGE NUMBERS — EACH TABLE HAS ITS OWN PAGINATION
     # =========================================================
 
-    companies = Company.query.order_by(
+    companies_page = request.args.get(
+        "companies_page", 1, type=int
+    )
+
+    users_page = request.args.get(
+        "users_page", 1, type=int
+    )
+
+    batches_page = request.args.get(
+        "batches_page", 1, type=int
+    )
+
+    inspections_page = request.args.get(
+        "inspections_page", 1, type=int
+    )
+
+    deviations_page = request.args.get(
+        "deviations_page", 1, type=int
+    )
+
+    capas_page = request.args.get(
+        "capas_page", 1, type=int
+    )
+
+
+    # =========================================================
+    # PAGINATED RECORDS
+    # =========================================================
+
+    companies_pagination = paginate_records(
+        Company.query.order_by(
+            Company.company_name
+        ),
+        page=companies_page,
+        per_page=5
+    )
+
+    companies = companies_pagination.items
+
+
+    users_pagination = paginate_records(
+        User.query.order_by(
+            User.full_name
+        ),
+        page=users_page,
+        per_page=5
+    )
+
+    users = users_pagination.items
+
+
+    batches_pagination = paginate_records(
+        CableBatch.query.order_by(
+            CableBatch.production_date.desc()
+        ),
+        page=batches_page,
+        per_page=5
+    )
+
+    batches = batches_pagination.items
+
+
+    inspections_pagination = paginate_records(
+        Inspection.query.order_by(
+            Inspection.inspection_date.desc()
+        ),
+        page=inspections_page,
+        per_page=5
+    )
+
+    inspections = inspections_pagination.items
+
+
+    deviations_pagination = paginate_records(
+        Deviation.query.order_by(
+            Deviation.reported_date.desc()
+        ),
+        page=deviations_page,
+        per_page=5
+    )
+
+    deviations = deviations_pagination.items
+
+
+    capas_pagination = paginate_records(
+        CAPA.query.order_by(
+            CAPA.due_date.desc()
+        ),
+        page=capas_page,
+        per_page=5
+    )
+
+    capas = capas_pagination.items
+
+
+    # =========================================================
+    # ALL RECORDS FOR STATISTICS
+    # =========================================================
+
+    all_companies = Company.query.order_by(
         Company.company_name
     ).all()
 
-    # =========================================================
-    # ALL USERS
-    # =========================================================
+    all_users = User.query.all()
 
-    users = User.query.order_by(
-        User.full_name
-    ).all()
+    all_batches = CableBatch.query.all()
 
-    # =========================================================
-    # ALL PRODUCTION
-    # =========================================================
+    all_inspections = Inspection.query.all()
 
-    batches = CableBatch.query.order_by(
-        CableBatch.production_date.desc()
-    ).all()
+    all_deviations = Deviation.query.all()
+
+    all_capas = CAPA.query.all()
+
 
     # =========================================================
-    # ALL INSPECTIONS
+    # GLOBAL STATISTICS
     # =========================================================
 
-    inspections = Inspection.query.order_by(
-        Inspection.inspection_date.desc()
-    ).all()
-
-    # =========================================================
-    # ALL DEVIATIONS
-    # =========================================================
-
-    deviations = Deviation.query.order_by(
-        Deviation.reported_date.desc()
-    ).all()
-
-    # =========================================================
-    # ALL CAPA
-    # =========================================================
-
-    capas = CAPA.query.order_by(
-        CAPA.due_date.desc()
-    ).all()
-
-    # =========================================================
-    # COMPANY COUNTS
-    # =========================================================
-
-    total_companies = len(companies)
+    total_companies = len(all_companies)
 
     active_companies = sum(
         1
-        for company in companies
+        for company in all_companies
         if company.is_active
     )
 
-    # =========================================================
-    # USER COUNTS
-    # =========================================================
 
-    total_users = len(users)
+    total_users = len(all_users)
 
     active_users = sum(
         1
-        for user in users
+        for user in all_users
         if user.is_active
     )
 
-    # =========================================================
-    # PRODUCTION STATISTICS
-    # =========================================================
 
-    total_batches = len(batches)
+    total_batches = len(all_batches)
 
     completed_batches = sum(
         1
-        for batch in batches
+        for batch in all_batches
         if batch.status == "Completed"
     )
 
+
     total_cable_length = sum(
         (batch.cable_length or 0)
-        for batch in batches
+        for batch in all_batches
     )
 
-    # =========================================================
-    # INSPECTION STATISTICS
-    # =========================================================
 
-    total_inspections = len(inspections)
+    total_inspections = len(all_inspections)
 
     passed_inspections = sum(
         1
-        for inspection in inspections
+        for inspection in all_inspections
         if inspection.overall_result == "Pass"
     )
 
     failed_inspections = sum(
         1
-        for inspection in inspections
+        for inspection in all_inspections
         if inspection.overall_result == "Fail"
     )
 
     pending_inspections = sum(
         1
-        for inspection in inspections
-        if inspection.overall_result
-        not in ["Pass", "Fail"]
+        for inspection in all_inspections
+        if inspection.overall_result not in [
+            "Pass",
+            "Fail"
+        ]
     )
 
-    if total_inspections > 0:
 
-        inspection_pass_rate = round(
+    inspection_pass_rate = (
+        round(
             (passed_inspections / total_inspections) * 100,
             2
         )
+        if total_inspections > 0
+        else 0
+    )
 
-    else:
 
-        inspection_pass_rate = 0
-
-    # =========================================================
-    # DEVIATION STATISTICS
-    # =========================================================
-
-    total_deviations = len(deviations)
+    total_deviations = len(all_deviations)
 
     open_deviations = sum(
         1
-        for deviation in deviations
+        for deviation in all_deviations
         if deviation.status == "Open"
     )
 
-    # =========================================================
-    # CAPA STATISTICS
-    # =========================================================
 
-    total_capa = len(capas)
+    total_capa = len(all_capas)
 
     open_capa = sum(
         1
-        for capa in capas
+        for capa in all_capas
         if capa.status == "Open"
     )
+
 
     # =========================================================
     # COMPANY-BY-COMPANY STATISTICS
@@ -5870,37 +6433,38 @@ def company_report():
 
     company_statistics = []
 
-    for company in companies:
+    for company in all_companies:
 
         company_users = [
             user
-            for user in users
+            for user in all_users
             if user.company_id == company.id
         ]
 
         company_batches = [
             batch
-            for batch in batches
+            for batch in all_batches
             if batch.company_id == company.id
         ]
 
         company_inspections = [
             inspection
-            for inspection in inspections
+            for inspection in all_inspections
             if inspection.company_id == company.id
         ]
 
         company_deviations = [
             deviation
-            for deviation in deviations
+            for deviation in all_deviations
             if deviation.company_id == company.id
         ]
 
         company_capas = [
             capa
-            for capa in capas
+            for capa in all_capas
             if capa.company_id == company.id
         ]
+
 
         company_passed = sum(
             1
@@ -5912,19 +6476,19 @@ def company_report():
             company_inspections
         )
 
-        if company_inspection_count > 0:
 
-            company_pass_rate = round(
+        company_pass_rate = (
+            round(
                 (
                     company_passed
                     / company_inspection_count
                 ) * 100,
                 2
             )
+            if company_inspection_count > 0
+            else 0
+        )
 
-        else:
-
-            company_pass_rate = 0
 
         company_statistics.append({
 
@@ -5972,59 +6536,59 @@ def company_report():
             )
         })
 
+
     # =========================================================
-    # RENDER REPORT
+    # RENDER
     # =========================================================
 
     return render_template(
         "reports/company_report.html",
 
         companies=companies,
+        companies_pagination=companies_pagination,
 
         users=users,
+        users_pagination=users_pagination,
 
         batches=batches,
+        batches_pagination=batches_pagination,
 
         inspections=inspections,
+        inspections_pagination=inspections_pagination,
 
         deviations=deviations,
+        deviations_pagination=deviations_pagination,
 
         capas=capas,
+        capas_pagination=capas_pagination,
 
         company_statistics=company_statistics,
 
         total_companies=total_companies,
-
         active_companies=active_companies,
 
         total_users=total_users,
-
         active_users=active_users,
 
         total_batches=total_batches,
-
         completed_batches=completed_batches,
 
         total_cable_length=total_cable_length,
 
         total_inspections=total_inspections,
-
         passed_inspections=passed_inspections,
-
         failed_inspections=failed_inspections,
-
         pending_inspections=pending_inspections,
-
         inspection_pass_rate=inspection_pass_rate,
 
         total_deviations=total_deviations,
-
         open_deviations=open_deviations,
 
         total_capa=total_capa,
-
         open_capa=open_capa
     )
+
+
 
 @main.route("/reports/company/excel")
 @login_required
@@ -6040,7 +6604,6 @@ def company_report_pdf():
 
 
     return export_all_companies_pdf()
-
 
 @main.route("/settings")
 @login_required
@@ -6372,8 +6935,6 @@ def live_search():
 
     return jsonify(results)
 
-
-
 @main.route("/push/subscribe", methods=["POST"])
 @login_required
 def push_subscribe():
@@ -6464,6 +7025,7 @@ def push_unsubscribe():
         "success": True
     })
 
+from .push_utils import get_vapid_public_key
 @main.route("/push/public-key")
 @login_required
 def push_public_key():
@@ -6471,9 +7033,4 @@ def push_public_key():
     return jsonify({
         "publicKey": get_vapid_public_key()
     })
-
-
-
-
-
 
