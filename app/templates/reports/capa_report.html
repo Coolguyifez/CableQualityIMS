@@ -403,12 +403,20 @@ Closed
 
 {% elif capa.status == "Overdue" %}
 
+{% set days = get_days_overdue(capa) %}
+
 <span class="badge bg-danger">
 
-Overdue
-
-({{ get_days_overdue(capa) }} {{ 'day' if get_days_overdue(capa) in [0, 1] else 'days' }})
-
+    Overdue
+    (
+    {% if days == 0 %}
+        today
+    {% elif days == 1 %}
+        1 day
+    {% else %}
+        {{ days }} days
+    {% endif %}
+    )
 </span>
 
 {% elif capa.status == "In Progress" %}
