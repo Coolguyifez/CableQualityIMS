@@ -1,3 +1,4 @@
+from flask import current_app
 from flask_login import current_user
 
 from .extensions import db
@@ -67,6 +68,7 @@ def create_notification(
         db.session.add(notification)
 
 
+    # Save in-app notifications first
     db.session.commit()
 
 
@@ -77,32 +79,33 @@ def create_notification(
     for user in users:
 
         # Master notification switch
-
         if not user.notification_enabled:
-
             continue
 
 
+        # --------------------------------
         # Category preferences
+        # --------------------------------
 
         if category == "Inspection":
 
             if not user.inspection_notification:
-
                 continue
 
         elif category == "Deviation":
 
             if not user.deviation_notification:
-
                 continue
 
         elif category == "CAPA":
 
             if not user.capa_notification:
-
                 continue
 
+
+        # --------------------------------
+        # Get user's push subscriptions
+        # --------------------------------
 
         subscriptions = PushSubscription.query.filter_by(
 
@@ -113,18 +116,44 @@ def create_notification(
         ).all()
 
 
+        # --------------------------------
+        # Send push to each device
+        # --------------------------------
+
         for subscription in subscriptions:
 
-            send_push_notification(
+            try:
 
-                subscription=subscription,
+                send_push_notification(
 
-                title=title,
+                    subscription=subscription,
 
-                message=message,
+                    title=title,
 
-                link=link,
+                    message=message,
 
-                priority=priority
+                    link=link,
 
-            )
+                    priority=priority
+
+                )
+
+            except Exception as e:
+
+                # Push notification failure must
+                # never break the main application.
+
+                current_app.logger.error(
+
+                    f"Push notification failed for "
+                    f"user {user.id}: {e}",
+
+                    exc_info=True
+
+                )
+
+                # Make sure a failed push does not
+                # leave the SQLAlchemy transaction
+                # in a broken state.
+
+                db.session.rollback()
