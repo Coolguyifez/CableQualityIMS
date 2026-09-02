@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session
 from .forms import CustomerForm, CableTypeForm, ProductionLineForm, CableBatchForm, InspectionForm, QualityMetricForm,  QualitySpecificationForm, DeviationForm, CAPAForm, CompanyForm, ThemeSettingsForm, AccountSettingsForm, NotificationSettingsForm
 from .models import Customer, User, CableType, ProductionLine, CableBatch, Inspection, QualityMetric, QualitySpecification, Deviation, CAPA, Notification, Company, AuditLog, PushSubscription
 from .extensions import db, bcrypt
@@ -2227,6 +2227,17 @@ def new_inspection():
             "Inspection saved successfully.",
             "success"
         )
+        create_notification(
+            title="Inspection pending",
+            message=f"{inspection.inspection_number} is awaiting quality metric evaluation.",
+            category="Inspection",
+            priority="Normal",
+            link=url_for(
+                "main.view_inspection",
+                inspection_id=inspection.id
+            )
+        )
+        
 
         return redirect(
             url_for("main.inspections")
