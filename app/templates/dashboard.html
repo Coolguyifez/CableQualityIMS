@@ -154,25 +154,57 @@ Overdue CAPAs
     </div>
 
     <!-- Monthly Trend -->
-    <div class="col-lg-6">
+    <!-- Inspection Trend -->
+<div class="col-lg-6">
 
-        <div class="card shadow-sm">
+    <div class="card shadow-sm h-100">
 
-            <div class="card-header fw-bold">
+        <div class="card-header">
 
-                Monthly Inspection Trend
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
 
-            </div>
+                <div class="fw-bold">
+                    Inspection Trend
+                </div>
 
-            <div class="card-body">
+                <div  role="group">
 
-                <canvas id="monthlyChart"></canvas>
+                    <a
+                        href="{{ url_for(request.endpoint, inspection_period='daily') }}"
+                        class="btn {% if inspection_period == 'daily' %}btn-secondary{% else %}btn-outline-secondary{% endif %}"
+                    >
+                        Daily
+                    </a>
+
+                    <a
+                        href="{{ url_for(request.endpoint, inspection_period='weekly') }}"
+                        class="btn {% if inspection_period == 'weekly' %}btn-secondary{% else %}btn-outline-secondary{% endif %}"
+                    >
+                        Weekly
+                    </a>
+
+                    <a
+                        href="{{ url_for(request.endpoint, inspection_period='monthly') }}"
+                        class="btn {% if inspection_period == 'monthly' or not inspection_period %}btn-secondary{% else %}btn-outline-secondary{% endif %}"
+                    >
+                        Monthly
+                    </a>
+
+                </div>
 
             </div>
 
         </div>
 
+        <div class="card-body">
+
+            <canvas id="monthlyChart"></canvas>
+
+        </div>
+
     </div>
+
+</div>
 
 </div>
 
@@ -470,12 +502,21 @@ Due:
 
 {% elif capa.status == "Overdue" %}
 
+{% set days = get_days_overdue(capa) %}
+
 <span class="badge bg-danger">
 
     Overdue
+    (
+    {% if days == 0 %}
+        today
+    {% elif days == 1 %}
+        1 day
+    {% else %}
+        {{ days }} days
+    {% endif %}
+    )
 
-    ({{ get_days_overdue(capa) }} {{ 'day' if get_days_overdue(capa) in [0, 1] else 'days' }})
-    
 </span>
 
 {% elif capa.status == "In Progress" %}
@@ -726,7 +767,7 @@ labels:{{ monthly_chart["labels"]|tojson }},
 
 datasets:[{
 
-label:"Inspections",
+label:"{% if inspection_period == 'daily' %}Daily Inspections{% elif inspection_period == 'weekly' %}Weekly Inspections{% else %}Monthly Inspections{% endif %}",
 
 data:{{ monthly_chart["data"]|tojson }},
 
