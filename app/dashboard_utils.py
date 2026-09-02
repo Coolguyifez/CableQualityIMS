@@ -282,18 +282,15 @@ def deviation_chart(company_id):
 
     }
 
-def monthly_inspection_chart(company_id):
+def inspection_chart_by_period(company_id, period="monthly"):
 
     results = (
         db.session.query(
-            Inspection.inspection_date,
-            func.count(Inspection.id).label("count")
+            Inspection.inspection_date
         )
         .filter(
-            Inspection.company_id == company_id
-        )
-        .group_by(
-            Inspection.inspection_date
+            Inspection.company_id == company_id,
+            Inspection.inspection_date.isnot(None)
         )
         .order_by(
             Inspection.inspection_date
@@ -301,21 +298,89 @@ def monthly_inspection_chart(company_id):
         .all()
     )
 
-    labels = [
-        inspection_date.strftime("%d %b %Y")
-        for inspection_date, _ in results
-    ]
+    period_counts = {}
 
-    data = [
-        count
-        for _, count in results
-    ]
+    for (inspection_date,) in results:
+
+        # Convert datetime to date if necessary
+        if hasattr(inspection_date, "date"):
+            inspection_date = inspection_date.date()
+
+        # Daily
+        if period == "daily":
+
+            period_key = inspection_date
+
+        # Weekly
+        elif period == "weekly":
+
+            # Monday is the beginning of the week
+            period_key = (
+                inspection_date
+                - timedelta(
+                    days=inspection_date.weekday()
+                )
+            )
+
+        # Monthly
+        else:
+
+            period_key = (
+                inspection_date.year,
+                inspection_date.month
+            )
+
+        period_counts[period_key] = (
+            period_counts.get(period_key, 0) + 1
+        )
+
+    labels = []
+    data = []
+
+    for period_key, count in period_counts.items():
+
+        # Daily labels
+        if period == "daily":
+
+            labels.append(
+                period_key.strftime("%d %b %Y")
+            )
+
+        # Weekly labels
+        elif period == "weekly":
+
+            week_end = (
+                period_key
+                + timedelta(days=6)
+            )
+
+            labels.append(
+                f"{period_key.strftime('%d %b')} - "
+                f"{week_end.strftime('%d %b %Y')}"
+            )
+
+        # Monthly labels
+        else:
+
+            year, month = period_key
+
+            month_date = date(
+                year,
+                month,
+                1
+            )
+
+            labels.append(
+                month_date.strftime("%b %Y")
+            )
+
+        data.append(count)
 
     return {
         "labels": labels,
         "data": data
     }
-
+    
 def production_line_chart(company_id):
 
     labels = []
@@ -427,10 +492,12 @@ def overdue_capas(company_id):
     return CAPA.query.filter(
 
         CAPA.company_id == company_id,
-
+        
         CAPA.status != "Closed",
-
-        CAPA.due_date < date.today()
+        
+        CAPA.due_date.isnot(None),
+        
+        CAPA.due_date <= date.today()
 
     ).count()
 
