@@ -2550,8 +2550,7 @@ def new_quality_metric(inspection_id):
 
         if (
                 deviation is not None
-                and current_user.notification_enabled
-                and current_user.deviation_notification
+                
         ):
             create_notification(
 
@@ -2590,49 +2589,42 @@ def new_quality_metric(inspection_id):
 
             if inspection.overall_result == "Pass":
 
-                if (
-                        current_user.notification_enabled
-                        and current_user.inspection_notification
-                ):
-                    create_notification(
+                
+                create_notification(
 
-                        title="Inspection Passed",
+                    title="Inspection Passed",
 
-                        message=f"{inspection.inspection_number} passed all quality checks.",
+                    message=f"{inspection.inspection_number} passed all quality checks.",
 
-                        category="Inspection",
+                    category="Inspection",
 
-                        priority="Normal",
+                    priority="Normal",
 
-                        link=url_for(
-                            "main.view_inspection",
-                            inspection_id=inspection.id
-                        )
-
+                    link=url_for(
+                        "main.view_inspection",
+                        inspection_id=inspection.id
                     )
+
+                )
 
             elif inspection.overall_result == "Fail":
+                
+                create_notification(
 
-                if (
-                        current_user.notification_enabled
-                        and current_user.inspection_notification
-                ):
-                    create_notification(
+                    title="Inspection Failed",
 
-                        title="Inspection Failed",
+                    message=f"{inspection.inspection_number} failed one or more quality checks.",
 
-                        message=f"{inspection.inspection_number} failed one or more quality checks.",
+                    category="Inspection",
 
-                        category="Inspection",
+                    priority="High",
 
-                        priority="High",
-
-                        link=url_for(
-                            "main.view_inspection",
-                            inspection_id=inspection.id
-                        )
-
+                    link=url_for(
+                        "main.view_inspection",
+                        inspection_id=inspection.id
                     )
+
+                )
 
         flash(
             "Quality Metric recorded successfully.",
@@ -3487,8 +3479,6 @@ def capa():
             # -------------------------------------------------
             if (
                     c.status == "Overdue"
-                    and current_user.notification_enabled
-                    and current_user.capa_notification
             ):
 
                 days = get_days_overdue(c)
@@ -3703,72 +3693,67 @@ def new_capa(deviation_id):
         # Notification
         # -------------------------------------------------
 
-        if (
-            current_user.notification_enabled
-            and current_user.capa_notification
-        ):
+        if capa.status == "Overdue":
 
-            if capa.status == "Overdue":
+            days = get_days_overdue(capa)
 
-                days = get_days_overdue(capa)
+            if days == 0:
 
-                if days == 0:
-
-                    message = (
-                        f"CAPA {capa.deviation.deviation_number} "
-                        f"was created with a due date of today. "
-                        f"It is now Overdue."
-                    )
-
-                else:
-
-                    message = (
-                        f"CAPA {capa.deviation.deviation_number} "
-                        f"was created with a due date that has "
-                        f"already passed. It is now Overdue "
-                        f"by {days} "
-                        f"{'day' if days == 1 else 'days'}."
-                    )
-
-                create_notification(
-
-                    title="Overdue CAPA",
-
-                    message=message,
-
-                    category="CAPA",
-
-                    priority="High",
-
-                    link=url_for(
-                        "main.view_capa",
-                        capa_id=capa.id
-                    )
+                message = (
+                    f"CAPA {capa.deviation.deviation_number} "
+                    f"was created with a due date of today. "
+                    f"It is now Overdue."
                 )
 
             else:
 
-                create_notification(
-
-                    title="New CAPA",
-
-                    message=(
-                        f"CAPA created for "
-                        f"{capa.deviation.deviation_number}, "
-                        f"and assigned to "
-                        f"{capa.assigned_to} under "
-                        f"{capa.deviation.inspection.batch.production_line.line_name}."
-                    ),
-
-                    category="CAPA",
-
-                    priority="Normal",
-
-                    link=url_for(
-                        "main.view_capa",
-                        capa_id=capa.id
-                    )
+                message = (
+                    f"CAPA {capa.deviation.deviation_number} "
+                    f"was created with a due date that has "
+                    f"already passed. It is now Overdue "
+                    f"by {days} "
+                    f"{'day' if days == 1 else 'days'}."
                 )
+
+            create_notification(
+
+                title="Overdue CAPA",
+
+                message=message,
+
+                category="CAPA",
+
+                priority="High",
+
+                link=url_for(
+                    "main.view_capa",
+                    capa_id=capa.id
+                )
+            )
+
+        else:
+
+            create_notification(
+
+                title="New CAPA",
+
+                message=(
+                    f"CAPA created for "
+                    f"{capa.deviation.deviation_number}, "
+                    f"and assigned to "
+                    f"{capa.assigned_to} under "
+                    f"{capa.deviation.inspection.batch.production_line.line_name}."
+                ),
+
+                category="CAPA",
+
+                priority="Normal",
+
+                link=url_for(
+                    "main.view_capa",
+                    capa_id=capa.id
+                )
+            )
 
         return redirect(
             url_for(
