@@ -120,14 +120,20 @@
 
                             {% elif capa.display_status == "Overdue" %}
 
-                                <span class="badge bg-danger">
+                            <span class="badge bg-danger">
 
-                                    Overdue
+                                Overdue
 
-                                    {{ capa.days_overdue }} {{ "day" if capa.days_overdue == 0 or capa.days_overdue == 1 else "days" }}
+                                ({% if capa.days_overdue == 0 %}
+                                    today
+                                {% elif capa.days_overdue == 1 %}
+                                    1 day
+                                {% else %}
+                                    {{ capa.days_overdue }} days
+                                {% endif %})
 
-                                </span>
-
+                            </span>
+                            
                             {% elif capa.display_status == "In Progress" %}
 
                                 <span class="badge bg-warning text-dark">
