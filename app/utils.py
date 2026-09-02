@@ -122,6 +122,11 @@ def create_notification(
 
         for subscription in subscriptions:
 
+            current_app.logger.info(
+                f"Sending push to subscription {subscription.id} "
+                f"for user {user.id}"
+            )
+
             try:
 
                 send_push_notification(
