@@ -54,24 +54,24 @@ def send_push_notification(
         webpush(
 
             subscription_info=subscription_info,
-
+        
             data=json.dumps(payload),
-
+        
             vapid_private_key=os.environ.get(
                 "VAPID_PRIVATE_KEY"
             ),
-
+        
             vapid_claims={
-
                 "sub": os.environ.get(
                     "VAPID_EMAIL",
                     "mailto:ikukaiwee@gmail.com"
                 )
-
-            }
-
+            },
+        
+            timeout=5
+        
         )
-
+        
         return True
 
 
