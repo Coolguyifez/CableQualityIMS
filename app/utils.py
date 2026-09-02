@@ -143,24 +143,21 @@ def create_notification(
 
                 )
 
-            except Exception as e:
+            except Exception:
 
                 # Push notification failure must
                 # never break the main application.
 
-                current_app.logger.error(
-
-                    f"Push notification failed for "
-                    f"for subscription {subscription.id}: {e}",
-
-                    exc_info=True
-
+                current_app.logger.exception(
+                    "Push notification failed for subscription %s",
+                    subscription.id
                 )
 
-                # Make sure a failed push does not
-                # leave the SQLAlchemy transaction
-                # in a broken state.
+                # IMPORTANT:
+                # A push failure must never break
+                # the main application request.
 
-                db.session.rollback()
-                
-                continue
+                try:
+                    db.session.rollback()
+                except Exception:
+                    pass
