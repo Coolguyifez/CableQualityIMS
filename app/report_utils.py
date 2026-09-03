@@ -1268,7 +1268,7 @@ def apply_capa_sort(query):
 
     columns = {
 
-        "id": CAPA.id,
+        "capa": Deviation.deviation_number,
 
         "assigned_to": CAPA.assigned_to,
 
@@ -1281,7 +1281,7 @@ def apply_capa_sort(query):
         "completion_date": CAPA.completion_date
 
     }
-
+    
     column = columns.get(
 
         sort,
