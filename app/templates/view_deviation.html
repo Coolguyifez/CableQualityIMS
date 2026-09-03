@@ -6,40 +6,46 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
 
-    <h2>
+    <div>
+        <h2>
         Deviation Details
-    </h2>
+        </h2>
+        <p class="text-muted">
+
+        {{ deviation.deviation_number }}
+
+        </p>
+    </div>
 
     <div>
 
         {% if deviation.capa %}
 
             <a href="{{ url_for('main.view_capa', capa_id=deviation.capa[0].id) }}"
-               class="btn btn-primary">
+                class="btn btn-primary">
 
                 <i class="bi bi-check2-square"></i>
-
                 View CAPA
 
             </a>
 
-        {% else %}
+        {% elif not deviation.capa and current_user.role in [
+            "System Administrator",
+            "Company Administrator",
+            "Quality Manager"
+        ] %}
 
             <a href="{{ url_for('main.new_capa', deviation_id=deviation.id) }}"
-               class="btn btn-primary">
+                class="btn btn-primary">
 
                 <i class="bi bi-plus-circle"></i>
-
                 Create CAPA
 
             </a>
 
         {% endif %}
 
-        
-
     </div>
-
 </div>
 
 <div class="card shadow-sm border-0">
