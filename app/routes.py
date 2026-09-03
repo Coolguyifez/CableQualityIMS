@@ -4632,6 +4632,8 @@ def export_inspection_excel():
 
     headers = [
 
+        "S/N",
+
         "Inspection Number",
 
         "Cable Name",
@@ -4663,11 +4665,13 @@ def export_inspection_excel():
     ]
     rows = []
 
-    for inspection in inspections:
+    for index, inspection in enumerate(inspections, start=1):
         cable = inspection.batch.cable_type
         batch = inspection.batch
 
         rows.append([
+
+            index,
 
             inspection.inspection_number,
 
@@ -4736,6 +4740,8 @@ def export_inspection_pdf():
     #pdf header
     headers = [
 
+        "S/N",
+
         "Inspection No",
 
         "Cable Name",
@@ -4768,11 +4774,13 @@ def export_inspection_pdf():
 
     rows = []
 
-    for inspection in inspections:
+    for index, inspection in enumerate(inspections, start=1):
         cable = inspection.batch.cable_type
         batch = inspection.batch
 
         rows.append([
+
+            index,
 
             inspection.inspection_number,
 
@@ -4888,145 +4896,97 @@ def deviation_report():
     )
 
 @main.route("/reports/deviations/excel")
-
 @login_required
-
 def export_deviation_excel():
 
     query = get_filtered_deviation_query(
-
         current_user.company_id
-
     )
 
-    query = apply_deviation_sort(
-
-        query
-
-    )
+    query = apply_deviation_sort(query)
 
     deviations = query.all()
 
     headers = [
-
+        "S/N",
         "Deviation No",
-
         "Inspection",
-
         "Severity",
-
         "Status",
-
         "Reported By",
-
-        "Created",
-
+        "Reported",
         "Closed"
-
     ]
 
-    rows = build_rows(
+    rows = []
 
-        deviations,
+    for index, deviation in enumerate(deviations, start=1):
 
-        [
-
-            "deviation_number",
-
-            "inspection.inspection_number",
-
-            "severity",
-
-            "status",
-
-            "reported_by",
-
-            "created_at",
-
-            "closed_date"
-
-        ]
-
-    )
+        rows.append([
+            index,
+            deviation.deviation_number,
+            deviation.inspection.inspection_number
+            if deviation.inspection else "",
+            deviation.severity,
+            deviation.status,
+            deviation.reported_by,
+            deviation.reported_date,
+            deviation.closed_date
+        ])
 
     return export_excel(
-
         title="Deviation Report",
-
         headers=headers,
-
         rows=rows,
-
         filename="Deviation_Report.xlsx"
-
     )
 
+
 @main.route("/reports/deviations/pdf")
-
 @login_required
-
 def export_deviation_pdf():
 
     query = get_filtered_deviation_query(
-
         current_user.company_id
-
     )
 
-    query = apply_deviation_sort(
-
-        query
-
-    )
+    query = apply_deviation_sort(query)
 
     deviations = query.all()
 
     headers = [
-
+        "S/N",
         "Deviation No",
-
         "Inspection",
-
         "Severity",
-
         "Status",
-
-        "Reported By"
-
+        "Reported By",
+        "Reported",
+        "Closed"
     ]
 
-    rows = build_rows(
+    rows = []
 
-        deviations,
+    for index, deviation in enumerate(deviations, start=1):
 
-        [
-
-            "deviation_number",
-
-            "inspection.inspection_number",
-
-            "severity",
-
-            "status",
-
-            "reported_by"
-
-        ]
-
-    )
+        rows.append([
+            index,
+            deviation.deviation_number,
+            deviation.inspection.inspection_number
+            if deviation.inspection else "",
+            deviation.severity,
+            deviation.status,
+            deviation.reported_by,
+            deviation.reported_date,
+            deviation.closed_date
+        ])
 
     return export_pdf(
-
         title="Deviation Report",
-
         headers=headers,
-
         rows=rows,
-
         filename="Deviation_Report.pdf"
-
     )
-
 
 @main.route("/reports/capa")
 @login_required
@@ -5116,7 +5076,7 @@ def export_capa_excel():
 
     headers = [
 
-        "ID",
+        "S/N",
 
         "CAPA",
 
@@ -5183,7 +5143,7 @@ def export_capa_pdf():
     capas = query.all()
 
     headers = [
-        "ID",
+        "S/N",
         
         "CAPA",
         
@@ -5304,6 +5264,8 @@ def export_quality_metric_excel():
 
     headers = [
 
+        "S/N",
+
         "Inspection",
 
         "Metric",
@@ -5322,11 +5284,13 @@ def export_quality_metric_excel():
 
     rows = []
 
-    for metric in metrics:
+    for index, metric in enumerate (metrics, start=1):
 
         rows.append(
 
             [
+
+                index,
 
                 metric.inspection.inspection_number,
 
@@ -5378,6 +5342,8 @@ def export_quality_metric_pdf():
 
     headers = [
 
+        "S/N",
+
         "Inspection",
 
         "Metric",
@@ -5390,11 +5356,12 @@ def export_quality_metric_pdf():
 
     rows = []
 
-    for metric in metrics:
+    for index, metric in enumerate (metrics, start=1):
 
         rows.append(
 
             [
+                index,
 
                 metric.inspection.inspection_number,
 
@@ -5500,6 +5467,8 @@ def export_production_excel():
 
     headers = [
 
+        "S/N",
+
         "Batch",
 
         "Drum",
@@ -5520,9 +5489,10 @@ def export_production_excel():
 
     rows = []
 
-    for batch in batches:
+    for index, batch in enumerate (batches, start=1):
 
         rows.append([
+            index,
 
             batch.batch_number,
 
@@ -5574,6 +5544,8 @@ def export_production_pdf():
 
     headers = [
 
+        "S/N",
+
         "Batch",
 
         "Customer",
@@ -5586,9 +5558,11 @@ def export_production_pdf():
 
     rows = []
 
-    for batch in batches:
+    for index, batch in enumerate (batches, start=1):
 
         rows.append([
+
+            index,
 
             batch.batch_number,
 
@@ -5698,6 +5672,8 @@ def export_customer_excel():
 
     headers = [
 
+        "S/N",
+
         "Company",
 
         "Requests",
@@ -5714,13 +5690,14 @@ def export_customer_excel():
 
     rows = []
 
-    for customer in customers:
+    for index, customer in enumerate(customers, start=1):
         request_count = CableBatch.query.filter(
             CableBatch.customer_id == customer.id,
             CableBatch.status != "Rejected"
         ).count()
 
         rows.append([
+            index,
 
             customer.company_name,
 
@@ -5768,25 +5745,33 @@ def export_customer_pdf():
 
     headers = [
 
+        "S/N",
+
         "Company",
 
         "Requests",
 
         "Contact",
+        
+        "Email",
 
-        "Phone"
+        "Phone",
+
+        "Address"
+
 
     ]
 
     rows = []
 
-    for customer in customers:
+    for index, customer in enumerate(customers, start=1):
         request_count = CableBatch.query.filter(
             CableBatch.customer_id == customer.id,
             CableBatch.status != "Rejected"
         ).count()
 
         rows.append([
+            index,
 
             customer.company_name,
 
@@ -5794,7 +5779,11 @@ def export_customer_pdf():
 
             customer.contact_person,
 
-            customer.phone
+            customer.email,
+
+            customer.phone,
+
+            customer.address
 
         ])
 
@@ -5887,6 +5876,8 @@ def export_user_excel():
 
     headers = [
 
+        "S/N",
+
         "Name",
 
         "Email",
@@ -5901,8 +5892,10 @@ def export_user_excel():
 
     rows = []
 
-    for user in users:
+    for index, user in enumerate(users, start=1):
         rows.append([
+
+            index,
 
             user.full_name,
 
@@ -5951,6 +5944,8 @@ def export_user_pdf():
 
     headers = [
 
+        "S/N",
+
         "Name",
 
         "Email",
@@ -5963,8 +5958,10 @@ def export_user_pdf():
 
     rows = []
 
-    for user in users:
+    for index, user in enumerate(users, start=1):
         rows.append([
+
+            index,
 
             user.full_name,
 
@@ -6070,6 +6067,8 @@ def export_audit_excel():
 
     headers = [
 
+        "S/N",
+
         "Date",
 
         "User",
@@ -6084,9 +6083,10 @@ def export_audit_excel():
 
     rows = []
 
-    for log in logs:
+    for index, log in enumerate(logs, start=1):
 
         rows.append([
+            index,
 
             log.created_at.strftime(
 
@@ -6138,6 +6138,8 @@ def export_audit_pdf():
 
     headers = [
 
+        "S/N",
+
         "Date",
 
         "User",
@@ -6150,7 +6152,9 @@ def export_audit_pdf():
 
     rows = []
 
-    for log in logs:
+    for index, log in enumerate(logs, start=1):
+
+        index,
 
         rows.append([
 
