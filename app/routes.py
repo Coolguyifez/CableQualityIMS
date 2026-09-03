@@ -5116,9 +5116,9 @@ def export_capa_excel():
 
     headers = [
 
-        "CAPA ID",
+        "ID",
 
-        "Deviation",
+        "CAPA",
 
         "Assigned To",
 
@@ -5132,30 +5132,26 @@ def export_capa_excel():
 
     ]
 
-    rows = build_rows(
+    rows = []
 
-        capas,
+    for index, capa in enumerate(capas, start=1):
 
-        [
-
-            "id",
-
-            "deviation.deviation_number",
-
-            "assigned_to",
-
-            "status",
-
-            "effectiveness",
-
-            "due_date",
-
-            "completion_date"
-
-        ]
-
-    )
-
+        rows.append([
+            index,
+            
+            f"CAPA-{capa.deviation.deviation_number}",
+            
+            capa.assigned_to,
+            
+            capa.status,
+            
+            capa.effectiveness,
+            
+            capa.due_date,
+            
+            capa.completion_date
+        ])
+        
     return export_excel(
 
         title="CAPA Report",
@@ -5187,38 +5183,40 @@ def export_capa_pdf():
     capas = query.all()
 
     headers = [
-
-        "CAPA ID",
-
-        "Deviation",
-
+        "ID",
+        
+        "CAPA",
+        
         "Assigned To",
-
+        
         "Status",
-
-        "Effectiveness"
-
+        
+        "Effectiveness",
+        
+        "Due Date",
+        
+        "Completion Date"
     ]
 
-    rows = build_rows(
+    rows = []
 
-        capas,
+    for index, capa in enumerate(capas, start=1):
 
-        [
-
-            "id",
-
-            "deviation.deviation_number",
-
-            "assigned_to",
-
-            "status",
-
-            "effectiveness"
-
-        ]
-
-    )
+        rows.append([
+            index,
+            
+            f"CAPA-{capa.deviation.deviation_number}",
+            
+            capa.assigned_to,
+            
+            capa.status,
+            
+            capa.effectiveness,
+            
+            capa.due_date,
+            
+            capa.completion_date
+        ])
 
     return export_pdf(
 
