@@ -3495,7 +3495,7 @@ def capa():
                     title="Overdue CAPA",
 
                     message=(
-                        f"CAPA {c.deviation.deviation_number} "
+                        f"CAPA-{c.deviation.deviation_number} "
                         f"is overdue {overdue_text}. "
                         f"Production "
                         f"{c.deviation.inspection.batch.production_line.line_name} "
@@ -3700,7 +3700,7 @@ def new_capa(deviation_id):
             if days == 0:
 
                 message = (
-                    f"CAPA {capa.deviation.deviation_number} "
+                    f"CAPA-{capa.deviation.deviation_number} "
                     f"was created with a due date of today. "
                     f"It is now Overdue."
                 )
@@ -3708,7 +3708,7 @@ def new_capa(deviation_id):
             else:
 
                 message = (
-                    f"CAPA {capa.deviation.deviation_number} "
+                    f"CAPA-{capa.deviation.deviation_number} "
                     f"was created with a due date that has "
                     f"already passed. It is now Overdue "
                     f"by {days} "
