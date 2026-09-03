@@ -1291,7 +1291,7 @@
                         <tr>
 
                             <th>Company</th>
-                            <th>Deviation</th>
+                            <th>CAPA</th>
                             <th>Assigned To</th>
                             <th>Due Date</th>
                             <th>Completion</th>
@@ -1313,9 +1313,11 @@
                             </td>
 
                             <td>
-
-                                {{ capa.deviation.deviation_number
+                                <strong>
+                               CAPA-{{ capa.deviation.deviation_number
                                    if capa.deviation else "—" }}
+                                
+                                </strong>  
 
                             </td>
 
