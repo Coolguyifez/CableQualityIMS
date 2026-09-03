@@ -2501,6 +2501,7 @@ def export_all_companies_excel():
     worksheet["A12"].font = title_font
 
     worksheet.append([
+        "S/N",
         "Company Name",
         "Company Code",
         "Address",
@@ -2510,9 +2511,10 @@ def export_all_companies_excel():
         "Created"
     ])
 
-    for company in companies:
+    for index, company in enumerate(companies, start=1):
 
         worksheet.append([
+            index,
             company.company_name,
             company.company_code,
             company.address or "",
@@ -2538,6 +2540,7 @@ def export_all_companies_excel():
     )
 
     worksheet.append([
+        "S/N",
         "Company",
         "Company Code",
         "Full Name",
@@ -2548,9 +2551,10 @@ def export_all_companies_excel():
         "Created Date"
     ])
 
-    for user in users:
+    for index, user in enumerate(users, start=1):
 
         worksheet.append([
+            index,
             user.company.company_name
             if user.company else "",
 
@@ -2583,6 +2587,7 @@ def export_all_companies_excel():
     )
 
     worksheet.append([
+        "S/N",
         "Company",
         "Company Code",
         "Batch Number",
@@ -2597,9 +2602,10 @@ def export_all_companies_excel():
         "Status"
     ])
 
-    for batch in batches:
+    for index, batch in enumerate(batches, start=1):
 
         worksheet.append([
+            index,
             batch.company.company_name
             if batch.company else "",
 
@@ -2649,6 +2655,7 @@ def export_all_companies_excel():
     )
 
     worksheet.append([
+        "S/N",
         "Company",
         "Company Code",
         "Inspection Number",
@@ -2659,9 +2666,10 @@ def export_all_companies_excel():
         "Remarks"
     ])
 
-    for inspection in inspections:
+    for index, inspection in enumerate(inspections, start=1):
 
         worksheet.append([
+            index,
             inspection.company.company_name
             if inspection.company
             else "",
@@ -2701,6 +2709,7 @@ def export_all_companies_excel():
     )
 
     worksheet.append([
+        "S/N",
         "Company",
         "Company Code",
         "Deviation Number",
@@ -2713,9 +2722,10 @@ def export_all_companies_excel():
         "Closed Date"
     ])
 
-    for deviation in deviations:
+    for index, deviation in enumerate(deviations, start=1):
 
         worksheet.append([
+            index,
             deviation.company.company_name
             if deviation.company
             else "",
@@ -2761,10 +2771,10 @@ def export_all_companies_excel():
     )
 
     worksheet.append([
+        "S/N",
         "Company",
         "Company Code",
-        "CAPA ID",
-        "Deviation",
+        "CAPA",
         "Corrective Action",
         "Preventive Action",
         "Assigned To",
@@ -2774,9 +2784,10 @@ def export_all_companies_excel():
         "Status"
     ])
 
-    for capa in capas:
+    for index, capa in enumerate(capas, start=1):
 
         worksheet.append([
+            index,
             capa.company.company_name
             if capa.company
             else "",
@@ -2785,9 +2796,7 @@ def export_all_companies_excel():
             if capa.company
             else "",
 
-            capa.id,
-
-            capa.deviation.deviation_number
+            f"CAPA-{capa.deviation.deviation_number}"
             if capa.deviation
             else "",
 
@@ -3166,9 +3175,10 @@ def export_all_companies_pdf():
 
     company_rows = []
 
-    for company in companies:
+    for index, company in enumerate(companies, start=1):
 
         company_rows.append([
+            index,
             company.company_name,
             company.company_code,
             company.address or "",
@@ -3185,6 +3195,7 @@ def export_all_companies_pdf():
     add_section(
         "Companies",
         [
+            "S/N",
             "Company",
             "Code",
             "Address",
@@ -3202,9 +3213,10 @@ def export_all_companies_pdf():
 
     user_rows = []
 
-    for user in users:
+    for index, user in enumerate(users, start=1):
 
         user_rows.append([
+            index,
             user.company.company_name
             if user.company
             else "",
@@ -3220,6 +3232,7 @@ def export_all_companies_pdf():
     add_section(
         "Users",
         [
+            "S/N",
             "Company",
             "Full Name",
             "Username",
@@ -3236,9 +3249,10 @@ def export_all_companies_pdf():
 
     production_rows = []
 
-    for batch in batches:
+    for index, batch in enumerate(batches, start=1):
 
         production_rows.append([
+            index,
             batch.company.company_name
             if batch.company
             else "",
@@ -3267,6 +3281,7 @@ def export_all_companies_pdf():
     add_section(
         "Production",
         [
+            "S/N",
             "Company",
             "Batch",
             "Cable Code",
@@ -3288,9 +3303,10 @@ def export_all_companies_pdf():
 
     inspection_rows = []
 
-    for inspection in inspections:
+    for index, inspection in enumerate(inspections, start=1):
 
         inspection_rows.append([
+            index,
             inspection.company.company_name
             if inspection.company
             else "",
@@ -3308,6 +3324,7 @@ def export_all_companies_pdf():
     add_section(
         "Inspections",
         [
+            "S/N",
             "Company",
             "Inspection",
             "Batch",
@@ -3324,9 +3341,10 @@ def export_all_companies_pdf():
 
     deviation_rows = []
 
-    for deviation in deviations:
+    for index, deviation in enumerate(deviations, start=1):
 
         deviation_rows.append([
+            index,
             deviation.company.company_name
             if deviation.company
             else "",
@@ -3346,6 +3364,7 @@ def export_all_companies_pdf():
     add_section(
         "Deviations",
         [
+            "S/N",
             "Company",
             "Deviation",
             "Inspection",
@@ -3364,13 +3383,14 @@ def export_all_companies_pdf():
 
     capa_rows = []
 
-    for capa in capas:
+    for index, capa in enumerate(capas, start=1):
 
         capa_rows.append([
+            index,
             capa.company.company_name
             if capa.company
             else "",
-            capa.deviation.deviation_number
+            f"CAPA-{capa.deviation.deviation_number}"
             if capa.deviation
             else "",
             capa.assigned_to,
@@ -3387,8 +3407,9 @@ def export_all_companies_pdf():
     add_section(
         "CAPA",
         [
+            "S/N",
             "Company",
-            "Deviation",
+            "CAPA",
             "Assigned To",
             "Due Date",
             "Completion",
