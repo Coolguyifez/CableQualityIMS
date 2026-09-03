@@ -2,13 +2,7 @@ from flask import current_app
 from flask_login import current_user
 
 from .extensions import db
-
-from .models import (
-    Notification,
-    User,
-    PushSubscription
-)
-
+from .models import Notification, User, PushSubscription
 from .push_utils import send_push_notification
 
 
@@ -20,10 +14,6 @@ def create_notification(
     user_id=None,
     link=None
 ):
-
-    # ------------------------------------
-    # Determine recipients
-    # ------------------------------------
 
     if user_id is not None:
 
@@ -40,41 +30,11 @@ def create_notification(
             is_active=True
         ).all()
 
+    # -----------------------------------------
+    # FILTER USERS BY NOTIFICATION PREFERENCES
+    # -----------------------------------------
 
-    # ------------------------------------
-    # Create database notifications
-    # ------------------------------------
-
-    for user in users:
-
-        notification = Notification(
-
-            company_id=current_user.company_id,
-
-            user_id=user.id,
-
-            title=title,
-
-            message=message,
-
-            category=category,
-
-            priority=priority,
-
-            link=link
-
-        )
-
-        db.session.add(notification)
-
-
-    # Save in-app notifications first
-    db.session.commit()
-
-
-    # ------------------------------------
-    # Send browser/device push notifications
-    # ------------------------------------
+    eligible_users = []
 
     for user in users:
 
@@ -82,11 +42,7 @@ def create_notification(
         if not user.notification_enabled:
             continue
 
-
-        # --------------------------------
-        # Category preferences
-        # --------------------------------
-
+        # Category-specific notification switch
         if category == "Inspection":
 
             if not user.inspection_notification:
@@ -102,60 +58,58 @@ def create_notification(
             if not user.capa_notification:
                 continue
 
+        eligible_users.append(user)
 
-        # --------------------------------
-        # Get user's push subscriptions
-        # --------------------------------
+    # -----------------------------------------
+    # CREATE DATABASE NOTIFICATIONS
+    # ONLY FOR USERS WHO ALLOW THEM
+    # -----------------------------------------
+
+    for user in eligible_users:
+
+        notification = Notification(
+            company_id=current_user.company_id,
+            user_id=user.id,
+            title=title,
+            message=message,
+            category=category,
+            priority=priority,
+            link=link
+        )
+
+        db.session.add(notification)
+
+    db.session.commit()
+
+    # -----------------------------------------
+    # SEND PUSH NOTIFICATIONS
+    # -----------------------------------------
+
+    for user in eligible_users:
 
         subscriptions = PushSubscription.query.filter_by(
-
             user_id=user.id,
-
             company_id=user.company_id
-
         ).all()
 
-
-        # --------------------------------
-        # Send push to each device
-        # --------------------------------
-
         for subscription in subscriptions:
-
-            current_app.logger.info(
-                f"Sending push to subscription {subscription.id} "
-                f"for user {user.id}"
-            )
 
             try:
 
                 send_push_notification(
-
                     subscription=subscription,
-
                     title=title,
-
                     message=message,
-
                     link=link,
-
                     priority=priority
-
                 )
 
             except Exception:
-
-                # Push notification failure must
-                # never break the main application.
 
                 current_app.logger.exception(
                     "Push notification failed for subscription %s",
                     subscription.id
                 )
-
-                # IMPORTANT:
-                # A push failure must never break
-                # the main application request.
 
                 try:
                     db.session.rollback()
