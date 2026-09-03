@@ -200,10 +200,10 @@ class="form-select">
 <option value="Open">Open</option>
 
 <option value="In Progress">In Progress</option>
-  
+
 <option value="Overdue">Overdue</option>
 
-<option value="Completed">Completed</option>  
+<option value="Completed">Completed</option>
 
 <option value="Closed">Closed</option>
 
@@ -320,7 +320,7 @@ Reset
 
 <th>
 
-Deviation
+CAPA
 
 </th>
 
@@ -374,7 +374,7 @@ Action
 
 <strong>
 
-#{{ capa.id }}
+{{ loop.index }}
 
 </strong>
 
@@ -382,7 +382,7 @@ Action
 
 <td>
 
-{{ capa.deviation.deviation_number }}
+CAPA-{{ capa.deviation.deviation_number }}
 
 </td>
 
@@ -576,7 +576,6 @@ No CAPA records found.
 </div>
 
 </div>
-
 {% include "components/report_pagination.html" %}
 
 </div>
