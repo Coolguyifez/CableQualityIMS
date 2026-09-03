@@ -220,6 +220,7 @@ Root Cause by Inspector
 </div>
 
 <div class="row">
+{% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager"] %}        
 
 <div class="col">
 
@@ -228,12 +229,15 @@ Root Cause by Inspector
 {{ form.due_date(class="form-control") }}
 
 </div>
+{% endif %}
 
 <div class="col">
 
 {{ form.completion_date.label }}
 
 {{ form.completion_date(class="form-control") }}
+
+<small><i>Optional until issue has been resolved or completed</i></small>
 
 </div>
 
