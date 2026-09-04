@@ -2229,7 +2229,7 @@ def new_inspection():
         )
         create_notification(
             title="Inspection pending",
-            message=f"{inspection.inspection_number} is awaiting quality metric evaluation.",
+            message=f"{inspection.inspection_number} is awaiting quality metric evaluation from {inspection.inspector}.",
             category="Inspection",
             priority="Normal",
             link=url_for(
@@ -2595,7 +2595,8 @@ def new_quality_metric(inspection_id):
 
                     title="Inspection Passed",
 
-                    message=f"{inspection.inspection_number} passed all quality checks.",
+                    message=f"{inspection.inspection_number} passed all quality checks."
+                            f" Inspected by {inspection.inspector}.",
 
                     category="Inspection",
 
@@ -2614,7 +2615,8 @@ def new_quality_metric(inspection_id):
 
                     title="Inspection Failed",
 
-                    message=f"{inspection.inspection_number} failed one or more quality checks.",
+                    message=f"{inspection.inspection_number} failed one or more quality checks."
+                            f" Inspected by {inspection.inspector}.",
 
                     category="Inspection",
 
