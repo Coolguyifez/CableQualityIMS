@@ -4,6 +4,19 @@
 
 {% block content %}
 
+<div class="d-flex flex-wrap gap-6 justify-content-end mb-3">
+
+    <a href="{{ url_for('main.home') }}"
+        class="btn btn-outline-secondary">
+
+        <i class="bi bi-arrow-left"></i>
+
+        Back
+
+    </a>
+
+</div>
+
 <div class="row justify-content-center">
 
     <div class="col-lg-8">
@@ -61,12 +74,7 @@
                         <th>Company Code</th>
                         <td>{{ current_user.company.company_code }}</td>
                     </tr>
-
-                    <tr>
-                        <th>Phone</th>
-                        <td>{{ current_user.company.phone or "-" }}</td>
-                    </tr>
-
+                    
                     <tr>
                         <th>Account Status</th>
 
