@@ -159,6 +159,8 @@
 
                             </a>
 
+                            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Quality Inspector"] %}
+
                             <a href="{{ url_for('main.edit_inspection', inspection_id=inspection.id) }}"
                                class="btn btn-warning btn-sm">
 
@@ -173,6 +175,7 @@
                                 <i class="bi bi-trash"></i>
 
                             </a>
+                            {% endif %}
                         </div>
                         
 
