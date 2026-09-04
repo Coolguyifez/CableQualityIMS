@@ -159,11 +159,14 @@
 
                 </span>
 
+                {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Quality Inspector"] %}
+
                 <a href="{{ url_for('main.new_quality_metric', inspection_id=inspection.id) }}"
                     class="btn btn-primary btn-sm">
                     <i class="bi bi-plus-circle"></i>
                     Add Metric
                 </a>
+                {% endif %}
 
             </div>
 
