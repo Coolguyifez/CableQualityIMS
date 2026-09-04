@@ -1148,63 +1148,87 @@ def new_company():
 )
 
 @login_required
-
 @system_admin_required
-
 def edit_company(company_id):
 
-    company = Company.query.get_or_404(
+    company = Company.query.get_or_404(company_id)
 
-        company_id
+    # Find the company's administrator
+    admin = User.query.filter_by(
+        company_id=company.id,
+        role="Company Administrator"
+    ).first()
 
-    )
+    form = CompanyForm(obj=company)
 
-    form = CompanyForm(
-
-        obj=company
-
-    )
+    # Load existing admin information into the form
+    if request.method == "GET" and admin:
+        form.admin_full_name.data = admin.full_name
+        form.admin_username.data = admin.username
+        form.admin_email.data = admin.email
 
     if form.validate_on_submit():
 
-        form.populate_obj(company)
+        # -----------------------------
+        # Update company information
+        # -----------------------------
+
+        company.company_name = form.company_name.data
+        company.company_code = form.company_code.data.upper()
+        company.address = form.address.data
+        company.email = form.email.data
+        company.phone = form.phone.data
+        company.logo = form.logo.data
+        company.is_active = form.is_active.data
+
+        # -----------------------------
+        # Update Company Administrator
+        # -----------------------------
+
+        if admin:
+
+            admin.full_name = form.admin_full_name.data
+            admin.username = form.admin_username.data
+            admin.email = form.admin_email.data
+
+            # Only change password if System Admin entered one
+            if form.admin_password.data:
+                admin.set_password(
+                    form.admin_password.data
+                )
+
+        # -----------------------------
+        # Activity log
+        # -----------------------------
 
         log_activity(
-
             module="Company",
-
             action="Update",
-
-            description=f"Updated company '{company.company_name}'"
-
+            description=(
+                f"Updated company "
+                f"'{company.company_name}' "
+                f"and its Company Administrator"
+            )
         )
 
         db.session.commit()
 
         flash(
-
-            "Company updated successfully.",
-
+            "Company and Company Administrator updated successfully.",
             "success"
-
         )
 
         return redirect(
-
             url_for("main.companies")
-
         )
 
     return render_template(
-
         "company_form.html",
-
         form=form,
-
-        title="Edit Company"
-
+        title="Edit Company",
+        company=company
     )
-
+    
 @main.route("/companies/<int:company_id>/toggle")
 @login_required
 @system_admin_required
