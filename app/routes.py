@@ -2392,20 +2392,23 @@ def quality_metrics():
         type=int
     )
 
-    pagination = paginate_records(
-
+    query = (
         QualityMetric.query
-        .filter_by(
-            company_id=current_user.company_id
+        .filter(
+            QualityMetric.company_id == current_user.company_id
         )
         .join(Inspection)
         .order_by(
-            Inspection.inspection_date.desc()
-        ),
+            Inspection.inspection_date.desc(),
+            Inspection.id.desc(),
+            QualityMetric.id.desc()
+        )
+    )
 
+    pagination = paginate_records(
+        query,
         page=page,
         per_page=10
-
     )
 
     metrics = pagination.items
@@ -2415,7 +2418,6 @@ def quality_metrics():
         metrics=metrics,
         pagination=pagination
     )
-
 
 @main.route(
     "/quality-metrics/new/<int:inspection_id>",
