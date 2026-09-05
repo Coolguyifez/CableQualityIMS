@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session, current_app
 from .forms import CustomerForm, CableTypeForm, ProductionLineForm, CableBatchForm, InspectionForm, QualityMetricForm,  QualitySpecificationForm, DeviationForm, CAPAForm, CompanyForm, ThemeSettingsForm, AccountSettingsForm, NotificationSettingsForm
 from .models import Customer, User, CableType, ProductionLine, CableBatch, Inspection, QualityMetric, QualitySpecification, Deviation, CAPA, Notification, Company, AuditLog, PushSubscription
 from .extensions import db, bcrypt
@@ -384,26 +384,70 @@ def generate_deviation_number():
     return f"DEV:{today}-{next_number:03d}"
 
 
+def flag_production_line_for_capa(capa):
+    """
+    Automatically changes the production line related to a CAPA
+    to Maintenance when the CAPA becomes overdue.
+
+    Relationship:
+        CAPA
+          -> Deviation
+          -> Inspection
+          -> Cable Batch
+          -> Production Line
+    """
+
+    try:
+        if not capa.deviation:
+            return False
+
+        inspection = capa.deviation.inspection
+
+        if not inspection:
+            return False
+
+        batch = inspection.batch
+
+        if not batch:
+            return False
+
+        production_line = batch.production_line
+
+        if not production_line:
+            return False
+
+        if production_line.status != "Maintenance":
+            production_line.status = "Maintenance"
+            return True
+
+    except Exception:
+        current_app.logger.exception(
+            "Unable to flag production line for overdue CAPA %s",
+            capa.id
+        )
+
+    return False
+
 def get_capa_status(capa):
     """
     Returns the current CAPA status based on its due date.
 
     Rules:
+    - Completed CAPAs remain Completed.
     - Closed CAPAs remain Closed.
-    - If today is the due date or past the due date,
-      the CAPA becomes Overdue.
+    - A CAPA becomes Overdue only after its due date has passed.
     - Otherwise, keep the manually assigned status.
     """
 
-    # Closed CAPAs should remain closed
-    if capa.status == "Closed":
-        return "Closed"
+    if capa.status in ["Completed", "Closed"]:
+        return capa.status
 
-    # Due today OR overdue
-    if capa.due_date and date.today() >= capa.due_date:
+    if (
+        capa.due_date
+        and date.today() > capa.due_date
+    ):
         return "Overdue"
 
-    # Not yet due
     return capa.status
 
 
@@ -415,7 +459,7 @@ def get_days_overdue(capa):
     if (
         capa.due_date
         and date.today() > capa.due_date
-        and capa.status != "Closed"
+        and capa.status not in ["Completed", "Closed"]
     ):
         return (
             date.today() - capa.due_date
@@ -427,25 +471,31 @@ def get_days_overdue(capa):
 def update_capa_status(capa):
     """
     Automatically updates the database status of a CAPA.
+
+    Returns:
+        True  -> status was changed
+        False -> no change
     """
 
-    # Closed CAPAs remain closed
-    if capa.status == "Closed":
+    # Completed and Closed CAPAs remain unchanged
+    if capa.status in ["Completed", "Closed"]:
         return False
 
-    # Due today OR overdue
+    # Only become overdue AFTER the due date
     if (
         capa.due_date
-        and date.today() >= capa.due_date
+        and date.today() > capa.due_date
         and capa.status != "Overdue"
     ):
-
         capa.status = "Overdue"
+
+        # Put the related production line into Maintenance
+        flag_production_line_for_capa(capa)
 
         return True
 
     return False
-
+    
 def paginate_records(query, page=1, per_page=10):
     return query.paginate(
         page=page,
@@ -1898,8 +1948,10 @@ def new_batch():
         CableType.name
     ).all()
 
-    production_lines = ProductionLine.query.filter_by(
-        company_id=current_user.company_id
+    # ONLY ACTIVE production lines should be available
+    production_lines = ProductionLine.query.filter(
+        ProductionLine.company_id == current_user.company_id,
+        ProductionLine.status == "Active"
     ).order_by(
         ProductionLine.line_name
     ).all()
@@ -1921,6 +1973,32 @@ def new_batch():
 
     if form.validate_on_submit():
 
+        # --------------------------------------------------
+        # SERVER-SIDE PRODUCTION LINE VALIDATION
+        # --------------------------------------------------
+        production_line = ProductionLine.query.filter(
+            ProductionLine.id == form.production_line_id.data,
+            ProductionLine.company_id == current_user.company_id,
+            ProductionLine.status == "Active"
+        ).first()
+
+        if not production_line:
+            flash(
+                "The selected production line is not active. "
+                "Please select an active production line.",
+                "danger"
+            )
+
+            return render_template(
+                "batch_form.html",
+                form=form,
+                cable_types=cable_types,
+                title="New Cable Batch"
+            )
+
+        # --------------------------------------------------
+        # CREATE BATCH
+        # --------------------------------------------------
         batch = CableBatch(
 
             company_id=current_user.company_id,
@@ -1935,7 +2013,7 @@ def new_batch():
 
             cable_type_id=form.cable_type_id.data,
 
-            production_line_id=form.production_line_id.data,
+            production_line_id=production_line.id,
 
             production_date=form.production_date.data,
 
@@ -1951,8 +2029,7 @@ def new_batch():
 
             outer_sheath_colour=form.outer_sheath_colour.data,
 
-            cable_code = form.cable_code.data
-
+            cable_code=form.cable_code.data
         )
 
         try:
@@ -1960,13 +2037,9 @@ def new_batch():
             db.session.add(batch)
 
             log_activity(
-
                 module="Cable Batch",
-
                 action="Create",
-
                 description=f"Created batch '{batch.batch_number}'"
-
             )
 
             db.session.commit()
@@ -1980,31 +2053,22 @@ def new_batch():
                 url_for("main.batches")
             )
 
-
-
         except IntegrityError:
 
             db.session.rollback()
 
             flash(
-
                 "Unable to create batch. Please try again.",
-
                 "danger"
-
             )
+
     return render_template(
-
         "batch_form.html",
-
         form=form,
-
         cable_types=cable_types,
-
         title="New Cable Batch"
-
     )
-
+    
 
 @main.route(
     "/batches/<int:batch_id>/edit",
@@ -3476,17 +3540,18 @@ def capa():
     # -----------------------------------------------------
     # Get ALL CAPAs for this company
     # -----------------------------------------------------
-    #
-    # We intentionally get all records first because the
-    # system must check every CAPA for overdue status,
-    # including CAPAs that are currently on page 2, 3, etc.
-    #
 
-    all_capas = CAPA.query.filter_by(
-        company_id=current_user.company_id
-    ).order_by(
-        CAPA.created_at.desc()
-    ).all()
+    all_capas = (
+        CAPA.query
+        .filter_by(
+            company_id=current_user.company_id
+        )
+        .order_by(
+            CAPA.created_at.desc(),
+            CAPA.id.desc()
+        )
+        .all()
+    )
 
     changed = False
 
@@ -3499,16 +3564,11 @@ def capa():
         status_changed = update_capa_status(c)
 
         if status_changed:
-
             changed = True
 
-            # -------------------------------------------------
-            # Create notification only when CAPA JUST became
-            # overdue.
-            # -------------------------------------------------
-            if (
-                    c.status == "Overdue"
-            ):
+            # update_capa_status() has just changed this
+            # CAPA to Overdue.
+            if c.status == "Overdue":
 
                 days = get_days_overdue(c)
 
@@ -3520,7 +3580,6 @@ def capa():
                     overdue_text = f"{days} days"
 
                 create_notification(
-
                     title="Overdue CAPA",
 
                     message=(
@@ -3528,7 +3587,7 @@ def capa():
                         f"is overdue {overdue_text}. "
                         f"Production "
                         f"{c.deviation.inspection.batch.production_line.line_name} "
-                        f"has been flagged for automatic lockdown "
+                        f"has been placed into Maintenance "
                         f"until the issue is resolved."
                     ),
 
@@ -3542,7 +3601,6 @@ def capa():
                     )
                 )
 
-
         # -------------------------------------------------
         # Template display values
         # -------------------------------------------------
@@ -3552,7 +3610,7 @@ def capa():
         c.days_overdue = get_days_overdue(c)
 
     # -----------------------------------------------------
-    # Save automatic status changes
+    # Save automatic changes
     # -----------------------------------------------------
 
     if changed:
@@ -3570,10 +3628,13 @@ def capa():
 
     pagination = paginate_records(
 
-        CAPA.query.filter_by(
+        CAPA.query
+        .filter_by(
             company_id=current_user.company_id
-        ).order_by(
-            CAPA.created_at.desc()
+        )
+        .order_by(
+            CAPA.created_at.desc(),
+            CAPA.id.desc()
         ),
 
         page=page,
@@ -3584,21 +3645,16 @@ def capa():
     capas = pagination.items
 
     # -----------------------------------------------------
-    # Recalculate values for current page
+    # Recalculate display values for current page
     # -----------------------------------------------------
 
     for c in capas:
-
         c.display_status = get_capa_status(c)
-
         c.days_overdue = get_days_overdue(c)
 
     return render_template(
-
         "capa.html",
-
         capas=capas,
-
         pagination=pagination
     )
 
@@ -3629,7 +3685,6 @@ def new_capa(deviation_id):
     ).first()
 
     if existing:
-
         flash(
             "A CAPA already exists for this deviation.",
             "warning"
@@ -3651,7 +3706,6 @@ def new_capa(deviation_id):
         # -------------------------------------------------
 
         capa = CAPA(
-
             company_id=current_user.company_id,
 
             deviation_id=deviation.id,
@@ -3674,19 +3728,17 @@ def new_capa(deviation_id):
         # -------------------------------------------------
         # Automatically determine initial status
         # -------------------------------------------------
-        #
-        # If the CAPA is created with today's date or an
-        # earlier due date, it immediately becomes Overdue.
-        #
-        # Closed is never changed to Overdue.
-        #
 
         if (
-            capa.status != "Closed"
+            capa.status not in ["Completed", "Closed"]
             and capa.due_date
-            and date.today() >= capa.due_date
+            and date.today() > capa.due_date
         ):
             capa.status = "Overdue"
+
+            # Automatically put production line
+            # into Maintenance
+            flag_production_line_for_capa(capa)
 
         db.session.add(capa)
 
@@ -3695,7 +3747,6 @@ def new_capa(deviation_id):
         # -------------------------------------------------
 
         log_activity(
-
             module="CAPA",
 
             action="Create",
@@ -3727,25 +3778,23 @@ def new_capa(deviation_id):
             days = get_days_overdue(capa)
 
             if days == 0:
-
                 message = (
                     f"CAPA-{capa.deviation.deviation_number} "
-                    f"was created with a due date of today. "
-                    f"It is now Overdue."
+                    f"was created with a due date that has "
+                    f"already passed. It is now Overdue."
                 )
-
             else:
-
                 message = (
                     f"CAPA-{capa.deviation.deviation_number} "
                     f"was created with a due date that has "
                     f"already passed. It is now Overdue "
                     f"by {days} "
-                    f"{'day' if days == 1 else 'days'}."
+                    f"{'day' if days == 1 else 'days'}. "
+                    f"The production line has been placed "
+                    f"into Maintenance."
                 )
 
             create_notification(
-
                 title="Overdue CAPA",
 
                 message=message,
@@ -3763,7 +3812,6 @@ def new_capa(deviation_id):
         else:
 
             create_notification(
-
                 title="New CAPA",
 
                 message=(
@@ -3797,6 +3845,7 @@ def new_capa(deviation_id):
         deviation=deviation
     )
 
+
 @main.route("/capa/<int:capa_id>")
 @permission_required("manage_capa")
 @login_required
@@ -3814,41 +3863,35 @@ def view_capa(capa_id):
     changed = update_capa_status(capa)
 
     # -----------------------------------------------------
-    # If CAPA just became overdue, create notification
+    # If CAPA JUST became overdue
     # -----------------------------------------------------
 
     if changed and capa.status == "Overdue":
 
-        if (
-            current_user.notification_enabled
-            and current_user.capa_notification
-        ):
+        days = get_days_overdue(capa)
 
-            days = get_days_overdue(capa)
+        create_notification(
+            title="Overdue CAPA",
 
-            create_notification(
+            message=(
+                f"CAPA-{capa.deviation.deviation_number} "
+                f"is overdue by {days} "
+                f"{'day' if days == 1 else 'days'}. "
+                f"Production "
+                f"{capa.deviation.inspection.batch.production_line.line_name} "
+                f"has been placed into Maintenance "
+                f"until the issue is resolved."
+            ),
 
-                title="Overdue CAPA",
+            category="CAPA",
 
-                message=(
-                    f"CAPA {capa.deviation.deviation_number} "
-                    f"is overdue by {days} "
-                    f"{'day' if days == 1 else 'days'}. "
-                    f"Production "
-                    f"{capa.deviation.inspection.batch.production_line.line_name} "
-                    f"has been flagged for automatic lockdown "
-                    f"until the issue is resolved."
-                ),
+            priority="High",
 
-                category="CAPA",
-
-                priority="High",
-
-                link=url_for(
-                    "main.view_capa",
-                    capa_id=capa.id
-                )
+            link=url_for(
+                "main.view_capa",
+                capa_id=capa.id
             )
+        )
 
         db.session.commit()
 
@@ -3864,7 +3907,6 @@ def view_capa(capa_id):
         "view_capa.html",
         capa=capa
     )
-
 
 # =========================================================
 # EDIT CAPA
@@ -3888,11 +3930,10 @@ def edit_capa(capa_id):
     if form.validate_on_submit():
 
         # -------------------------------------------------
-        # Store previous values
+        # Store previous status
         # -------------------------------------------------
 
         old_status = capa.status
-        old_due_date = capa.due_date
 
         # -------------------------------------------------
         # Update fields
@@ -3913,42 +3954,30 @@ def edit_capa(capa_id):
         capa.effectiveness = form.effectiveness.data
 
         # -------------------------------------------------
-        # Automatically determine status from new due date
+        # Automatically determine status from due date
         # -------------------------------------------------
-        #
-        # This is important when an overdue CAPA is edited.
-        #
-        # Example:
-        #
-        # Old:
-        # Due date = 1 September
-        # Status   = Overdue
-        #
-        # User edits:
-        # Due date = 15 September
-        # Status   = In Progress
-        #
-        # It remains In Progress until 15 September.
-        #
-        # On 15 September, it automatically becomes Overdue.
-        #
 
         if (
-            capa.status != "Closed"
+            capa.status not in ["Completed", "Closed"]
             and capa.due_date
-            and date.today() >= capa.due_date
+            and date.today() > capa.due_date
         ):
-
             capa.status = "Overdue"
+
+            # Automatically place production line
+            # into Maintenance
+            flag_production_line_for_capa(capa)
 
         # -------------------------------------------------
         # Audit Trail
         # -------------------------------------------------
 
-        if old_status != "Closed" and capa.status == "Closed":
+        if (
+            old_status != "Closed"
+            and capa.status == "Closed"
+        ):
 
             log_activity(
-
                 module="CAPA",
 
                 action="Close",
@@ -3960,10 +3989,26 @@ def edit_capa(capa_id):
                 )
             )
 
+        elif (
+            old_status != "Completed"
+            and capa.status == "Completed"
+        ):
+
+            log_activity(
+                module="CAPA",
+
+                action="Complete",
+
+                description=(
+                    f"{current_user.full_name} completed "
+                    f"CAPA for deviation "
+                    f"'{capa.deviation.deviation_number}'"
+                )
+            )
+
         else:
 
             log_activity(
-
                 module="CAPA",
 
                 action="Update",
@@ -3976,7 +4021,7 @@ def edit_capa(capa_id):
             )
 
         # -------------------------------------------------
-        # Save changes
+        # Save
         # -------------------------------------------------
 
         db.session.commit()
@@ -4008,7 +4053,6 @@ def edit_capa(capa_id):
 @login_required
 @permission_required("manage_capa")
 def delete_capa(capa_id):
-
     capa = CAPA.query.filter_by(
         id=capa_id,
         company_id=current_user.company_id
@@ -4047,7 +4091,6 @@ def delete_capa(capa_id):
     return redirect(
         url_for("main.capa")
     )
-
 
 
 @main.route("/notifications")
