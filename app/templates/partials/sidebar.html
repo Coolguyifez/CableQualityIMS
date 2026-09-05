@@ -139,6 +139,8 @@
             </a>
         </li>
 
+         {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Quality Inspector"] %}
+
         <li class="nav-title mt-3">REPORTS</li>
 
         <li class="nav-item">
@@ -148,6 +150,8 @@
                 Reports
             </a>
         </li>
+        
+        {% endif %}
 
         {% if current_user.role == "Company Administrator" %}
 
