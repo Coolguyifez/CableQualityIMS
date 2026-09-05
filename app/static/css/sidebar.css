@@ -1,195 +1,245 @@
-/* ===========================
-   SIDEBAR
-=========================== */
+<div class="sidebar">
 
-.sidebar {
-    width: 260px;
-    background: #0F172A;
-    color: #fff;
+    <div class="logo text-center py-3">
 
-    /* Full viewport height */
-    height: 100vh;
+        <h4 class="fw-bold mb-1">
 
-    padding: 20px;
-    flex-shrink: 0;
+            <img src="{{ url_for('static', filename='icons/cableqims.png') }}" class="img-fluid" alt="CableQIMS Logo" style="max-height: 110px;">
 
-    /* Keep sidebar in place while main content scrolls */
-    position: sticky;
-    top: 0;
+            CableQIMS
 
-    /* Prevent sidebar from moving with the page */
-    align-self: flex-start;
+        </h4>
 
-    display: flex;
-    flex-direction: column;
+        {% if current_user.is_authenticated %}
 
-    transition: all 0.3s ease;
+        <div class="small fw-bold text-primary">
 
-    /* Better scrolling on touch devices */
-    -webkit-overflow-scrolling: touch;
-}
+            <a href="{{url_for('main.home')}}" style="text-decoration: none;" class="text-primary">
 
-.sidebar-content {
-    flex: 1;
-    min-height: 0;
+            {{ current_user.company.company_name }}
 
-    /* Sidebar scrolls independently */
-    overflow-y: auto;
+            </a>
+
+        </div>
+
+        <small class="text-muted">
+
+            {{ current_user.role }}
+
+        </small>
+
+        {% else %}
+
+        <small class="text-secondary">
+
+            Quality Information Management
+
+        </small>
+
+        {% endif %}
+
+    </div>
     
-}
+    <div class="sidebar-content">
+        <ul class="nav flex-column mt-4">
 
-.wrapper {
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-}
+            <li class="nav-title">MAIN</li>
 
-.page {
-    flex: 1;
-    min-width: 0;
-    height: 100vh;
-    overflow-y: auto;
-}
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}"
+                href="{{ url_for('main.home') }}">
+                    <i class="bi bi-speedometer2"></i>
+                    Dashboard
+                </a>
+            </li>
 
+            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Quality Inspector", "Production Supervisor", "Production Operator"] %}
 
-/* ===========================
-   SIDEBAR SCROLLBAR
-=========================== */
+            <li class="nav-title mt-3">MASTER DATA</li>
+        
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint in ['main.customers','main.new_customer','main.edit_customer'] %}active{% endif %}"
+                href="{{ url_for('main.customers') }}">
+                    <i class="bi bi-people"></i>
+                    Customers
+                </a>
+            </li>
 
-.sidebar::-webkit-scrollbar {
-    width: 6px;
-}
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint in ['main.cable_types','main.new_cable_type','main.edit_cable_type'] %}active{% endif %}"
+                    href="{{ url_for('main.cable_types') }}">
+                    <i class="bi bi-lightning"></i>
+                    Cable Types
+                </a>
+            </li>
 
-.sidebar::-webkit-scrollbar-track {
-    background: transparent;
-}
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint in ['main.production_lines','main.new_production_line','main.edit_production_line'] %}active{% endif %}"
+                    href="{{ url_for('main.production_lines') }}">
+                    <i class="bi bi-building-gear"></i>
+                    Production Lines
+                </a>
+            </li>
+            
 
-.sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.25);
-    border-radius: 10px;
-}
-
-.sidebar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.4);
-}
-
-
-/* Firefox */
-.sidebar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
-}
-
-
-/* ===========================
-   LOGO
-=========================== */
-
-.logo {
-    text-align: center;
-    margin-bottom: 35px;
-}
-
-.logo h4 {
-    color: #fff;
-}
+            <li class="nav-title mt-3">OPERATIONS</li>
 
 
-/* ===========================
-   SIDEBAR NAVIGATION
-=========================== */
+            <li class="nav-item">
 
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
+                <a href="{{ url_for('main.quality_specifications') }}"
+                    class="nav-link">
 
-.sidebar li {
-    margin-bottom: 10px;
-}
+                    <i class="bi bi-list-nested"></i>
 
-.sidebar .nav-link {
-    color: #fff;
-    border-radius: 8px;
-    padding: 12px 15px;
-    transition: 0.3s;
-    display: flex;
-    align-items: center;
-}
+                    Quality Specifications
 
-.sidebar .nav-link i {
-    margin-right: 10px;
-}
+                </a>
 
-.sidebar .nav-link:hover,
-.sidebar .nav-link.active {
-    background: #1E293B;
-    color: #60A5FA;
-}
+            </li>
 
-.sidebar-footer {
-    flex-shrink: 0;
-    margin-top: auto;
-    padding: 12px 8px;
-    text-align: center;
-    font-size: 11px;
-    font-style: italic;
-    line-height: 1.4;
-}
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'main.batches' %}active{% endif %}"
+                href="{{ url_for('main.batches') }}">
+                    <i class="bi bi-box-seam"></i>
+                    Cable Batches
+                </a>
+            </li>
 
 
-/* ===========================
-   MOBILE
-=========================== */
+        
 
-@media (max-width: 991px) {
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint in ['main.inspections', 'main.new_inspection'] %}active{% endif %}"
+                    href="{{ url_for('main.inspections') }}">
+                    <i class="bi bi-clipboard-check"></i>
+                    Inspections
+                </a>
+            </li>
 
-    .sidebar {
-        position: fixed;
+            
 
-        top: 0;
-        left: -260px;
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint in ['main.quality_metrics', 'main.new_quality_metric'] %}active{% endif %}"
+                    href="{{ url_for('main.quality_metrics') }}">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    Quality Metrics
+                </a>
+            </li>
 
-        width: 260px;
-        max-width: 260px;
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint in ['main.deviations', 'main.raise_deviation'] %}active{% endif %}"
+                    href="{{ url_for('main.deviations') }}">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Deviations
+                </a>
+            </li>
 
-        height: 100vh;
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint in ['main.capa', 'main.new_capa'] %}active{% endif %}"
+                    href="{{ url_for('main.capa') }}">
+                    <i class="bi bi-tools"></i>
+                CAPA
+                </a>
+            </li>
 
-        overflow-y: auto;
-        overflow-x: hidden;
+            {% endif %}
 
-        -webkit-overflow-scrolling: touch;
+            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager"] %}
 
-        z-index: 1050;
+            <li class="nav-title mt-3">REPORTS</li>
 
-        transition: left .3s ease;
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'main.reports' %}active{% endif %}"
+                href="{{ url_for('main.reports') }}">
+                    <i class="bi bi-bar-chart"></i>
+                    Reports
+                </a>
+            </li>
+            
+            {% endif %}
 
-        /* Reset sticky behavior on mobile */
-        align-self: auto;
-    }
+            {% if current_user.role == "Company Administrator" %}
 
-    .sidebar.active {
-        left: 0;
-    }
+            <li class="nav-title mt-3">ACCOUNTS</li>
+
+            <li class="nav-item">
+
+                <a class="nav-link
+                {% if request.endpoint in [
+                    'main.users',
+                    'main.new_user',
+                    'main.edit_user'
+                ] %}
+                active
+                {% endif %}"
+
+                href="{{ url_for('main.users') }}">
+
+                    <i class="bi bi-person-badge"></i>
+
+                    Users
+
+                </a>
+
+            </li>
+
+            {% endif %}
+
+            {% if current_user.role=="System Administrator" %}
+
+            <li class="nav-title mt-3">REGISTERED COMPANY</li>
+
+            <li class="nav-item">
+
+                <a class="nav-link"
+
+                href="{{ url_for('main.companies') }}">
+
+                    <i class="bi bi-buildings"></i>
+
+                    Companies
+
+                </a>
+
+            </li>
+
+            {% endif %}
+
+            <li class="nav-title mt-3">SYSTEM</li>
+
+            {% if current_user.role == "System Administrator" %}
+
+            <li class="nav-item">
+
+                <a class="nav-link {% if request.endpoint == 'main.audit_trail' %}active{% endif %}"
+                href="{{ url_for('main.audit_trail') }}">
+
+                    <i class="bi bi-journal-text"></i>
+
+                    Audit Trail
+
+                </a>
+
+            </li>
+
+            {% endif %}
+
+        <li class="nav-item">
+                <a class="nav-link"
+                href="{{ url_for('main.settings') }}">
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
 
 
-    /* ===========================
-       MOBILE OVERLAY
-    =========================== */
 
-    .sidebar-overlay {
-        position: fixed;
-        inset: 0;
+        </ul>
 
-        background: rgba(0, 0, 0, .45);
+    </div>    
 
-        display: none;
+    <!-- Footer -->
+        {% include 'partials/footer.html' %}
 
-        z-index: 1040;
-    }
-
-    .sidebar-overlay.show {
-        display: block;
-    }
-}
+</div>
