@@ -492,12 +492,12 @@ def overdue_capas(company_id):
     return CAPA.query.filter(
 
         CAPA.company_id == company_id,
-        
-        CAPA.status != "Closed",
-        
+
+        CAPA.status.notin_(["Completed", "Closed"]),
+
         CAPA.due_date.isnot(None),
-        
-        CAPA.due_date <= date.today()
+
+        CAPA.due_date < date.today()
 
     ).count()
 
