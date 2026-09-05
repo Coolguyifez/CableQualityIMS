@@ -177,6 +177,7 @@
                     <thead class="table">
 
                     <tr>
+                        <th>#</th>
 
                         <th>Metric</th>
 
@@ -197,6 +198,8 @@
                     {% for metric in inspection.quality_metrics %}
 
                     <tr>
+
+                        <td>{{loop.index}}</td>
 
                         <td>
 
