@@ -4093,6 +4093,7 @@ def delete_capa(capa_id):
     )
 
 
+
 @main.route("/notifications")
 @permission_required("manage_notifications")
 @login_required
