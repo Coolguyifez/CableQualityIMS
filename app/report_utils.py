@@ -1382,13 +1382,13 @@ def get_capa_statistics(query):
         CAPA.status == "Closed"
     ).count()
 
-    overdue = query.filter(
+   overdue = query.filter(
 
         CAPA.due_date.isnot(None),
-        
-        CAPA.due_date <= date.today(),
-        
-        CAPA.status != "Closed"
+
+        CAPA.due_date < date.today(),
+
+        CAPA.status.notin_(["Completed", "Closed"])
 
     ).count()
 
