@@ -281,27 +281,37 @@
                             {% endif %}
 
                         </td>
-                        <td>
+                        <td> 
+                            <div class="d-inline-flex align-items-center gap-1"> 
 
-                            {% set deviation = metric.deviations|first %}
+                            {% set deviation = metric.deviations|first %} 
 
-                            {% if deviation %}
+                            {% if deviation %} 
+                            <a href="{{ url_for( 'main.view_deviation', deviation_id=deviation.id ) }}" 
+                            
+                            class="btn btn-sm btn-danger" title="View Deviation" > 
 
-                            <a href="{{ url_for('main.view_deviation',
-                                                deviation_id=deviation.id) }}"
-                            class="btn btn-danger btn-sm">
+                            <i class="bi bi-exclamation-triangle"></i> 
 
-                            <i class="bi bi-exclamation-triangle"></i>
+                            View Deviation 
 
-                                View Deviation
+                            </a> 
 
-                            </a>
+                            {% else %} 
 
-                            {% else %}
+                            <span class="text-muted me-1">—</span> 
 
-                            —
+                            {% endif %} 
 
-                            {% endif %}
+                            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Quality Inspector"] %}
+
+                            <a href="{{ url_for( 'main.edit_quality_metric', metric_id=metric.id ) }}" class="btn btn-sm btn-warning" title="Edit Metric" > 
+
+                                <i class="bi bi-pencil"></i> </a> <a href="{{ url_for( 'main.delete_quality_metric', metric_id=metric.id ) }}" class="btn btn-sm btn-danger" 
+                                title="Delete Metric" onclick="return confirm('Delete this metric?')" > 
+                                    <i class="bi bi-trash"></i> </a> </div> 
+
+                            {% endif %}        
                         </td>
 
                     </tr>
