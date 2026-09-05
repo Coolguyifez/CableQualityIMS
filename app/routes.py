@@ -1,6 +1,9 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session, current_app
-from .forms import CustomerForm, CableTypeForm, ProductionLineForm, CableBatchForm, InspectionForm, QualityMetricForm,  QualitySpecificationForm, DeviationForm, CAPAForm, CompanyForm, ThemeSettingsForm, AccountSettingsForm, NotificationSettingsForm
-from .models import Customer, User, CableType, ProductionLine, CableBatch, Inspection, QualityMetric, QualitySpecification, Deviation, CAPA, Notification, Company, AuditLog, PushSubscription
+from .forms import CustomerForm, CableTypeForm, ProductionLineForm, CableBatchForm, InspectionForm, QualityMetricForm, \
+    QualitySpecificationForm, DeviationForm, CAPAForm, CompanyForm, ThemeSettingsForm, AccountSettingsForm, \
+    NotificationSettingsForm
+from .models import Customer, User, CableType, ProductionLine, CableBatch, Inspection, QualityMetric, \
+    QualitySpecification, Deviation, CAPA, Notification, Company, AuditLog, PushSubscription
 from .extensions import db, bcrypt
 from datetime import datetime
 from datetime import date
@@ -102,13 +105,10 @@ from .decorators import (
     roles_required
 )
 
-
-
-
 main = Blueprint("main", __name__)
 
-def generate_batch_number(production_date):
 
+def generate_batch_number(production_date):
     prefix = production_date.strftime(
 
         "CB-%Y%m%d"
@@ -153,6 +153,7 @@ def generate_batch_number(production_date):
 
     return f"{prefix}-{sequence:03d}"
 
+
 def generate_cable_construction(cable_type):
     """
     Automatically builds the cable construction.
@@ -170,6 +171,7 @@ def generate_cable_construction(cable_type):
         f"{cable_type.outer_sheath_material}"
         f" - {cable_type.flame_retardant}"
     )
+
 
 def generate_cable_code(
         cable_type,
@@ -229,6 +231,7 @@ def generate_cable_code(
 
 from datetime import date
 from app.models import Inspection
+
 
 def generate_inspection_number(inspection_date):
     """
@@ -292,9 +295,9 @@ def validate_result(specification, measured_value):
             value = float(measured_value)
 
             passed = (
-                specification.minimum_value
-                <= value
-                <= specification.maximum_value
+                    specification.minimum_value
+                    <= value
+                    <= specification.maximum_value
             )
 
             return (
@@ -332,7 +335,6 @@ def validate_result(specification, measured_value):
 
 
 def update_inspection_status(inspection_id):
-
     inspection = Inspection.query.get_or_404(inspection_id)
 
     metrics = QualityMetric.query.filter_by(
@@ -361,8 +363,8 @@ def update_inspection_status(inspection_id):
 
     db.session.commit()
 
-def generate_deviation_number():
 
+def generate_deviation_number():
     today = datetime.now().strftime("%Y-%m%d")
 
     last = (
@@ -382,7 +384,6 @@ def generate_deviation_number():
         next_number = 1
 
     return f"DEV:{today}-{next_number:03d}"
-
 
 def flag_production_line_for_capa(capa):
     """
@@ -495,7 +496,8 @@ def update_capa_status(capa):
         return True
 
     return False
-    
+
+
 def paginate_records(query, page=1, per_page=10):
     return query.paginate(
         page=page,
@@ -507,7 +509,6 @@ def paginate_records(query, page=1, per_page=10):
 @main.route("/")
 @login_required
 def home():
-
     company_id = current_user.company_id
 
     stats = get_dashboard_statistics(
@@ -590,7 +591,6 @@ def home():
 
 @main.route("/login", methods=["GET", "POST"])
 def login():
-
     if current_user.is_authenticated:
         return redirect(
             url_for("main.home")
@@ -605,7 +605,6 @@ def login():
         ).first()
 
         if not company:
-
             flash(
                 "Invalid company code.",
                 "danger"
@@ -622,11 +621,10 @@ def login():
         ).first()
 
         if (
-            user
-            and user.check_password(form.password.data)
-            and user.is_active
+                user
+                and user.check_password(form.password.data)
+                and user.is_active
         ):
-
             login_user(
                 user,
                 remember=form.remember.data
@@ -651,10 +649,10 @@ def login():
         form=form
     )
 
+
 @main.route("/logout")
 @login_required
 def logout():
-
     logout_user()
 
     flash(
@@ -666,11 +664,11 @@ def logout():
         url_for("main.login")
     )
 
+
 @main.route("/users")
 @login_required
 @roles_required("Company Administrator")
 def users():
-
     users = User.query.filter_by(
 
         company_id=current_user.company_id
@@ -710,6 +708,7 @@ def users():
 
     )
 
+
 @main.route(
     "/users/new",
     methods=["GET", "POST"]
@@ -717,7 +716,6 @@ def users():
 @login_required
 @roles_required("Company Administrator")
 def new_user():
-
     form = UserForm()
 
     if form.validate_on_submit():
@@ -731,7 +729,6 @@ def new_user():
         ).first()
 
         if username_exists:
-
             flash(
 
                 "Username already exists.",
@@ -759,7 +756,6 @@ def new_user():
         ).first()
 
         if email_exists:
-
             flash(
 
                 "Email already exists.",
@@ -795,7 +791,6 @@ def new_user():
         )
 
         if form.password.data:
-
             user.set_password(
 
                 form.password.data
@@ -848,6 +843,7 @@ def new_user():
 
     )
 
+
 @main.route(
     "/users/<int:user_id>/edit",
     methods=["GET", "POST"]
@@ -855,7 +851,6 @@ def new_user():
 @login_required
 @roles_required("Company Administrator")
 def edit_user(user_id):
-
     user = User.query.filter_by(
 
         id=user_id,
@@ -879,7 +874,6 @@ def edit_user(user_id):
         ).first()
 
         if username_exists:
-
             flash(
 
                 "Username already exists.",
@@ -909,7 +903,6 @@ def edit_user(user_id):
         ).first()
 
         if email_exists:
-
             flash(
 
                 "Email already exists.",
@@ -939,7 +932,6 @@ def edit_user(user_id):
         user.is_active = form.is_active.data
 
         if form.password.data:
-
             user.set_password(
 
                 form.password.data
@@ -989,7 +981,6 @@ def edit_user(user_id):
 @login_required
 @roles_required("Company Administrator")
 def delete_user(user_id):
-
     user = User.query.filter_by(
 
         id=user_id,
@@ -999,7 +990,6 @@ def delete_user(user_id):
     ).first_or_404()
 
     if user.id == current_user.id:
-
         flash(
 
             "You cannot delete your own account.",
@@ -1047,13 +1037,9 @@ def delete_user(user_id):
 
 
 @main.route("/companies")
-
 @login_required
-
 @system_admin_required
-
 def companies():
-
     companies = Company.query.order_by(
 
         Company.company_name
@@ -1090,24 +1076,20 @@ def companies():
 
     )
 
+
 @main.route(
 
     "/companies/new",
 
-    methods=["GET","POST"]
+    methods=["GET", "POST"]
 
 )
-
 @login_required
-
 @system_admin_required
-
 def new_company():
-
     form = CompanyForm()
 
     if form.validate_on_submit():
-
         company = Company(
 
             company_name=form.company_name.data,
@@ -1189,14 +1171,11 @@ def new_company():
 
     )
 
+
 @main.route(
-
     "/companies/<int:company_id>/edit",
-
-    methods=["GET","POST"]
-
+    methods=["GET", "POST"]
 )
-
 @login_required
 @system_admin_required
 def edit_company(company_id):
@@ -1278,12 +1257,11 @@ def edit_company(company_id):
         title="Edit Company",
         company=company
     )
-    
+
 @main.route("/companies/<int:company_id>/toggle")
 @login_required
 @system_admin_required
 def toggle_company(company_id):
-
     company = Company.query.get_or_404(
         company_id
     )
@@ -1337,10 +1315,10 @@ def toggle_company(company_id):
         url_for("main.companies")
     )
 
+
 @main.route("/profile")
 @login_required
 def profile():
-
     return render_template(
         "profile.html",
         user=current_user,
@@ -1348,13 +1326,10 @@ def profile():
     )
 
 
-
-
 @main.route("/customers")
 @login_required
 @permission_required("manage_customers")
 def customers():
-
     customers = Customer.query.filter_by(
         company_id=current_user.company_id
     ).order_by(
@@ -1385,15 +1360,14 @@ def customers():
         pagination=pagination
     )
 
+
 @main.route("/customers/new", methods=["GET", "POST"])
 @permission_required("manage_customers")
 @login_required
 def new_customer():
-
     form = CustomerForm()
 
     if form.validate_on_submit():
-
         customer = Customer(
             company_id=current_user.company_id,
             company_name=form.company_name.data,
@@ -1431,6 +1405,7 @@ def new_customer():
         form=form
     )
 
+
 @main.route("/customers/<int:customer_id>/edit", methods=["GET", "POST"])
 @login_required
 @permission_required("manage_customers")
@@ -1443,13 +1418,11 @@ def edit_customer(customer_id):
     form = CustomerForm(obj=customer)
 
     if form.validate_on_submit():
-
         customer.company_name = form.company_name.data
         customer.contact_person = form.contact_person.data
         customer.email = form.email.data
         customer.phone = form.phone.data
         customer.address = form.address.data
-
 
         log_activity(
 
@@ -1507,6 +1480,7 @@ def delete_customer(customer_id):
         url_for("main.customers")
     )
 
+
 # ==========================
 # CABLE TYPES
 # ==========================
@@ -1515,7 +1489,6 @@ def delete_customer(customer_id):
 @permission_required("manage_cable_types")
 @login_required
 def cable_types():
-
     page = request.args.get(
         "page",
         1,
@@ -1545,7 +1518,6 @@ def cable_types():
 @login_required
 @permission_required("manage_cable_types")
 def new_cable_type():
-
     form = CableTypeForm()
 
     if form.validate_on_submit():
@@ -1570,7 +1542,6 @@ def new_cable_type():
         ).first()
 
         if existing:
-
             flash(
                 "Cable Type already exists.",
                 "warning"
@@ -1643,7 +1614,6 @@ def new_cable_type():
 @login_required
 @permission_required("manage_cable_types")
 def edit_cable_type(id):
-
     cable = CableType.query.filter_by(
         id=id,
         company_id=current_user.company_id
@@ -1701,12 +1671,10 @@ def edit_cable_type(id):
 @login_required
 @permission_required("manage_cable_types")
 def delete_cable_type(id):
-
     cable = CableType.query.filter_by(
         id=id,
         company_id=current_user.company_id
     ).first_or_404()
-
 
     log_activity(
 
@@ -1738,7 +1706,6 @@ def delete_cable_type(id):
 @permission_required("manage_production_lines")
 @login_required
 def production_lines():
-
     page = request.args.get(
         "page",
         1,
@@ -1768,11 +1735,9 @@ def production_lines():
 @login_required
 @permission_required("manage_production_lines")
 def new_production_line():
-
     form = ProductionLineForm()
 
     if form.validate_on_submit():
-
         line = ProductionLine(
 
             company_id=current_user.company_id,
@@ -1820,7 +1785,6 @@ def new_production_line():
 @login_required
 @permission_required("manage_production_lines")
 def edit_production_line(id):
-
     line = ProductionLine.query.filter_by(
         id=id,
         company_id=current_user.company_id
@@ -1829,7 +1793,6 @@ def edit_production_line(id):
     form = ProductionLineForm(obj=line)
 
     if form.validate_on_submit():
-
         form.populate_obj(line)
 
         log_activity(
@@ -1868,7 +1831,6 @@ def delete_production_line(id):
         company_id=current_user.company_id
     ).first_or_404()
 
-
     log_activity(
 
         module="Production Line",
@@ -1892,6 +1854,7 @@ def delete_production_line(id):
         url_for("main.production_lines")
     )
 
+
 # =====================================
 # CABLE BATCHES
 # =====================================
@@ -1900,7 +1863,6 @@ def delete_production_line(id):
 @permission_required("manage_batches")
 @login_required
 def batches():
-
     page = request.args.get(
         "page",
         1,
@@ -1927,7 +1889,6 @@ def batches():
         batches=batches,
         pagination=pagination
     )
-
 
 @main.route("/batches/new", methods=["GET", "POST"])
 @login_required
@@ -2068,7 +2029,8 @@ def new_batch():
         cable_types=cable_types,
         title="New Cable Batch"
     )
-    
+
+
 
 @main.route(
     "/batches/<int:batch_id>/edit",
@@ -2077,7 +2039,6 @@ def new_batch():
 @login_required
 @permission_required("manage_batches")
 def edit_batch(batch_id):
-
     batch = CableBatch.query.filter_by(
 
         id=batch_id,
@@ -2122,7 +2083,6 @@ def edit_batch(batch_id):
     ]
 
     if form.validate_on_submit():
-
         batch.drum_number = form.drum_number.data.strip()
 
         batch.customer_id = form.customer_id.data
@@ -2187,12 +2147,10 @@ def edit_batch(batch_id):
 @login_required
 @permission_required("manage_batches")
 def delete_batch(batch_id):
-
     batch = CableBatch.query.filter_by(
         id=batch_id,
         company_id=current_user.company_id
     ).first_or_404()
-
 
     log_activity(
 
@@ -2226,7 +2184,6 @@ def delete_batch(batch_id):
 @permission_required("manage_inspections")
 @login_required
 def inspections():
-
     page = request.args.get(
         "page",
         1,
@@ -2259,7 +2216,6 @@ def inspections():
 @login_required
 @permission_required("manage_inspections")
 def new_inspection():
-
     form = InspectionForm()
 
     form.batch_id.choices = [
@@ -2279,7 +2235,6 @@ def new_inspection():
     ]
 
     if form.validate_on_submit():
-
         inspection = Inspection(
 
             company_id=current_user.company_id,
@@ -2310,7 +2265,6 @@ def new_inspection():
 
         db.session.commit()
 
-
         flash(
             "Inspection saved successfully.",
             "success"
@@ -2325,7 +2279,6 @@ def new_inspection():
                 inspection_id=inspection.id
             )
         )
-        
 
         return redirect(
             url_for("main.inspections")
@@ -2336,11 +2289,11 @@ def new_inspection():
         form=form
     )
 
+
 @main.route("/inspections/<int:inspection_id>")
 @permission_required("manage_inspections")
 @login_required
 def view_inspection(inspection_id):
-
     inspection = Inspection.query.filter_by(
         id=inspection_id,
         company_id=current_user.company_id
@@ -2351,11 +2304,11 @@ def view_inspection(inspection_id):
         inspection=inspection
     )
 
+
 @main.route("/inspections/<int:inspection_id>/edit", methods=["GET", "POST"])
 @login_required
 @permission_required("manage_inspections")
 def edit_inspection(inspection_id):
-
     inspection = Inspection.query.filter_by(
         id=inspection_id,
         company_id=current_user.company_id
@@ -2380,7 +2333,6 @@ def edit_inspection(inspection_id):
     ]
 
     if form.validate_on_submit():
-
         inspection.batch_id = form.batch_id.data
         inspection.inspector = form.inspector.data
         inspection.inspection_date = form.inspection_date.data
@@ -2410,6 +2362,7 @@ def edit_inspection(inspection_id):
         form=form
     )
 
+
 @main.route("/inspections/<int:inspection_id>/delete")
 @login_required
 @permission_required("manage_inspections")
@@ -2418,7 +2371,6 @@ def delete_inspection(inspection_id):
         id=inspection_id,
         company_id=current_user.company_id
     ).first_or_404()
-
 
     log_activity(
 
@@ -2440,6 +2392,7 @@ def delete_inspection(inspection_id):
     )
 
     return redirect(url_for("main.inspections"))
+
 
 # ==========================================
 # QUALITY METRICS
@@ -2640,7 +2593,7 @@ def new_quality_metric(inspection_id):
 
         if (
                 deviation is not None
-                
+
         ):
             create_notification(
 
@@ -2680,7 +2633,6 @@ def new_quality_metric(inspection_id):
 
             if inspection.overall_result == "Pass":
 
-                
                 create_notification(
 
                     title="Inspection Passed",
@@ -2700,13 +2652,13 @@ def new_quality_metric(inspection_id):
                 )
 
             elif inspection.overall_result == "Fail":
-                
+
                 create_notification(
 
                     title="Inspection Failed",
 
                     message=f"{inspection.inspection_number} failed one or more quality checks."
-                            f" Inspected by {inspection.inspector}.",
+                            f" Inspected by {inspection.inspector}",
 
                     category="Inspection",
 
@@ -2749,7 +2701,6 @@ def new_quality_metric(inspection_id):
 @login_required
 @permission_required("manage_quality_metrics")
 def edit_quality_metric(metric_id):
-
     metric = QualityMetric.query.filter_by(
 
         id=metric_id,
@@ -2799,7 +2750,6 @@ def edit_quality_metric(metric_id):
     ]
 
     if request.method == "GET":
-
         form.specification_id.data = metric.specification_id
 
         form.measured_value.data = metric.measured_value
@@ -2862,7 +2812,6 @@ def edit_quality_metric(metric_id):
 
             if existing_deviation:
                 db.session.delete(existing_deviation)
-
 
         log_activity(
 
@@ -2969,6 +2918,7 @@ def edit_quality_metric(metric_id):
 
     )
 
+
 @main.route(
     "/quality-metrics/<int:metric_id>/delete"
 )
@@ -2984,8 +2934,6 @@ def delete_quality_metric(metric_id):
     ).first_or_404()
 
     inspection_id = metric.inspection_id
-
-
 
     db.session.delete(metric)
 
@@ -3043,10 +2991,10 @@ def delete_quality_metric(metric_id):
 
     )
 
+
 @main.route("/quality-specification/<int:specification_id>/details")
 @login_required
 def quality_specification_details(specification_id):
-
     specification = QualitySpecification.query.filter_by(
 
         id=specification_id,
@@ -3060,10 +3008,10 @@ def quality_specification_details(specification_id):
         "unit": specification.unit or "",
 
         "minimum_value": specification.minimum_value
-            if specification.minimum_value is not None else "",
+        if specification.minimum_value is not None else "",
 
         "maximum_value": specification.maximum_value
-            if specification.maximum_value is not None else "",
+        if specification.maximum_value is not None else "",
 
         "expected_result": specification.expected_result or ""
 
@@ -3073,7 +3021,6 @@ def quality_specification_details(specification_id):
 @main.route("/quality-specifications/<int:id>/json")
 @login_required
 def quality_specification_json(id):
-
     specification = QualitySpecification.query.filter_by(
         id=id,
         company_id=current_user.company_id
@@ -3092,7 +3039,6 @@ def quality_specification_json(id):
 @permission_required("manage_specifications")
 @login_required
 def quality_specifications():
-
     page = request.args.get(
         "page",
         1,
@@ -3123,6 +3069,7 @@ def quality_specifications():
         pagination=pagination
     )
 
+
 @main.route(
     "/quality-specifications/new",
     methods=["GET", "POST"]
@@ -3130,7 +3077,6 @@ def quality_specifications():
 @login_required
 @permission_required("manage_specifications")
 def new_quality_specification():
-
     form = QualitySpecificationForm()
 
     cable_types = CableType.query.filter_by(
@@ -3154,9 +3100,7 @@ def new_quality_specification():
         for c in cable_types
     }
 
-
     if form.validate_on_submit():
-
         specification = QualitySpecification(
 
             company_id=current_user.company_id,
@@ -3216,11 +3160,11 @@ def new_quality_specification():
             "warning"
         )
     return render_template(
-            "quality_specification_form.html",
-            form=form,
-            voltage_map = voltage_map
+        "quality_specification_form.html",
+        form=form,
+        voltage_map=voltage_map
 
-        )
+    )
 
 
 @main.route(
@@ -3230,7 +3174,6 @@ def new_quality_specification():
 @login_required
 @permission_required("manage_specifications")
 def edit_quality_specification(id):
-
     specification = QualitySpecification.query.filter_by(
         id=id,
         company_id=current_user.company_id
@@ -3259,9 +3202,7 @@ def edit_quality_specification(id):
         for c in cable_types
     }
 
-
     if form.validate_on_submit():
-
         specification.cable_type_id = form.cable_type_id.data
 
         specification.metric_name = form.metric_name.data
@@ -3315,16 +3256,16 @@ def edit_quality_specification(id):
             "warning"
         )
     return render_template(
-            "quality_specification_form.html",
-            form=form,
-            voltage_map=voltage_map
-        )
+        "quality_specification_form.html",
+        form=form,
+        voltage_map=voltage_map
+    )
+
 
 @main.route("/quality-specifications/<int:id>/delete")
 @login_required
 @permission_required("manage_specifications")
 def delete_quality_specification(id):
-
     specification = QualitySpecification.query.filter_by(
         id=id,
         company_id=current_user.company_id
@@ -3353,11 +3294,11 @@ def delete_quality_specification(id):
         url_for("main.quality_specifications")
     )
 
+
 @main.route("/deviations")
 @login_required
 @permission_required("manage_deviations")
 def deviations():
-
     page = request.args.get(
         "page",
         1,
@@ -3383,7 +3324,6 @@ def deviations():
     )
 
 
-
 @main.route("/deviations/<int:deviation_id>")
 @login_required
 @permission_required("manage_deviations")
@@ -3397,6 +3337,7 @@ def view_deviation(deviation_id):
         "view_deviation.html",
         deviation=deviation
     )
+
 
 @main.route(
     "/deviations/<int:deviation_id>/edit",
@@ -3530,7 +3471,6 @@ def delete_deviation(deviation_id):
     return redirect(
         url_for("main.deviations")
     )
-
 
 @main.route("/capa")
 @permission_required("manage_capa")
@@ -4093,7 +4033,6 @@ def delete_capa(capa_id):
     )
 
 
-
 @main.route("/notifications")
 @permission_required("manage_notifications")
 @login_required
@@ -4112,10 +4051,11 @@ def notifications():
         notifications=notifications
 
     )
+
+
 @main.route("/notifications/<int:notification_id>/read")
 @login_required
 def read_notification(notification_id):
-
     notification = Notification.query.filter_by(
         id=notification_id,
         company_id=current_user.company_id,
@@ -4150,7 +4090,6 @@ def read_notification(notification_id):
             ).first()
 
             if not capa:
-
                 flash(
                     "This CAPA has been deleted and is no longer available.",
                     "warning"
@@ -4171,7 +4110,6 @@ def read_notification(notification_id):
                 url_for("main.notifications")
             )
 
-
     # =========================================================
     # INSPECTION
     # =========================================================
@@ -4189,7 +4127,6 @@ def read_notification(notification_id):
             ).first()
 
             if not inspection:
-
                 flash(
                     "This inspection has been deleted and is no longer available.",
                     "warning"
@@ -4210,7 +4147,6 @@ def read_notification(notification_id):
                 url_for("main.notifications")
             )
 
-
     # =========================================================
     # DEVIATION
     # =========================================================
@@ -4228,7 +4164,6 @@ def read_notification(notification_id):
             ).first()
 
             if not deviation:
-
                 flash(
                     "This deviation has been deleted and is no longer available.",
                     "warning"
@@ -4249,7 +4184,6 @@ def read_notification(notification_id):
                 url_for("main.notifications")
             )
 
-
     # =========================================================
     # RECORD STILL EXISTS
     # =========================================================
@@ -4257,6 +4191,7 @@ def read_notification(notification_id):
     return redirect(
         notification.link
     )
+
 
 @main.route("/notifications/read-all")
 @login_required
@@ -4328,11 +4263,11 @@ def delete_notification(notification_id):
 
     )
 
+
 @main.route("/audit-trail")
 @permission_required("view_audit")
 @login_required
 def audit_trail():
-
     # --------------------------------
     # Base query
     # --------------------------------
@@ -4350,7 +4285,6 @@ def audit_trail():
     ).strip()
 
     if search:
-
         logs = logs.filter(
             AuditLog.description.ilike(
                 f"%{search}%"
@@ -4368,7 +4302,6 @@ def audit_trail():
     ).strip()
 
     if module:
-
         logs = logs.filter(
             AuditLog.module == module
         )
@@ -4384,7 +4317,6 @@ def audit_trail():
     ).strip()
 
     if action:
-
         logs = logs.filter(
             AuditLog.action == action
         )
@@ -4425,11 +4357,11 @@ def audit_trail():
         action=action
     )
 
+
 @main.route("/reports")
 @permission_required("view_reports")
 @login_required
 def reports():
-
     inspection_count = Inspection.query.filter_by(
         company_id=current_user.company_id
     ).count()
@@ -4516,7 +4448,6 @@ def reports():
     ]
 
     if current_user.role == "System Administrator":
-
         reports.append({
 
             "title": "Company Report",
@@ -4546,6 +4477,7 @@ def reports():
         audit_count=audit_count
 
     )
+
 
 # ============================================================
 # REPORTS
@@ -4685,10 +4617,10 @@ def inspection_report():
         pass_rate=stats["pass_rate"]
     )
 
+
 @main.route("/reports/inspections/excel")
 @login_required
 def export_inspection_excel():
-
     query = get_filtered_inspection_query(
 
         current_user.company_id
@@ -4795,7 +4727,6 @@ def export_inspection_excel():
 @main.route("/reports/inspections/pdf")
 @login_required
 def export_inspection_pdf():
-
     query = get_filtered_inspection_query(
 
         current_user.company_id
@@ -4810,7 +4741,7 @@ def export_inspection_pdf():
 
     inspections = query.all()
 
-    #pdf header
+    # pdf header
     headers = [
 
         "S/N",
@@ -4841,9 +4772,8 @@ def export_inspection_pdf():
 
         "Result",
 
-
     ]
-    #pdf row
+    # pdf row
 
     rows = []
 
@@ -4881,10 +4811,9 @@ def export_inspection_pdf():
 
             inspection.overall_result,
 
-
         ])
 
-    #Export PDF
+    # Export PDF
 
     return export_pdf(
 
@@ -4899,13 +4828,9 @@ def export_inspection_pdf():
     )
 
 
-
 @main.route("/reports/deviations")
-
 @login_required
-
 def deviation_report():
-
     query = get_filtered_deviation_query(
 
         current_user.company_id
@@ -4967,6 +4892,7 @@ def deviation_report():
         severity_chart=severity_chart
 
     )
+
 
 @main.route("/reports/deviations/excel")
 @login_required
@@ -5061,10 +4987,10 @@ def export_deviation_pdf():
         filename="Deviation_Report.pdf"
     )
 
+
 @main.route("/reports/capa")
 @login_required
 def capa_report():
-
     query = get_filtered_capa_query(
 
         current_user.company_id
@@ -5129,40 +5055,27 @@ def capa_report():
 
     )
 
+
 @main.route("/reports/capa/excel")
 @login_required
 def export_capa_excel():
 
     query = get_filtered_capa_query(
-
         current_user.company_id
-
     )
 
-    query = apply_capa_sort(
-
-        query
-
-    )
+    query = apply_capa_sort(query)
 
     capas = query.all()
 
     headers = [
-
         "S/N",
-
         "CAPA",
-
         "Assigned To",
-
         "Status",
-
         "Effectiveness",
-
         "Due Date",
-
         "Completion Date"
-
     ]
 
     rows = []
@@ -5171,63 +5084,41 @@ def export_capa_excel():
 
         rows.append([
             index,
-            
             f"CAPA-{capa.deviation.deviation_number}",
-            
             capa.assigned_to,
-            
             capa.status,
-            
             capa.effectiveness,
-            
             capa.due_date,
-            
             capa.completion_date
         ])
-        
+
     return export_excel(
-
         title="CAPA Report",
-
         headers=headers,
-
         rows=rows,
-
         filename="CAPA_Report.xlsx"
-
     )
+
 
 @main.route("/reports/capa/pdf")
 @login_required
 def export_capa_pdf():
 
     query = get_filtered_capa_query(
-
         current_user.company_id
-
     )
 
-    query = apply_capa_sort(
-
-        query
-
-    )
+    query = apply_capa_sort(query)
 
     capas = query.all()
 
     headers = [
         "S/N",
-        
         "CAPA",
-        
         "Assigned To",
-        
         "Status",
-        
         "Effectiveness",
-        
         "Due Date",
-        
         "Completion Date"
     ]
 
@@ -5237,36 +5128,24 @@ def export_capa_pdf():
 
         rows.append([
             index,
-            
             f"CAPA-{capa.deviation.deviation_number}",
-            
             capa.assigned_to,
-            
             capa.status,
-            
             capa.effectiveness,
-            
             capa.due_date,
-            
             capa.completion_date
         ])
 
     return export_pdf(
-
         title="CAPA Report",
-
         headers=headers,
-
         rows=rows,
-
         filename="CAPA_Report.pdf"
-
     )
 
 @main.route("/reports/quality-metrics")
 @login_required
 def quality_metrics_report():
-
     query = get_filtered_quality_metric_query(
 
         current_user.company_id
@@ -5317,10 +5196,10 @@ def quality_metrics_report():
 
     )
 
+
 @main.route("/reports/quality-metrics/excel")
 @login_required
 def export_quality_metric_excel():
-
     query = get_filtered_quality_metric_query(
 
         current_user.company_id
@@ -5358,11 +5237,9 @@ def export_quality_metric_excel():
     rows = []
 
     for index, metric in enumerate (metrics, start=1):
-
         rows.append(
 
             [
-
                 index,
 
                 metric.inspection.inspection_number,
@@ -5395,10 +5272,10 @@ def export_quality_metric_excel():
 
     )
 
+
 @main.route("/reports/quality-metrics/pdf")
 @login_required
 def export_quality_metric_pdf():
-
     query = get_filtered_quality_metric_query(
 
         current_user.company_id
@@ -5430,10 +5307,10 @@ def export_quality_metric_pdf():
     rows = []
 
     for index, metric in enumerate (metrics, start=1):
-
         rows.append(
 
             [
+
                 index,
 
                 metric.inspection.inspection_number,
@@ -5461,11 +5338,9 @@ def export_quality_metric_pdf():
     )
 
 
-
 @main.route("/reports/production")
 @login_required
 def production_report():
-
     query = get_filtered_production_query(
 
         current_user.company_id
@@ -5520,10 +5395,10 @@ def production_report():
 
     )
 
+
 @main.route("/reports/production/excel")
 @login_required
 def export_production_excel():
-
     query = get_filtered_production_query(
 
         current_user.company_id
@@ -5563,7 +5438,6 @@ def export_production_excel():
     rows = []
 
     for index, batch in enumerate (batches, start=1):
-
         rows.append([
             index,
 
@@ -5597,10 +5471,10 @@ def export_production_excel():
 
     )
 
+
 @main.route("/reports/production/pdf")
 @login_required
 def export_production_pdf():
-
     query = get_filtered_production_query(
 
         current_user.company_id
@@ -5632,9 +5506,7 @@ def export_production_pdf():
     rows = []
 
     for index, batch in enumerate (batches, start=1):
-
         rows.append([
-
             index,
 
             batch.batch_number,
@@ -5663,7 +5535,6 @@ def export_production_pdf():
 @main.route("/reports/customers")
 @login_required
 def customer_report():
-
     query = get_filtered_customer_query(
 
         current_user.company_id
@@ -5725,10 +5596,10 @@ def customer_report():
 
     )
 
+
 @main.route("/reports/customers/excel")
 @login_required
 def export_customer_excel():
-
     query = get_filtered_customer_query(
 
         current_user.company_id
@@ -5770,6 +5641,7 @@ def export_customer_excel():
         ).count()
 
         rows.append([
+
             index,
 
             customer.company_name,
@@ -5798,10 +5670,10 @@ def export_customer_excel():
 
     )
 
+
 @main.route("/reports/customers/pdf")
 @login_required
 def export_customer_pdf():
-
     query = get_filtered_customer_query(
 
         current_user.company_id
@@ -5825,13 +5697,12 @@ def export_customer_pdf():
         "Requests",
 
         "Contact",
-        
+
         "Email",
 
         "Phone",
 
         "Address"
-
 
     ]
 
@@ -5844,6 +5715,7 @@ def export_customer_pdf():
         ).count()
 
         rows.append([
+
             index,
 
             customer.company_name,
@@ -5876,7 +5748,6 @@ def export_customer_pdf():
 @main.route("/reports/users")
 @login_required
 def user_report():
-
     query = get_filtered_user_query(
 
         current_user.company_id
@@ -5929,10 +5800,10 @@ def user_report():
 
     )
 
+
 @main.route("/reports/users/excel")
 @login_required
 def export_user_excel():
-
     query = get_filtered_user_query(
 
         current_user.company_id
@@ -5997,10 +5868,10 @@ def export_user_excel():
 
     )
 
+
 @main.route("/reports/users/pdf")
 @login_required
 def export_user_pdf():
-
     query = get_filtered_user_query(
 
         current_user.company_id
@@ -6063,11 +5934,9 @@ def export_user_pdf():
     )
 
 
-
 @main.route("/reports/audit")
 @login_required
 def audit_report():
-
     query = get_filtered_audit_query(
 
         current_user.company_id
@@ -6120,10 +5989,10 @@ def audit_report():
 
     )
 
+
 @main.route("/reports/audit/excel")
 @login_required
 def export_audit_excel():
-
     query = get_filtered_audit_query(
 
         current_user.company_id
@@ -6140,7 +6009,7 @@ def export_audit_excel():
 
     headers = [
 
-        "S/N",
+        "S/N"
 
         "Date",
 
@@ -6157,8 +6026,8 @@ def export_audit_excel():
     rows = []
 
     for index, log in enumerate(logs, start=1):
-
         rows.append([
+
             index,
 
             log.created_at.strftime(
@@ -6191,10 +6060,10 @@ def export_audit_excel():
 
     )
 
+
 @main.route("/reports/audit/pdf")
 @login_required
 def export_audit_pdf():
-
     query = get_filtered_audit_query(
 
         current_user.company_id
@@ -6226,10 +6095,9 @@ def export_audit_pdf():
     rows = []
 
     for index, log in enumerate(logs, start=1):
-
-        index,
-
         rows.append([
+
+            index,
 
             log.created_at.strftime(
 
@@ -6260,12 +6128,10 @@ def export_audit_pdf():
     )
 
 
-
 @main.route("/reports/company")
 @login_required
 @system_admin_required
 def company_report():
-
     # =========================================================
     # PAGE NUMBERS — EACH TABLE HAS ITS OWN PAGINATION
     # =========================================================
@@ -6294,7 +6160,6 @@ def company_report():
         "capas_page", 1, type=int
     )
 
-
     # =========================================================
     # PAGINATED RECORDS
     # =========================================================
@@ -6309,7 +6174,6 @@ def company_report():
 
     companies = companies_pagination.items
 
-
     users_pagination = paginate_records(
         User.query.order_by(
             User.full_name
@@ -6319,7 +6183,6 @@ def company_report():
     )
 
     users = users_pagination.items
-
 
     batches_pagination = paginate_records(
         CableBatch.query.order_by(
@@ -6331,7 +6194,6 @@ def company_report():
 
     batches = batches_pagination.items
 
-
     inspections_pagination = paginate_records(
         Inspection.query.order_by(
             Inspection.inspection_date.desc()
@@ -6341,7 +6203,6 @@ def company_report():
     )
 
     inspections = inspections_pagination.items
-
 
     deviations_pagination = paginate_records(
         Deviation.query.order_by(
@@ -6353,7 +6214,6 @@ def company_report():
 
     deviations = deviations_pagination.items
 
-
     capas_pagination = paginate_records(
         CAPA.query.order_by(
             CAPA.due_date.desc()
@@ -6363,7 +6223,6 @@ def company_report():
     )
 
     capas = capas_pagination.items
-
 
     # =========================================================
     # ALL RECORDS FOR STATISTICS
@@ -6383,7 +6242,6 @@ def company_report():
 
     all_capas = CAPA.query.all()
 
-
     # =========================================================
     # GLOBAL STATISTICS
     # =========================================================
@@ -6396,7 +6254,6 @@ def company_report():
         if company.is_active
     )
 
-
     total_users = len(all_users)
 
     active_users = sum(
@@ -6404,7 +6261,6 @@ def company_report():
         for user in all_users
         if user.is_active
     )
-
 
     total_batches = len(all_batches)
 
@@ -6414,12 +6270,10 @@ def company_report():
         if batch.status == "Completed"
     )
 
-
     total_cable_length = sum(
         (batch.cable_length or 0)
         for batch in all_batches
     )
-
 
     total_inspections = len(all_inspections)
 
@@ -6444,7 +6298,6 @@ def company_report():
         ]
     )
 
-
     inspection_pass_rate = (
         round(
             (passed_inspections / total_inspections) * 100,
@@ -6454,7 +6307,6 @@ def company_report():
         else 0
     )
 
-
     total_deviations = len(all_deviations)
 
     open_deviations = sum(
@@ -6462,7 +6314,6 @@ def company_report():
         for deviation in all_deviations
         if deviation.status == "Open"
     )
-
 
     total_capa = len(all_capas)
 
@@ -6472,7 +6323,6 @@ def company_report():
         if capa.status == "Open"
     )
 
-
     # =========================================================
     # COMPANY-BY-COMPANY STATISTICS
     # =========================================================
@@ -6480,7 +6330,6 @@ def company_report():
     company_statistics = []
 
     for company in all_companies:
-
         company_users = [
             user
             for user in all_users
@@ -6511,7 +6360,6 @@ def company_report():
             if capa.company_id == company.id
         ]
 
-
         company_passed = sum(
             1
             for inspection in company_inspections
@@ -6522,19 +6370,17 @@ def company_report():
             company_inspections
         )
 
-
         company_pass_rate = (
             round(
                 (
-                    company_passed
-                    / company_inspection_count
+                        company_passed
+                        / company_inspection_count
                 ) * 100,
                 2
             )
             if company_inspection_count > 0
             else 0
         )
-
 
         company_statistics.append({
 
@@ -6581,7 +6427,6 @@ def company_report():
                 if capa.status == "Open"
             )
         })
-
 
     # =========================================================
     # RENDER
@@ -6635,41 +6480,37 @@ def company_report():
     )
 
 
-
 @main.route("/reports/company/excel")
 @login_required
 @system_admin_required
 def company_report_excel():
-
     return export_all_companies_excel()
+
 
 @main.route("/reports/company/pdf")
 @login_required
 @system_admin_required
 def company_report_pdf():
-
-
     return export_all_companies_pdf()
+
 
 @main.route("/settings")
 @login_required
 def settings():
-
     return render_template(
         "settings/settings.html"
     )
 
+
 @main.route("/settings/appearance", methods=["GET", "POST"])
 @login_required
 def appearance_settings():
-
     form = ThemeSettingsForm()
 
     if request.method == "GET":
         form.theme.data = current_user.theme
 
     if form.validate_on_submit():
-
         current_user.theme = form.theme.data
 
         db.session.commit()
@@ -6695,11 +6536,9 @@ def appearance_settings():
 )
 @login_required
 def account_settings():
-
     form = AccountSettingsForm()
 
     if request.method == "GET":
-
         form.full_name.data = current_user.full_name
         form.username.data = current_user.username
         form.email.data = current_user.email
@@ -6713,7 +6552,6 @@ def account_settings():
         ).first()
 
         if existing_username:
-
             flash(
                 "Username already exists.",
                 "danger"
@@ -6731,7 +6569,6 @@ def account_settings():
         ).first()
 
         if existing_email:
-
             flash(
                 "Email already exists.",
                 "danger"
@@ -6779,13 +6616,11 @@ def account_settings():
 )
 @login_required
 def password_settings():
-
     form = ChangePasswordForm()
 
     if form.validate_on_submit():
 
         if not current_user.check_password(form.current_password.data):
-
             flash(
                 "Current password is incorrect.",
                 "danger"
@@ -6797,7 +6632,6 @@ def password_settings():
             )
 
         if current_user.check_password(form.new_password.data):
-
             flash(
                 "New password cannot be the same as your current password.",
                 "warning"
@@ -6824,8 +6658,6 @@ def password_settings():
 
         db.session.commit()
 
-
-
         flash(
             "Password changed successfully.",
             "success"
@@ -6847,11 +6679,9 @@ def password_settings():
 )
 @login_required
 def notification_settings():
-
     form = NotificationSettingsForm()
 
     if request.method == "GET":
-
         form.notification_enabled.data = current_user.notification_enabled
 
         form.inspection_notification.data = current_user.inspection_notification
@@ -6863,7 +6693,6 @@ def notification_settings():
         form.failure_sound.data = current_user.failure_sound
 
     if form.validate_on_submit():
-
         current_user.notification_enabled = form.notification_enabled.data
 
         current_user.inspection_notification = form.inspection_notification.data
@@ -6884,10 +6713,7 @@ def notification_settings():
 
         )
 
-
         db.session.commit()
-
-
 
         flash(
             "Notification settings updated successfully.",
@@ -6907,7 +6733,6 @@ def notification_settings():
 @main.route("/search/live")
 @login_required
 def live_search():
-
     q = request.args.get("q", "").strip()
 
     if len(q) < 2:
@@ -6981,10 +6806,10 @@ def live_search():
 
     return jsonify(results)
 
+
 @main.route("/push/subscribe", methods=["POST"])
 @login_required
 def push_subscribe():
-
     data = request.get_json()
 
     if not data:
@@ -7000,7 +6825,6 @@ def push_subscribe():
     auth = keys.get("auth")
 
     if not endpoint or not p256dh or not auth:
-
         return jsonify({
             "success": False,
             "message": "Invalid push subscription."
@@ -7042,16 +6866,15 @@ def push_subscribe():
         "message": "Push notifications enabled."
     })
 
+
 @main.route("/push/unsubscribe", methods=["POST"])
 @login_required
 def push_unsubscribe():
-
     data = request.get_json()
 
     endpoint = data.get("endpoint") if data else None
 
     if not endpoint:
-
         return jsonify({
             "success": False,
             "message": "Endpoint is required."
@@ -7063,7 +6886,6 @@ def push_unsubscribe():
     ).first()
 
     if subscription:
-
         db.session.delete(subscription)
         db.session.commit()
 
@@ -7071,12 +6893,13 @@ def push_unsubscribe():
         "success": True
     })
 
+
 from .push_utils import get_vapid_public_key
+
+
 @main.route("/push/public-key")
 @login_required
 def push_public_key():
-
     return jsonify({
         "publicKey": get_vapid_public_key()
     })
-
