@@ -217,6 +217,8 @@ Root Cause by Inspector
 
 </div>
 
+{% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager"] %}    
+
 <div class="col">
 
 {{ form.effectiveness.label }}
@@ -224,6 +226,8 @@ Root Cause by Inspector
 {{ form.effectiveness(class="form-select") }}
 
 </div>
+
+{% endif %}
 
 </div>
 
