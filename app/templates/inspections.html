@@ -4,12 +4,31 @@
 
 {% block content %}
 
-{% set title="Inspections" %}
-{% set subtitle="Manage every inspection carried out" %}
-{% set action_url=url_for('main.new_inspection') %}
-{% set action_text="Add New Inspection" %}
+{% set title = "Inspections" %}
+{% set subtitle = "Manage every inspection carried out" %}
 
-{% include "partials/page_header.html" %}
+{% if current_user.role in [
+    "System Administrator",
+    "Company Administrator",
+    "Quality Manager",
+    "Quality Inspector"
+] %}
+
+    {% set action_url = url_for('main.new_inspection') %}
+    {% set action_text = "Add New Inspection" %}
+
+    {% include "partials/page_header.html" %}
+
+{% else %}
+
+    {# Header without the Add button #}
+
+    <div class="mb-4">
+        <h2>{{ title }}</h2>
+        <p class="text-muted">{{ subtitle }}</p>
+    </div>
+
+{% endif %}
 
 
 <div class="card shadow-sm">
