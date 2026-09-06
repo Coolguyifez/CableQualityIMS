@@ -3872,8 +3872,6 @@ def view_capa(capa_id):
     "/capa/<int:capa_id>/edit",
     methods=["GET", "POST"]
 )
-@login_required
-@permission_required("manage_capa")
 def edit_capa(capa_id):
 
     capa = CAPA.query.filter_by(
@@ -3885,102 +3883,207 @@ def edit_capa(capa_id):
 
     if form.validate_on_submit():
 
-        # -------------------------------------------------
-        # Store previous status
-        # -------------------------------------------------
+
+        # --------------------------------
+        # Store old values before changes
+        # --------------------------------
 
         old_status = capa.status
+        old_due_date = capa.due_date
 
-        # -------------------------------------------------
-        # Update fields
-        # -------------------------------------------------
-
-        capa.corrective_action = form.corrective_action.data
-
-        capa.preventive_action = form.preventive_action.data
-
-        capa.assigned_to = form.assigned_to.data
-
-        capa.due_date = form.due_date.data
-
-        capa.completion_date = form.completion_date.data
-
-        capa.status = form.status.data
-
-        capa.effectiveness = form.effectiveness.data
-
-        # -------------------------------------------------
-        # Automatically determine status from due date
-        # -------------------------------------------------
+        # Get production line
+        production_line = None
 
         if (
-            capa.status not in ["Completed", "Closed"]
-            and capa.due_date
-            and date.today() > capa.due_date
+                capa.deviation
+                and capa.deviation.inspection
+                and capa.deviation.inspection.batch
+        ):
+            production_line = (
+                capa.deviation.inspection.batch.production_line
+            )
+
+        production_line_name = (
+            production_line.line_name
+            if production_line
+            else "Unknown Production Line"
+        )
+
+        # --------------------------------
+        # Update CAPA
+        # --------------------------------
+
+        capa.corrective_action = form.corrective_action.data
+        capa.preventive_action = form.preventive_action.data
+        capa.assigned_to = form.assigned_to.data
+        capa.due_date = form.due_date.data
+        capa.completion_date = form.completion_date.data
+        capa.status = form.status.data
+        capa.effectiveness = form.effectiveness.data
+
+        # --------------------------------
+        # Check if due date was extended
+        # --------------------------------
+
+        due_date_extended = (
+                old_due_date
+                and capa.due_date
+                and capa.due_date > old_due_date
+        )
+
+        # --------------------------------
+        # Check overdue status
+        # --------------------------------
+
+        if (
+                capa.status not in ["Completed", "Closed"]
+                and capa.due_date
+                and date.today() > capa.due_date
         ):
             capa.status = "Overdue"
 
-            # Automatically place production line
-            # into Maintenance
             flag_production_line_for_capa(capa)
 
-        # -------------------------------------------------
-        # Audit Trail
-        # -------------------------------------------------
+        # --------------------------------
+        # Activity log
+        # --------------------------------
 
-        if (
-            old_status != "Closed"
-            and capa.status == "Closed"
-        ):
-
-            log_activity(
-                module="CAPA",
-
-                action="Close",
-
-                description=(
-                    f"{current_user.full_name} closed "
-                    f"CAPA for deviation "
-                    f"'{capa.deviation.deviation_number}'"
-                )
+        log_activity(
+            module="CAPA",
+            action="Update",
+            description=(
+                f"CAPA-{capa.deviation.deviation_number} "
+                f"was updated."
             )
+        )
 
-        elif (
-            old_status != "Completed"
-            and capa.status == "Completed"
-        ):
-
-            log_activity(
-                module="CAPA",
-
-                action="Complete",
-
-                description=(
-                    f"{current_user.full_name} completed "
-                    f"CAPA for deviation "
-                    f"'{capa.deviation.deviation_number}'"
-                )
-            )
-
-        else:
-
-            log_activity(
-                module="CAPA",
-
-                action="Update",
-
-                description=(
-                    f"{current_user.full_name} updated "
-                    f"CAPA for deviation "
-                    f"'{capa.deviation.deviation_number}'"
-                )
-            )
-
-        # -------------------------------------------------
-        # Save
-        # -------------------------------------------------
+        # --------------------------------
+        # Save changes
+        # --------------------------------
 
         db.session.commit()
+
+        # --------------------------------
+        # STATUS CHANGE NOTIFICATIONS
+        # --------------------------------
+
+        if old_status != capa.status:
+
+            # Open → In Progress
+            if (
+                    old_status == "Open"
+                    and capa.status == "In Progress"
+            ):
+                create_notification(
+                    title="CAPA In Progress",
+                    message=(
+                        f"CAPA-{capa.deviation.deviation_number} "
+                        f"for Production Line "
+                        f"{production_line_name}, "
+                        f"assigned to {capa.assigned_to}, "
+                        f"has changed from Open to In Progress."
+                    ),
+                    category="CAPA",
+                    priority="Normal",
+                    link=url_for(
+                        "main.view_capa",
+                        capa_id=capa.id
+                    )
+                )
+
+            # In Progress → Completed
+            elif (
+                    old_status == "In Progress"
+                    and capa.status == "Completed"
+            ):
+                create_notification(
+                    title="CAPA Completed",
+                    message=(
+                        f"CAPA-{capa.deviation.deviation_number} "
+                        f"for Production "
+                        f"{production_line_name}, "
+                        f"assigned to {capa.assigned_to}, "
+                        f"has been marked Completed."
+                    ),
+                    category="CAPA",
+                    priority="High",
+                    link=url_for(
+                        "main.view_capa",
+                        capa_id=capa.id
+                    )
+                )
+
+            # Open → Completed
+            elif (
+                    old_status == "Open"
+                    and capa.status == "Completed"
+            ):
+                create_notification(
+                    title="CAPA Completed",
+                    message=(
+                        f"CAPA-{capa.deviation.deviation_number} "
+                        f"for Production "
+                        f"{production_line_name}, "
+                        f"assigned to {capa.assigned_to}, "
+                        f"has been marked Completed."
+                    ),
+                    category="CAPA",
+                    priority="High",
+                    link=url_for(
+                        "main.view_capa",
+                        capa_id=capa.id
+                    )
+                )
+
+            # Any other status change
+            else:
+                create_notification(
+                    title="CAPA Status Changed",
+                    message=(
+                        f"CAPA-{capa.deviation.deviation_number} "
+                        f"for Production "
+                        f"{production_line_name}, "
+                        f"assigned to {capa.assigned_to}, "
+                        f"has changed from "
+                        f"{old_status} to {capa.status}."
+                    ),
+                    category="CAPA",
+                    priority="Normal",
+                    link=url_for(
+                        "main.view_capa",
+                        capa_id=capa.id
+                    )
+                )
+
+        # --------------------------------
+        # DUE DATE EXTENDED NOTIFICATION
+        # --------------------------------
+
+        if due_date_extended:
+            create_notification(
+                title="CAPA Due Date Extended",
+                message=(
+                    f"CAPA-{capa.deviation.deviation_number} "
+                    f"for Production "
+                    f"{production_line_name}, "
+                    f"assigned to {capa.assigned_to}, "
+                    f"due date has been extended from "
+                    f"{old_due_date.strftime('%d %B %Y')} "
+                    f"to "
+                    f"{capa.due_date.strftime('%d %B %Y')}. "
+                    f"{current_user.full_name}, the {current_user.role} has been given a new deadline."
+                ),
+                category="CAPA",
+                priority="High",
+                link=url_for(
+                    "main.view_capa",
+                    capa_id=capa.id
+                )
+            )
+
+        # --------------------------------
+        # Success message
+        # --------------------------------
 
         flash(
             "CAPA updated successfully.",
@@ -3999,7 +4102,6 @@ def edit_capa(capa_id):
         form=form,
         deviation=capa.deviation
     )
-
 
 # =========================================================
 # DELETE CAPA
