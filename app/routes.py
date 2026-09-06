@@ -3362,6 +3362,7 @@ def view_deviation(deviation_id):
 @login_required
 @permission_required("manage_deviations")
 def edit_deviation(deviation_id):
+
     deviation = Deviation.query.filter_by(
         id=deviation_id,
         company_id=current_user.company_id
@@ -3369,67 +3370,198 @@ def edit_deviation(deviation_id):
 
     form = DeviationForm(obj=deviation)
 
+    # --------------------------------
     # Related records
+    # --------------------------------
+
     inspection = deviation.inspection
     metric = deviation.quality_metric
     specification = metric.specification
 
+    # Production line
+    production_line = None
+
+    if inspection and inspection.batch:
+        production_line = inspection.batch.production_line
+
+    production_line_name = (
+        production_line.line_name
+        if production_line
+        else "Unknown Production Line"
+    )
+
     if form.validate_on_submit():
 
-        # Store the old status before updating
+        # --------------------------------
+        # Store old status
+        # --------------------------------
+
         old_status = deviation.status
 
+        # --------------------------------
+        # Update deviation
+        # --------------------------------
+
         deviation.description = form.description.data
-
         deviation.severity = form.severity.data
-
         deviation.root_cause = form.root_cause.data
-
         deviation.status = form.status.data
-
         deviation.reported_by = form.reported_by.data
 
-        if old_status != "Closed" and deviation.status == "Closed":
+        # --------------------------------
+        # Closed date
+        # --------------------------------
 
+        if (
+            old_status != "Closed"
+            and deviation.status == "Closed"
+        ):
             deviation.closed_date = datetime.utcnow().date()
 
         elif deviation.status != "Closed":
-
             deviation.closed_date = None
 
+        # --------------------------------
         # Audit Log
-        if old_status != "Closed" and deviation.status == "Closed":
+        # --------------------------------
+
+        if (
+            old_status != "Closed"
+            and deviation.status == "Closed"
+        ):
 
             log_activity(
-
                 module="Deviation",
-
                 action="Close",
-
                 description=(
                     f"{current_user.full_name} closed "
                     f"Deviation '{deviation.deviation_number}' "
                     f"(Severity: {deviation.severity})"
                 )
-
             )
 
         else:
 
             log_activity(
-
                 module="Deviation",
-
                 action="Update",
-
                 description=(
                     f"{current_user.full_name} updated "
                     f"Deviation '{deviation.deviation_number}'"
                 )
-
             )
 
+        # --------------------------------
+        # Save changes
+        # --------------------------------
+
         db.session.commit()
+
+        # --------------------------------
+        # STATUS CHANGE NOTIFICATIONS
+        # --------------------------------
+
+        if old_status != deviation.status:
+
+            # Open → In Progress
+            if (
+                old_status == "Open"
+                and deviation.status == "In Progress"
+            ):
+
+                create_notification(
+                    title="Deviation In Progress",
+                    message=(
+                        f"Deviation "
+                        f"{deviation.deviation_number} "
+                        f"for Production Line "
+                        f"{production_line_name}, "
+                        f"reported by {deviation.reported_by}, "
+                        f"has changed from Open "
+                        f"to In Progress. "
+                        f"Severity: {deviation.severity}."
+                    ),
+                    category="Deviation",
+                    priority="Normal",
+                    link=url_for(
+                        "main.view_deviation",
+                        deviation_id=deviation.id
+                    )
+                )
+
+            # In Progress → Closed
+            elif (
+                old_status == "In Progress"
+                and deviation.status == "Closed"
+            ):
+
+                create_notification(
+                    title="Deviation Closed",
+                    message=(
+                        f"Deviation "
+                        f"{deviation.deviation_number} "
+                        f"for Production Line "
+                        f"{production_line_name}, "
+                        f"reported by {deviation.reported_by}, "
+                        f"has been Closed. "
+                        f"Severity: {deviation.severity}."
+                    ),
+                    category="Deviation",
+                    priority="High",
+                    link=url_for(
+                        "main.view_deviation",
+                        deviation_id=deviation.id
+                    )
+                )
+
+            # Open → Closed
+            elif (
+                old_status == "Open"
+                and deviation.status == "Closed"
+            ):
+
+                create_notification(
+                    title="Deviation Closed",
+                    message=(
+                        f"Deviation "
+                        f"{deviation.deviation_number} "
+                        f"for Production Line "
+                        f"{production_line_name}, "
+                        f"reported by {deviation.reported_by}, "
+                        f"has been Closed. "
+                        f"Severity: {deviation.severity}."
+                    ),
+                    category="Deviation",
+                    priority="High",
+                    link=url_for(
+                        "main.view_deviation",
+                        deviation_id=deviation.id
+                    )
+                )
+
+            # Any other status change
+            else:
+
+                create_notification(
+                    title="Deviation Status Changed",
+                    message=(
+                        f"Deviation "
+                        f"{deviation.deviation_number} "
+                        f"for Production Line "
+                        f"{production_line_name}, "
+                        f"reported by {deviation.reported_by}, "
+                        f"has changed from "
+                        f"{old_status} to "
+                        f"{deviation.status}. "
+                        f"Severity: {deviation.severity}."
+                    ),
+                    category="Deviation",
+                    priority="Normal",
+                    link=url_for(
+                        "main.view_deviation",
+                        deviation_id=deviation.id
+                    )
+                )
 
         flash(
             "Deviation updated successfully.",
@@ -3451,6 +3583,7 @@ def edit_deviation(deviation_id):
         metric=metric,
         specification=specification
     )
+
 
 
 @main.route("/deviations/<int:deviation_id>/delete")
@@ -3872,6 +4005,8 @@ def view_capa(capa_id):
     "/capa/<int:capa_id>/edit",
     methods=["GET", "POST"]
 )
+@login_required
+@permission_required("manage_capa")
 def edit_capa(capa_id):
 
     capa = CAPA.query.filter_by(
@@ -3883,7 +4018,6 @@ def edit_capa(capa_id):
 
     if form.validate_on_submit():
 
-
         # --------------------------------
         # Store old values before changes
         # --------------------------------
@@ -3891,16 +4025,22 @@ def edit_capa(capa_id):
         old_status = capa.status
         old_due_date = capa.due_date
 
-        # Get production line
+        # --------------------------------
+        # Related Production Line
+        # --------------------------------
+
         production_line = None
 
         if (
-                capa.deviation
-                and capa.deviation.inspection
-                and capa.deviation.inspection.batch
+            capa.deviation
+            and capa.deviation.inspection
+            and capa.deviation.inspection.batch
         ):
             production_line = (
-                capa.deviation.inspection.batch.production_line
+                capa.deviation
+                .inspection
+                .batch
+                .production_line
             )
 
         production_line_name = (
@@ -3926,9 +4066,9 @@ def edit_capa(capa_id):
         # --------------------------------
 
         due_date_extended = (
-                old_due_date
-                and capa.due_date
-                and capa.due_date > old_due_date
+            old_due_date is not None
+            and capa.due_date is not None
+            and capa.due_date > old_due_date
         )
 
         # --------------------------------
@@ -3936,49 +4076,85 @@ def edit_capa(capa_id):
         # --------------------------------
 
         if (
-                capa.status not in ["Completed", "Closed"]
-                and capa.due_date
-                and date.today() > capa.due_date
+            capa.status not in ["Completed", "Closed"]
+            and capa.due_date
+            and date.today() > capa.due_date
         ):
             capa.status = "Overdue"
 
             flag_production_line_for_capa(capa)
 
         # --------------------------------
-        # Activity log
+        # CAPA → DEVIATION AUTOMATIC CLOSURE
+        # --------------------------------
+
+        deviation_closed_by_capa = False
+
+        if (
+            old_status != "Closed"
+            and capa.status == "Closed"
+            and capa.deviation
+        ):
+            deviation = capa.deviation
+
+            if deviation.status != "Closed":
+
+                deviation.status = "Closed"
+                deviation.closed_date = datetime.utcnow().date()
+
+                deviation_closed_by_capa = True
+
+                log_activity(
+                    module="Deviation",
+                    action="Close",
+                    description=(
+                        f"Deviation "
+                        f"'{deviation.deviation_number}' "
+                        f"was automatically closed because "
+                        f"CAPA-{deviation.deviation_number} "
+                        f"was closed."
+                    )
+                )
+
+        # --------------------------------
+        # CAPA Activity Log
         # --------------------------------
 
         log_activity(
             module="CAPA",
             action="Update",
             description=(
-                f"CAPA-{capa.deviation.deviation_number} "
-                f"was updated."
+                f"{current_user.full_name} updated "
+                f"CAPA-{capa.deviation.deviation_number}."
             )
         )
 
         # --------------------------------
-        # Save changes
+        # Save CAPA + Deviation changes
         # --------------------------------
 
         db.session.commit()
 
-        # --------------------------------
+        # =================================
         # STATUS CHANGE NOTIFICATIONS
-        # --------------------------------
+        # =================================
 
         if old_status != capa.status:
 
+            # --------------------------------
             # Open → In Progress
+            # --------------------------------
+
             if (
-                    old_status == "Open"
-                    and capa.status == "In Progress"
+                old_status == "Open"
+                and capa.status == "In Progress"
             ):
+
                 create_notification(
                     title="CAPA In Progress",
                     message=(
                         f"CAPA-{capa.deviation.deviation_number} "
-                        f"for Production Line "
+                        f"for Production "
                         f"{production_line_name}, "
                         f"assigned to {capa.assigned_to}, "
                         f"has changed from Open to In Progress."
@@ -3991,11 +4167,15 @@ def edit_capa(capa_id):
                     )
                 )
 
+            # --------------------------------
             # In Progress → Completed
+            # --------------------------------
+
             elif (
-                    old_status == "In Progress"
-                    and capa.status == "Completed"
+                old_status == "In Progress"
+                and capa.status == "Completed"
             ):
+
                 create_notification(
                     title="CAPA Completed",
                     message=(
@@ -4013,11 +4193,15 @@ def edit_capa(capa_id):
                     )
                 )
 
+            # --------------------------------
             # Open → Completed
+            # --------------------------------
+
             elif (
-                    old_status == "Open"
-                    and capa.status == "Completed"
+                old_status == "Open"
+                and capa.status == "Completed"
             ):
+
                 create_notification(
                     title="CAPA Completed",
                     message=(
@@ -4035,8 +4219,12 @@ def edit_capa(capa_id):
                     )
                 )
 
+            # --------------------------------
             # Any other status change
+            # --------------------------------
+
             else:
+
                 create_notification(
                     title="CAPA Status Changed",
                     message=(
@@ -4055,11 +4243,12 @@ def edit_capa(capa_id):
                     )
                 )
 
-        # --------------------------------
+        # =================================
         # DUE DATE EXTENDED NOTIFICATION
-        # --------------------------------
+        # =================================
 
         if due_date_extended:
+
             create_notification(
                 title="CAPA Due Date Extended",
                 message=(
@@ -4070,14 +4259,44 @@ def edit_capa(capa_id):
                     f"due date has been extended from "
                     f"{old_due_date.strftime('%d %B %Y')} "
                     f"to "
-                    f"{capa.due_date.strftime('%d %B %Y')}. "
-                    f"{current_user.full_name}, the {current_user.role} has been given a new deadline."
+                    f"{capa.due_date.strftime('%d %B %Y')} "
+                    f"by {current_user.full_name} "
+                    f"({current_user.role}). "
+                    f"The CAPA has been given a new deadline."
                 ),
                 category="CAPA",
                 priority="High",
                 link=url_for(
                     "main.view_capa",
                     capa_id=capa.id
+                )
+            )
+
+        # =================================
+        # DEVIATION AUTOMATICALLY CLOSED
+        # =================================
+
+        if deviation_closed_by_capa:
+
+            create_notification(
+                title="Deviation Automatically Closed",
+                message=(
+                    f"Deviation "
+                    f"{capa.deviation.deviation_number} "
+                    f"for Production "
+                    f"{production_line_name}, "
+                    f"reported by "
+                    f"{capa.deviation.reported_by}, "
+                    f"has been automatically Closed "
+                    f"because its CAPA was Closed. "
+                    f"Severity: "
+                    f"{capa.deviation.severity}."
+                ),
+                category="Deviation",
+                priority="High",
+                link=url_for(
+                    "main.view_deviation",
+                    deviation_id=capa.deviation.id
                 )
             )
 
@@ -4102,7 +4321,6 @@ def edit_capa(capa_id):
         form=form,
         deviation=capa.deviation
     )
-
 # =========================================================
 # DELETE CAPA
 # =========================================================
