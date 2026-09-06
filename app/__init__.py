@@ -1,4 +1,5 @@
 from flask import Flask
+import time
 from config import Config
 
 from .extensions import (
@@ -53,6 +54,55 @@ def create_app():
 
     app.register_blueprint(main)
     app.register_blueprint(auth)
+
+
+    # --------------------------------
+    # Automatic CAPA / Production Line Check
+    # --------------------------------
+
+    last_capa_check = [0]
+    CAPA_CHECK_INTERVAL = 60  # seconds
+
+    @app.before_request
+    def automatic_capa_check():
+
+        current_time = time.time()
+
+        # Prevent checking the database on every request.
+        if current_time - last_capa_check[0] < CAPA_CHECK_INTERVAL:
+            return
+
+        last_capa_check[0] = current_time
+
+        try:
+            from .models import CAPA
+            from .routes import update_capa_status
+
+            capas = CAPA.query.all()
+
+            changed = False
+
+            for capa in capas:
+
+                if update_capa_status(capa):
+                    changed = True
+
+                    app.logger.info(
+                        "Automatic CAPA check: "
+                        "CAPA %s updated. Status: %s",
+                        capa.id,
+                        capa.status
+                    )
+
+            if changed:
+                db.session.commit()
+
+        except Exception:
+            db.session.rollback()
+
+            app.logger.exception(
+                "Automatic CAPA status check failed."
+            )
 
     # --------------------------------
     # Notifications
