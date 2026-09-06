@@ -2923,7 +2923,8 @@ def edit_quality_metric(metric_id):
 
                     title="Inspection Passed",
 
-                    message=f"{inspection.inspection_number} passed all quality checks.",
+                    message=f"{inspection.inspection_number} passed all quality checks."
+                            f" Inspected by {inspection.inspector}",
 
                     category="Inspection",
 
@@ -2945,7 +2946,8 @@ def edit_quality_metric(metric_id):
 
                     title="Inspection Failed",
 
-                    message=f"{inspection.inspection_number} failed one or more quality checks.",
+                    message=f"{inspection.inspection_number} failed one or more quality checks."
+                            f" Inspected by {inspection.inspector}",
 
                     category="Inspection",
 
