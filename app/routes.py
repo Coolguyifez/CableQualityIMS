@@ -2580,14 +2580,71 @@ def new_quality_metric(inspection_id):
 
             else:
 
+                # --------------------------------
+                # Build requirement description
+                # --------------------------------
+
+                if specification.requirement:
+                    requirement_text = specification.requirement
+
+                elif specification.validation_type == "any":
+                    requirement_text = "Accept Any Value"
+
+                elif specification.validation_type == "minimum":
+                    requirement_text = (
+                        f"{specification.minimum_value} (Min)"
+                    )
+
+                elif specification.validation_type == "maximum":
+                    requirement_text = (
+                        f"{specification.maximum_value} (Max)"
+                    )
+
+                elif specification.validation_type == "range":
+                    requirement_text = (
+                        f"{specification.minimum_value} - "
+                        f"{specification.maximum_value}"
+                    )
+
+                elif specification.validation_type == "text":
+                    requirement_text = (
+                        specification.expected_result
+                    )
+
+                else:
+                    requirement_text = "-"
+
+                # --------------------------------
+                # Add unit to measured value
+                # --------------------------------
+
+                measured_value = metric.measured_value
+
+                unit = (
+                    f" {specification.unit}"
+                    if specification.unit
+                    else ""
+                )
+
+                # --------------------------------
+                # Create detailed deviation
+                # --------------------------------
+
+                deviation_description = (
+                    f"{specification.metric_name} failed inspection. "
+                    f"Measured or observed as "
+                    f"'{measured_value}{unit}'. "
+                    f"Where the requirement is "
+                    f"'{requirement_text}', "
+                    f"which triggered a non-conformance."
+                )
+
                 deviation = Deviation(
                     company_id=current_user.company_id,
                     deviation_number=generate_deviation_number(),
                     inspection_id=inspection.id,
                     quality_metric_id=metric.id,
-                    description=(
-                        f"{specification.metric_name} "
-                        f"failed inspection."),
+                    description=deviation_description,
                     severity="Major",
                     status="Open",
                     reported_by=inspection.inspector
