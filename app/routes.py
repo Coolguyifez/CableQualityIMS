@@ -384,6 +384,7 @@ def generate_deviation_number():
         next_number = 1
 
     return f"DEV:{today}-{next_number:03d}"
+    
 
 def flag_production_line_for_capa(capa):
     """
@@ -417,8 +418,18 @@ def flag_production_line_for_capa(capa):
         if not production_line:
             return False
 
-        if production_line.status != "Maintenance":
+        # Only an Active line should be automatically
+        # changed to Maintenance.
+        if production_line.status == "Active":
             production_line.status = "Maintenance"
+
+            current_app.logger.info(
+                "Production line '%s' changed to Maintenance "
+                "because CAPA %s became overdue.",
+                production_line.line_name,
+                capa.id
+            )
+
             return True
 
     except Exception:
@@ -428,6 +439,7 @@ def flag_production_line_for_capa(capa):
         )
 
     return False
+
 
 def get_capa_status(capa):
     """
@@ -443,10 +455,7 @@ def get_capa_status(capa):
     if capa.status in ["Completed", "Closed"]:
         return capa.status
 
-    if (
-        capa.due_date
-        and date.today() > capa.due_date
-    ):
+    if capa.due_date and date.today() > capa.due_date:
         return "Overdue"
 
     return capa.status
@@ -468,35 +477,42 @@ def get_days_overdue(capa):
 
     return 0
 
-
 def update_capa_status(capa):
     """
     Automatically updates the database status of a CAPA.
 
-    Returns:
-        True  -> status was changed
-        False -> no change
+    - Completed and Closed CAPAs remain unchanged.
+    - A CAPA becomes Overdue after its due date passes.
+    - Any overdue CAPA keeps its related production line
+      in Maintenance.
     """
 
-    # Completed and Closed CAPAs remain unchanged
+    # Completed and Closed CAPAs are not processed
     if capa.status in ["Completed", "Closed"]:
         return False
 
-    # Only become overdue AFTER the due date
-    if (
-        capa.due_date
-        and date.today() > capa.due_date
-        and capa.status != "Overdue"
-    ):
-        capa.status = "Overdue"
+    # No due date
+    if not capa.due_date:
+        return False
 
-        # Put the related production line into Maintenance
-        flag_production_line_for_capa(capa)
+    # CAPA is overdue
+    if date.today() > capa.due_date:
 
-        return True
+        status_changed = False
+
+        # Change CAPA status if necessary
+        if capa.status != "Overdue":
+            capa.status = "Overdue"
+            status_changed = True
+
+        # ALWAYS make sure the related production line
+        # is in Maintenance while the CAPA is overdue.
+        line_changed = flag_production_line_for_capa(capa)
+
+        return status_changed or line_changed
 
     return False
-
+    
 
 def paginate_records(query, page=1, per_page=10):
     return query.paginate(
