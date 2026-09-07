@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <!-- CableQIMS Logo -->
+    <link
+        rel="icon"
+        type="image/png"
+        href="{{ url_for('static', filename='icons/cableqims.png') }}"
+    >
+
+    <!-- Bootstrap CSS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- Bootstrap Icons -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+    >
+
+    <!-- Font -->
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <title>Service Temporarily Unavailable</title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        html,
+        body {
+
+            margin: 0;
+            padding: 0;
+
+            width: 100%;
+            min-height: 100%;
+
+        }
+
+
+        body {
+
+            min-height: 100vh;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 24px;
+
+            font-family:
+                Inter,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: #f8fafc;
+
+            color: #0f172a;
+
+            transition:
+                background 0.25s ease,
+                color 0.25s ease;
+
+        }
+
+
+        .error-container {
+
+            width: 100%;
+
+            max-width: 520px;
+
+            text-align: center;
+
+            padding: 40px 30px;
+
+        }
+
+
+        .error-icon {
+
+            width: 100px;
+
+            height: 100px;
+
+            display: inline-flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            border-radius: 50%;
+
+            background: rgba(255, 193, 7, 0.10);
+
+            margin-bottom: 28px;
+
+        }
+
+
+        .error-icon i {
+
+            font-size: 3rem;
+
+        }
+
+
+        .error-code {
+
+            margin: 0 0 8px;
+
+            font-size: 58px;
+
+            font-weight: 700;
+
+            line-height: 1;
+
+        }
+
+
+        h1 {
+
+            margin: 0 0 12px;
+
+            font-size: 28px;
+
+            font-weight: 700;
+
+        }
+
+
+        p {
+
+            margin: 0 auto 24px;
+
+            max-width: 420px;
+
+            font-size: 15px;
+
+            line-height: 1.7;
+
+            color: #64748b;
+
+        }
+
+
+        .retry-button {
+
+            border: none;
+
+            padding: 11px 22px;
+
+            border-radius: 8px;
+
+            background: #0c60de;
+
+            color: #ffffff;
+
+            font-size: 14px;
+
+            font-weight: 600;
+
+            cursor: pointer;
+
+            transition:
+                transform 0.2s ease,
+                opacity 0.2s ease;
+
+        }
+
+
+        .retry-button:hover {
+
+            opacity: 0.9;
+
+            transform: translateY(-1px);
+
+        }
+
+
+        .status {
+
+            margin-top: 18px;
+
+            font-size: 12px;
+
+            color: #94a3b8;
+
+        }
+
+
+        /*
+         * DARK THEME
+         */
+
+        @media (prefers-color-scheme: dark) {
+
+            body {
+
+                background: #103895;
+
+                color: #f8fafc;
+
+            }
+
+
+            p {
+
+                color: #cbd5e1;
+
+            }
+
+
+            .status {
+
+                color: #94a3b8;
+
+            }
+
+        }
+
+
+        /*
+         * MOBILE
+         */
+
+        @media (max-width: 576px) {
+
+            .error-container {
+
+                padding: 32px 22px;
+
+            }
+
+
+            .error-code {
+
+                font-size: 50px;
+
+            }
+
+
+            h1 {
+
+                font-size: 24px;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <div class="error-container">
+
+
+        <!-- Error Icon -->
+
+        <div class="error-icon">
+
+            <i class="bi bi-cloud-slash text-warning"></i>
+
+        </div>
+
+
+        <!-- Error Code -->
+
+        <div class="error-code">
+
+            503
+
+        </div>
+
+
+        <!-- Title -->
+
+        <h1>
+
+            Service Temporarily Unavailable
+
+        </h1>
+
+
+        <!-- Main Message -->
+
+        <p>
+
+            CableQIMS is temporarily unable to
+            process your request.
+
+        </p>
+
+
+        <p>
+
+            The service may be temporarily unavailable
+            due to maintenance, deployment, high system
+            load, or a temporary service connection problem.
+
+        </p>
+
+
+        <!-- Retry -->
+
+        <button
+            class="retry-button"
+            onclick="window.location.reload()"
+        >
+
+            <i class="bi bi-arrow-clockwise"></i>
+
+            Try Again
+
+        </button>
+
+
+        <!-- Status -->
+
+        <div class="status">
+
+            CableQIMS • Service temporarily unavailable
+
+        </div>
+
+
+    </div>
+
+
+    <script>
+
+        /*
+         * Automatically retry when
+         * the browser detects a connection.
+         */
+
+        window.addEventListener(
+            "online",
+            function () {
+
+                window.location.reload();
+
+            }
+        );
+
+    </script>
+
+</body>
+
+</html>
+
