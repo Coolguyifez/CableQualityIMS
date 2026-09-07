@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import time
 from config import Config
 
@@ -54,6 +54,31 @@ def create_app():
 
     app.register_blueprint(main)
     app.register_blueprint(auth)
+
+    # --------------------------------
+    # Maintenance Mode
+    # --------------------------------
+
+    @app.before_request
+    def check_maintenance_mode():
+
+        if not app.config.get("MAINTENANCE_MODE"):
+            return
+
+        print("MAINTENANCE CHECK:", request.endpoint, request.method)
+
+        # Always allow the login page
+        if request.endpoint and request.endpoint.endswith(".login"):
+            return
+
+        # Allow authenticated System Administrator
+        if current_user.is_authenticated:
+            if current_user.role == "System Administrator":
+                return
+
+        # Everyone else gets 503
+        return render_template("errors/503.html"), 503
+
 
 
     # --------------------------------
@@ -158,6 +183,14 @@ def create_app():
         return render_template(
             "errors/404.html"
         ), 404
+
+    @app.errorhandler(503)
+    def service_unavailable(error):
+        db.session.rollback()
+
+        return render_template(
+            "errors/503.html"
+        ), 503
 
 
     return app
