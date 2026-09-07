@@ -6,6 +6,11 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
 
+    MAINTENANCE_MODE = os.getenv(
+        "CABLEQIMS_MAINTENANCE",
+        "false"
+    ).lower() == "true"
+
     VAPID_PRIVATE_KEY = os.environ.get(
         "VAPID_PRIVATE_KEY"
         
