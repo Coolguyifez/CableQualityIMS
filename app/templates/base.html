@@ -27,12 +27,12 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-    
+
     <!-- Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
@@ -278,16 +278,37 @@
 <!-- Custom JS -->
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
-<script src="{{ url_for('static', filename='js/service-worker.js') }}"></script>
 
 
 
 <script>
 if ("serviceWorker" in navigator) {
 
-    navigator.serviceWorker.register(
-        "/static/sw.js"
-    );
+    window.addEventListener("load", function() {
+
+        navigator.serviceWorker.register(
+            "/service-worker.js"
+        )
+
+        .then(function(registration) {
+
+            console.log(
+                "CableQIMS Service Worker registered:",
+                registration.scope
+            );
+
+        })
+
+        .catch(function(error) {
+
+            console.error(
+                "CableQIMS Service Worker registration failed:",
+                error
+            );
+
+        });
+
+    });
 
 }
 </script>
