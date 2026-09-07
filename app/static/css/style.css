@@ -64,8 +64,7 @@ body.dark{
 
 body{
 
-    font-family: 'Inter', sans-serif !important;
-
+    font-family: 'Inter', sans-serif;
     background:var(--background);
 
     color:var(--text);
@@ -99,4 +98,255 @@ main{
     flex:1;
 
 }
+
+/* ==========================================
+   CABLEQIMS OFFLINE MESSAGE
+   ========================================== */
+
+#cqims-offline-message {
+
+    position: fixed;
+
+    top: 20px;
+    right: 20px;
+
+    z-index: 99999;
+
+    width: min(380px, calc(100vw - 40px));
+
+    padding: 15px 18px;
+
+    border-radius: 12px;
+
+    background: #ffffff;
+
+    color: #0f172a;
+
+    border: 1px solid #e2e8f0;
+
+    box-shadow:
+        0 8px 30px rgba(15, 23, 42, 0.15);
+
+    animation:
+        cqimsOfflineSlide 0.3s ease;
+
+    transition:
+        background 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        opacity 0.3s ease;
+}
+
+
+/* ==========================================
+   CONTENT
+   ========================================== */
+
+.cqims-offline-content {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+}
+
+
+/* ==========================================
+   ICON
+   ========================================== */
+
+.cqims-offline-icon {
+
+    width: 42px;
+    height: 42px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #f1f5f9;
+
+    color: #0d6efd;
+
+    font-size: 19px;
+}
+
+
+/* ==========================================
+   TEXT
+   ========================================== */
+
+.cqims-offline-text {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+}
+
+
+.cqims-offline-text strong {
+
+    font-size: 14px;
+
+    font-weight: 700;
+}
+
+
+.cqims-offline-text span {
+
+    font-size: 12px;
+
+    line-height: 1.5;
+
+    color: #64748b;
+}
+
+
+/* ==========================================
+   DARK THEME
+   ========================================== */
+
+[data-cqims-actual-theme="dark"]
+#cqims-offline-message {
+
+    background: #26292c;
+
+    color: #f8fafc;
+
+    border-color: #334155;
+
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.40);
+}
+
+
+[data-cqims-actual-theme="dark"]
+.cqims-offline-icon {
+
+    background: #334155;
+
+    color: #60a5fa;
+}
+
+
+[data-cqims-actual-theme="dark"]
+.cqims-offline-text span {
+
+    color: #94a3b8;
+}
+
+
+/* ==========================================
+   LIGHT THEME
+   ========================================== */
+
+[data-cqims-actual-theme="light"]
+#cqims-offline-message {
+
+    background: #ffffff;
+
+    color: #0f172a;
+
+    border-color: #e2e8f0;
+}
+
+
+[data-cqims-actual-theme="light"]
+.cqims-offline-icon {
+
+    background: #f4f4f4;
+
+    color: #0d6efd;
+}
+
+
+[data-cqims-actual-theme="light"]
+.cqims-offline-text span {
+
+    color: #64748b;
+}
+
+
+/* ==========================================
+   SYSTEM DARK MODE
+   ========================================== */
+
+@media (prefers-color-scheme: dark) {
+
+    [data-cqims-actual-theme="system"]
+    #cqims-offline-message {
+
+        background: #1e293b;
+
+        color: #f8fafc;
+
+        border-color: #334155;
+
+        box-shadow:
+            0 8px 30px rgba(0, 0, 0, 0.40);
+    }
+
+
+    [data-cqims-actual-theme="system"]
+    .cqims-offline-icon {
+
+        background: #334155;
+
+        color: #60a5fa;
+    }
+
+
+    [data-cqims-actual-theme="system"]
+    .cqims-offline-text span {
+
+        color: #94a3b8;
+    }
+
+}
+
+
+/* ==========================================
+   ANIMATION
+   ========================================== */
+
+@keyframes cqimsOfflineSlide {
+
+    from {
+
+        opacity: 0;
+
+        transform: translateY(-15px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: translateY(0);
+
+    }
+
+}
+
+
+.cqims-offline-hide {
+
+    opacity: 0;
+
+    transform: translateY(-10px);
+
+}
+
+
+
 
