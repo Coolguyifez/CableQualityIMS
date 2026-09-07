@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session, current_app, Response
 from .forms import CustomerForm, CableTypeForm, ProductionLineForm, CableBatchForm, InspectionForm, QualityMetricForm, \
     QualitySpecificationForm, DeviationForm, CAPAForm, CompanyForm, ThemeSettingsForm, AccountSettingsForm, \
     NotificationSettingsForm
@@ -602,6 +602,23 @@ def home():
 
         get_days_overdue=get_days_overdue
 
+    )
+
+
+
+@main.route("/offline")
+def offline():
+    return render_template("/static/offline.html")
+
+@main.route("/service-worker.js")
+def service_worker():
+    return Response(
+        open(
+            "app/static/js/service-worker.js",
+            "r",
+            encoding="utf-8"
+        ).read(),
+        mimetype="application/javascript"
     )
 
 
