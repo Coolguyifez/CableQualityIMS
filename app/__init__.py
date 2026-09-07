@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 import time
 from config import Config
 
