@@ -676,3 +676,226 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 });
+
+
+/* =========================================================
+   CABLEQIMS OFFLINE FORM PROTECTION
+   ========================================================= */
+
+let cqimsSubmittingForm = false;
+
+
+/*
+ * Display a small offline message
+ */
+function showOfflineMessage(messageText) {
+
+    const existing =
+        document.getElementById("cqims-offline-message");
+
+    if (existing) {
+        existing.remove();
+    }
+
+    const message =
+        document.createElement("div");
+
+    message.id = "cqims-offline-message";
+
+    message.innerHTML = `
+        <div class="cqims-offline-content">
+
+            <div class="cqims-offline-icon">
+                <i class="bi bi-wifi-off text-warning"></i>
+            </div>
+
+            <div class="cqims-offline-text">
+
+                <strong>
+                    You're Offline
+                </strong>
+
+                <span>
+                    ${messageText ||
+                    "Please check your internet connection. Your action was not submitted."}
+                </span>
+
+            </div>
+
+        </div>
+    `;
+
+    document.body.appendChild(message);
+
+
+    setTimeout(function () {
+
+        if (!message.parentNode) {
+            return;
+        }
+
+        message.classList.add(
+            "cqims-offline-hide"
+        );
+
+
+        setTimeout(function () {
+
+            if (message.parentNode) {
+                message.remove();
+            }
+
+        }, 300);
+
+    }, 5000);
+}
+
+
+/*
+ * Check whether CableQIMS server is reachable
+ */
+async function isCableQIMSOnline() {
+
+    /*
+     * First check browser connection.
+     */
+    if (!navigator.onLine) {
+        return false;
+    }
+
+
+    /*
+     * Try to contact CableQIMS itself.
+     */
+    const controller =
+        new AbortController();
+
+    const timeout =
+        setTimeout(function () {
+
+            controller.abort();
+
+        }, 5000);
+
+
+    try {
+
+        await fetch(
+            "/?offline_check=" +
+            Date.now(),
+            {
+                method: "GET",
+                cache: "no-store",
+                credentials: "same-origin",
+                signal: controller.signal
+            }
+        );
+
+        clearTimeout(timeout);
+
+        return true;
+
+    } catch (error) {
+
+        clearTimeout(timeout);
+
+        console.warn(
+            "CableQIMS server is unreachable:",
+            error
+        );
+
+        return false;
+    }
+}
+
+
+/*
+ * Intercept form submissions
+ */
+document.addEventListener(
+    "submit",
+    async function (event) {
+
+        /*
+         * Allow the second submission through.
+         */
+        if (cqimsSubmittingForm) {
+            return;
+        }
+
+
+        /*
+         * Stop the normal POST immediately.
+         */
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+
+
+        const form =
+            event.target;
+
+
+        /*
+         * Check CableQIMS connection.
+         */
+        const online =
+            await isCableQIMSOnline();
+
+
+        if (!online) {
+
+            showOfflineMessage(
+                "Please check your internet connection. Your action was not submitted."
+            );
+
+            return;
+        }
+
+
+        /*
+         * Server is reachable.
+         *
+         * Allow the original form to submit.
+         */
+        cqimsSubmittingForm = true;
+
+        form.submit();
+
+    },
+    true
+);
+
+
+/*
+ * Detect browser going offline
+ */
+window.addEventListener(
+    "offline",
+    function () {
+
+        showOfflineMessage(
+            "Please check your internet connection."
+        );
+
+    }
+);
+
+
+/*
+ * Detect connection restored
+ */
+window.addEventListener(
+    "online",
+    function () {
+
+        console.log(
+            "CableQIMS: Internet connection restored."
+        );
+
+    }
+);
+
+
+
+
