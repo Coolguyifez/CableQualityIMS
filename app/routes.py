@@ -1547,6 +1547,7 @@ def cable_types():
     )
 
 
+
 @main.route("/cable-types/new", methods=["GET", "POST"])
 @login_required
 @permission_required("manage_cable_types")
@@ -1569,14 +1570,40 @@ def new_cable_type():
         if form.flame_retardant.data != "NONE":
             construction += f" - {form.flame_retardant.data}"
 
-        existing = CableType.query.filter_by(
-            company_id=current_user.company_id,
-            name=construction
-        ).first()
+        # Normalize values to avoid duplicates caused by spacing or case.
+        def normalize(value):
+            return str(value or "").strip().casefold()
 
-        if existing:
+        # Check for an existing cable with matching specifications.
+        existing_cable = CableType.query.filter_by(
+            company_id=current_user.company_id
+        ).all()
+
+        duplicate = next(
+            (
+                cable for cable in existing_cable
+                if all([
+                    normalize(cable.name) == normalize(construction),
+                    normalize(cable.pair_count) == normalize(form.pair_count.data),
+                    normalize(cable.conductor_size) == normalize(form.conductor_size.data),
+                    normalize(cable.voltage_rating) == normalize(form.voltage_rating.data),
+                    normalize(cable.drain_configuration) == normalize(form.drain_configuration.data),
+                    normalize(cable.conductor_material) == normalize(form.conductor_material.data),
+                    normalize(cable.insulation_material) == normalize(form.insulation_material.data),
+                    normalize(cable.fire_resistant_material) == normalize(form.fire_resistant_material.data),
+                    normalize(cable.inner_sheath_material) == normalize(form.inner_sheath_material.data),
+                    normalize(cable.armour_type) == normalize(form.armour_type.data),
+                    normalize(cable.outer_sheath_material) == normalize(form.outer_sheath_material.data),
+                    normalize(cable.flame_retardant) == normalize(form.flame_retardant.data),
+                    normalize(cable.application) == normalize(form.application.data),
+                ])
+            ),
+            None
+        )
+
+        if duplicate:
             flash(
-                "Cable Type already exists.",
+                "This exact Cable Type already exists with the same specifications.",
                 "warning"
             )
 
@@ -1586,46 +1613,28 @@ def new_cable_type():
             )
 
         cable = CableType(
-
             company_id=current_user.company_id,
-
             name=construction,
-
             pair_count=form.pair_count.data,
-
             conductor_size=form.conductor_size.data,
-
             voltage_rating=form.voltage_rating.data,
-
             drain_configuration=form.drain_configuration.data,
-
             conductor_material=form.conductor_material.data,
-
             insulation_material=form.insulation_material.data,
-
             fire_resistant_material=form.fire_resistant_material.data,
-
             inner_sheath_material=form.inner_sheath_material.data,
-
             armour_type=form.armour_type.data,
-
             outer_sheath_material=form.outer_sheath_material.data,
-
             flame_retardant=form.flame_retardant.data,
-
             application=form.application.data
         )
 
         db.session.add(cable)
 
         log_activity(
-
             module="Cable Type",
-
             action="Create",
-
             description=f"Created cable type '{cable.name}'"
-
         )
 
         db.session.commit()
