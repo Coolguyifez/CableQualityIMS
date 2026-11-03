@@ -1652,10 +1652,12 @@ def new_cable_type():
     )
 
 
+
 @main.route("/cable-types/<int:id>/edit", methods=["GET", "POST"])
 @login_required
 @permission_required("manage_cable_types")
 def edit_cable_type(id):
+
     cable = CableType.query.filter_by(
         id=id,
         company_id=current_user.company_id
@@ -1664,9 +1666,6 @@ def edit_cable_type(id):
     form = CableTypeForm(obj=cable)
 
     if form.validate_on_submit():
-
-        # Update all fields except the generated name
-        form.populate_obj(cable)
 
         # Generate Construction Name automatically
         construction = "/".join(
@@ -1685,16 +1684,63 @@ def edit_cable_type(id):
         if form.flame_retardant.data != "NONE":
             construction += f" - {form.flame_retardant.data}"
 
-        # Save generated construction as the cable name
-        cable.name = construction
+        # Normalize values for accurate comparison
+        def normalize(value):
+            return str(value or "").strip().casefold()
 
-        db.session.commit()
+        # Check other cable types in the same company.
+        # Exclude the cable currently being edited.
+        existing_cables = CableType.query.filter(
+            CableType.company_id == current_user.company_id,
+            CableType.id != cable.id
+        ).all()
+
+        duplicate = next(
+            (
+                existing for existing in existing_cables
+                if all([
+                    normalize(existing.name) == normalize(construction),
+                    normalize(existing.pair_count) == normalize(form.pair_count.data),
+                    normalize(existing.conductor_size) == normalize(form.conductor_size.data),
+                    normalize(existing.voltage_rating) == normalize(form.voltage_rating.data),
+                    normalize(existing.drain_configuration) == normalize(form.drain_configuration.data),
+                    normalize(existing.conductor_material) == normalize(form.conductor_material.data),
+                    normalize(existing.insulation_material) == normalize(form.insulation_material.data),
+                    normalize(existing.fire_resistant_material) == normalize(form.fire_resistant_material.data),
+                    normalize(existing.inner_sheath_material) == normalize(form.inner_sheath_material.data),
+                    normalize(existing.armour_type) == normalize(form.armour_type.data),
+                    normalize(existing.outer_sheath_material) == normalize(form.outer_sheath_material.data),
+                    normalize(existing.flame_retardant) == normalize(form.flame_retardant.data),
+                    normalize(existing.application) == normalize(form.application.data),
+                ])
+            ),
+            None
+        )
+
+        if duplicate:
+            flash(
+                "Another Cable Type already exists with the same specifications.",
+                "warning"
+            )
+
+            return render_template(
+                "cable_type_form.html",
+                form=form
+            )
+
+        # Update fields only after duplicate validation
+        form.populate_obj(cable)
+
+        # Save generated construction name
+        cable.name = construction
 
         log_activity(
             module="Cable Type",
             action="Update",
             description=f"Updated cable type '{cable.name}'"
         )
+
+        db.session.commit()
 
         flash(
             "Cable Type updated successfully.",
