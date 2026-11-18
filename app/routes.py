@@ -2546,7 +2546,7 @@ def new_inspection():
 
             flash(
                 "The inspection could not be saved. "
-                "Please check your storage configuration and try again.",
+                "Please try again.",
                 "danger"
             )
 
