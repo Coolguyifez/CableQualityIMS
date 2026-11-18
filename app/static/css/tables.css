@@ -1,41 +1,98 @@
-.table{
+/* =====================================================
+   TABLE STYLING
+===================================================== */
 
-    margin-bottom:0;
-
+.table {
+    margin-bottom: 0;
 }
 
-.table thead{
-
-    background:#F8FAFC;
-
+.table thead {
+    background: #F8FAFC;
 }
 
-.table th{
-
-    font-weight:600;
-
-    color:#475569;
-
-    padding:16px;
-
+.table th {
+    font-weight: 600;
+    color: #475569;
+    padding: 16px;
 }
 
-.table td{
-
-    padding:16px;
-
-    vertical-align:middle;
-
+.table td {
+    padding: 16px;
+    vertical-align: middle;
 }
 
-.table tbody tr{
-
-    transition:.25s;
-
+.table tbody tr {
+    transition: .25s;
 }
 
-.table tbody tr:hover{
+.table tbody tr:hover {
+    background: #F8FAFC;
+}
 
-    background:#F8FAFC;
 
+/* =====================================================
+   HIDE ALL SCROLLBARS
+   Scrolling remains functional
+===================================================== */
+
+/* Firefox */
+* {
+    scrollbar-width: none !important;
+}
+
+/* Internet Explorer and older Edge */
+* {
+    -ms-overflow-style: none !important;
+}
+
+/* Chrome, Safari, Opera and other WebKit browsers */
+*::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+}
+
+/* Main page */
+html,
+body {
+    overflow-x: hidden;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+/* Sidebar */
+.sidebar,
+.sidebar-inner,
+.sidebar-menu,
+.sidebar-content {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+/* Tables and responsive table containers */
+.table-responsive,
+.table-container,
+.table-wrapper {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+/* All scrollable containers */
+div,
+main,
+section,
+aside,
+nav {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+/* WebKit scrollbar removal */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
