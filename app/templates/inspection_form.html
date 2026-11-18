@@ -22,21 +22,22 @@
      EXISTING INSPECTION IMAGES
 ====================================================== -->
 
+
 {% if inspection and inspection.images %}
 
-<div class="card shadow-sm border-0 mb-4">
+<div class="card shadow-sm border-0 mb-4 inspection-images-card">
 
-    <div class="card-header bg-white">
-        <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-semibold">
-                <i class="bi bi-images"></i>
-                Existing Inspection Images
-            </h5>
+    <div class="card-header d-flex justify-content-between align-items-center">
 
-            <span class="badge bg-info">
-                {{ existing_count }} / 10 Images
-            </span>
-        </div>
+        <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-images me-2"></i>
+            Existing Inspection Images
+        </h5>
+
+        <span class="badge bg-info">
+            {{ inspection.images|length }} / 10 Images
+        </span>
+
     </div>
 
     <div class="card-body">
@@ -45,56 +46,76 @@
 
             {% for image in inspection.images %}
 
-            <div class="col-6 col-md-3">
+            <div class="col-6 col-md-4 col-lg-3">
 
-                <div class="card h-100 shadow-sm">
+                <div class="card h-100 shadow-sm inspection-image-item">
 
-                    {% if image.display_url %}
+                    <!-- IMAGE PREVIEW -->
 
-                        <a href="{{ image.display_url }}"
-                           target="_blank"
-                           rel="noopener noreferrer">
+                    <div class="inspection-image-wrapper">
 
-                            <img
-                                src="{{ image.display_url }}"
-                                class="inspection-existing-image"
-                                alt="{{ image.original_filename }}"
-                                loading="lazy"
-                            >
+                        {% if image.display_url %}
 
-                        </a>
+                            <a href="{{ image.display_url }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="inspection-image-link">
 
-                    {% else %}
+                                <img
+                                    src="{{ image.display_url }}"
+                                    class="inspection-existing-image"
+                                    alt="{{ image.original_filename or 'Inspection image' }}"
+                                    loading="lazy"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                >
 
-                        <div class="d-flex align-items-center justify-content-center bg-light"
-                             style="height: 150px;">
+                            </a>
 
-                            <span class="text-muted small">
-                                Image unavailable
-                            </span>
+                            <div class="inspection-image-fallback"
+                                 style="display:none;">
 
-                        </div>
+                                <i class="bi bi-image"></i>
 
-                    {% endif %}
+                                <span>Image unavailable</span>
+
+                            </div>
+
+                        {% else %}
+
+                            <div class="inspection-image-fallback">
+
+                                <i class="bi bi-image"></i>
+
+                                <span>Image URL unavailable</span>
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                    <!-- IMAGE INFORMATION -->
 
                     <div class="card-body p-2">
 
                         <div class="small text-muted text-truncate mb-2"
-                             title="{{ image.original_filename }}">
+                             title="{{ image.original_filename or 'Inspection image' }}">
 
-                            {{ image.original_filename }}
+                            {{ image.original_filename or 'Inspection image' }}
 
                         </div>
 
-                        <!-- REMOVE INDIVIDUAL IMAGE -->
+                        <!-- REMOVE IMAGE -->
 
-                        <form method="POST"
-                              action="{{ url_for(
-                                  'main.delete_inspection_image',
-                                  inspection_id=inspection.id,
-                                  image_id=image.id
-                              ) }}"
-                              onsubmit="return confirm('Are you sure you want to remove this image?');">
+                        <form
+                            method="POST"
+                            action="{{ url_for(
+                                'main.delete_inspection_image',
+                                inspection_id=inspection.id,
+                                image_id=image.id
+                            ) }}"
+                            onsubmit="return confirm('Are you sure you want to remove this image?');"
+                        >
 
                             <input
                                 type="hidden"
@@ -102,10 +123,12 @@
                                 value="{{ csrf_token() }}"
                             >
 
-                            <button type="submit"
-                                    class="btn btn-outline-danger btn-sm w-100">
+                            <button
+                                type="submit"
+                                class="btn btn-outline-danger btn-sm w-100"
+                            >
 
-                                <i class="bi bi-trash"></i>
+                                <i class="bi bi-trash me-1"></i>
                                 Remove Image
 
                             </button>
@@ -123,8 +146,12 @@
         </div>
 
         <small class="text-muted d-block mt-3">
+
+            <i class="bi bi-info-circle me-1"></i>
+
             Remove an image individually if you want to replace it.
             Other images will remain attached to this inspection.
+
         </small>
 
     </div>
