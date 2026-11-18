@@ -2671,29 +2671,57 @@ def edit_inspection(inspection_id):
         company_id=current_user.company_id
     ).first_or_404()
 
+    # -----------------------------------------------------
+    # PREPARE INSPECTION FORM
+    # -----------------------------------------------------
+
     form = InspectionForm(obj=inspection)
 
-    form.batch_id.choices = [
+    def prepare_form():
 
-        (b.id, b.batch_number)
+        form.batch_id.choices = [
+            (b.id, b.batch_number)
+            for b in CableBatch.query.filter_by(
+                company_id=current_user.company_id
+            ).order_by(
+                CableBatch.production_date.desc()
+            ).all()
+        ]
 
-        for b in CableBatch.query.filter_by(
-            company_id=current_user.company_id
-        ).order_by(
-            CableBatch.production_date.desc()
-        ).all()
+    # -----------------------------------------------------
+    # GENERATE SIGNED URLS FOR EXISTING IMAGES
+    # -----------------------------------------------------
 
-    ]
+    def prepare_inspection_images():
+
+        for image in inspection.images:
+
+            try:
+
+                image.display_url = create_inspection_image_signed_url(
+                    image.image_path
+                )
+
+            except Exception:
+
+                current_app.logger.exception(
+                    "Could not generate signed URL for inspection image %s",
+                    image.id
+                )
+
+                image.display_url = None
+
+    prepare_form()
+
+    # -----------------------------------------------------
+    # HANDLE FORM SUBMISSION
+    # -----------------------------------------------------
 
     if form.validate_on_submit():
 
-        # Update existing inspection information.
         inspection.batch_id = form.batch_id.data
-
         inspection.inspector = form.inspector.data
-
         inspection.inspection_date = form.inspection_date.data
-
         inspection.remarks = form.remarks.data
 
         uploaded_files = request.files.getlist(
@@ -2702,10 +2730,34 @@ def edit_inspection(inspection_id):
 
         try:
 
-            # Add any newly selected images.
+            # Add newly selected images.
             attach_inspection_images(
                 inspection,
                 uploaded_files
+            )
+
+            # Record update activity.
+            log_activity(
+                module="Inspection",
+                action="Update",
+                description=(
+                    f"Updated inspection "
+                    f"'{inspection.inspection_number}'"
+                )
+            )
+
+            db.session.commit()
+
+            flash(
+                "Inspection updated successfully.",
+                "success"
+            )
+
+            return redirect(
+                url_for(
+                    "main.view_inspection",
+                    inspection_id=inspection.id
+                )
             )
 
         except ValueError as exc:
@@ -2713,32 +2765,6 @@ def edit_inspection(inspection_id):
             db.session.rollback()
 
             flash(str(exc), "danger")
-
-            # Reload the inspection after rollback.
-            inspection = Inspection.query.filter_by(
-                id=inspection_id,
-                company_id=current_user.company_id
-            ).first_or_404()
-
-            form = InspectionForm(obj=inspection)
-
-            form.batch_id.choices = [
-
-                (b.id, b.batch_number)
-
-                for b in CableBatch.query.filter_by(
-                    company_id=current_user.company_id
-                ).order_by(
-                    CableBatch.production_date.desc()
-                ).all()
-
-            ]
-
-            return render_template(
-                "inspection_form.html",
-                form=form,
-                inspection=inspection
-            )
 
         except Exception:
 
@@ -2754,62 +2780,33 @@ def edit_inspection(inspection_id):
                 "danger"
             )
 
-            inspection = Inspection.query.filter_by(
-                id=inspection_id,
-                company_id=current_user.company_id
-            ).first_or_404()
+        # Reload inspection after rollback.
+        inspection = Inspection.query.filter_by(
+            id=inspection_id,
+            company_id=current_user.company_id
+        ).first_or_404()
 
-            form = InspectionForm(obj=inspection)
+        form = InspectionForm(obj=inspection)
 
-            form.batch_id.choices = [
+        prepare_form()
 
-                (b.id, b.batch_number)
+    # -----------------------------------------------------
+    # PREPARE EXISTING IMAGES BEFORE RENDERING
+    # -----------------------------------------------------
 
-                for b in CableBatch.query.filter_by(
-                    company_id=current_user.company_id
-                ).order_by(
-                    CableBatch.production_date.desc()
-                ).all()
+    prepare_inspection_images()
 
-            ]
+    existing_count = len(inspection.images)
 
-            return render_template(
-                "inspection_form.html",
-                form=form,
-                inspection=inspection
-            )
-
-        # Record update activity.
-        log_activity(
-
-            module="Inspection",
-
-            action="Update",
-
-            description=(
-                f"Updated inspection '{inspection.inspection_number}'"
-            )
-
-        )
-
-        db.session.commit()
-
-        flash(
-            "Inspection updated successfully.",
-            "success"
-        )
-
-        return redirect(
-            url_for(
-                "main.view_inspection",
-                inspection_id=inspection.id
-            )
-        )
+    # -----------------------------------------------------
+    # RENDER EDIT PAGE
+    # -----------------------------------------------------
 
     return render_template(
         "inspection_form.html",
         form=form,
-        inspection=inspection
+        inspection=inspection,
+        existing_count=existing_count
     )
 
 
