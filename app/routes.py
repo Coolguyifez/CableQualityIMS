@@ -2941,8 +2941,7 @@ def delete_inspection(inspection_id):
     # -----------------------------------------------------
 
     flash(
-        f"Inspection '{inspection_number}' and its attached "
-        "images have been deleted successfully.",
+        f"Inspection '{inspection_number}' has been deleted successfully.",
         "success"
     )
 
