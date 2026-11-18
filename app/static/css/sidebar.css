@@ -1,130 +1,76 @@
 
-/* ===========================
-   SIDEBAR
-=========================== */
+/* =========================================================
+   CABLEQIMS SIDEBAR
+========================================================= */
 
 .sidebar {
-    width: 260px;
-    background: #0F172A;
-    color: #fff;
+    width: var(--sidebar-width, 260px);
+    min-width: var(--sidebar-width, 260px);
+    max-width: var(--sidebar-width, 260px);
 
-    /* Full viewport height */
     height: 100vh;
-
     padding: 20px;
-    flex-shrink: 0;
 
-    /* Keep sidebar in place while main content scrolls */
-    position: sticky;
+    background: #0F172A;
+    color: #FFFFFF;
+
+    flex: 0 0 var(--sidebar-width, 260px);
+
+    position: relative;
     top: 0;
-
-    /* Prevent sidebar from moving with the page */
     align-self: flex-start;
 
     display: flex;
     flex-direction: column;
 
-    transition: all 0.3s ease;
+    overflow: hidden;
 
-    /* Smooth scrolling on touch devices */
+    transition: left 0.3s ease,
+                background 0.3s ease,
+                color 0.3s ease;
+
     -webkit-overflow-scrolling: touch;
-
-    /* Hide scrollbar but allow scrolling */
-    scrollbar-width: none;
-    -ms-overflow-style: none;
 }
 
-/* Chrome, Edge, Safari and other WebKit browsers */
-.sidebar::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
-}
-
-
-/* ===========================
+/* =========================================================
    SIDEBAR CONTENT
-=========================== */
+========================================================= */
 
 .sidebar-content {
-    flex: 1;
+    flex: 1 1 auto;
     min-height: 0;
 
-    /* Sidebar scrolls independently */
     overflow-y: auto;
     overflow-x: hidden;
 
-    /* Hide scrollbar in Firefox and IE/Edge */
     scrollbar-width: none;
     -ms-overflow-style: none;
 
     -webkit-overflow-scrolling: touch;
 }
 
-/* Hide sidebar-content scrollbar in Chrome, Edge and Safari */
-.sidebar-content::-webkit-scrollbar {
+.sidebar-content::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar {
     display: none;
-    width: 0;
-    height: 0;
 }
 
-
-/* ===========================
-   MAIN WRAPPER
-=========================== */
-
-.wrapper {
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-}
-
-
-/* ===========================
-   MAIN PAGE
-=========================== */
-
-.page {
-    flex: 1;
-    min-width: 0;
-    height: 100vh;
-
-    /* Allow page scrolling */
-    overflow-y: auto;
-    overflow-x: hidden;
-
-    /* Hide scrollbar in Firefox and IE/Edge */
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-
-    -webkit-overflow-scrolling: touch;
-}
-
-/* Hide page scrollbar in Chrome, Edge and Safari */
-.page::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
-}
-
-
-/* ===========================
+/* =========================================================
    LOGO
-=========================== */
+========================================================= */
 
 .logo {
     text-align: center;
-    margin-bottom: 35px;
+    margin-bottom: 25px;
+    flex-shrink: 0;
 }
 
 .logo h4 {
-    color: #fff;
+    color: #FFFFFF;
 }
 
-
-/* ===========================
+/* =========================================================
    SIDEBAR NAVIGATION
-=========================== */
+========================================================= */
 
 .sidebar ul {
     list-style: none;
@@ -137,17 +83,19 @@
 }
 
 .sidebar .nav-link {
-    color: #fff;
+    color: #FFFFFF;
     border-radius: 8px;
     padding: 12px 15px;
-    transition: 0.3s;
 
     display: flex;
     align-items: center;
+
+    transition: background 0.3s ease, color 0.3s ease;
 }
 
 .sidebar .nav-link i {
     margin-right: 10px;
+    flex-shrink: 0;
 }
 
 .sidebar .nav-link:hover,
@@ -156,70 +104,173 @@
     color: #60A5FA;
 }
 
+.sidebar .nav-title {
+    color: #94A3B8;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 10px 12px 5px;
+}
 
-/* ===========================
+/* =========================================================
    SIDEBAR FOOTER
-=========================== */
+========================================================= */
 
 .sidebar-footer {
     flex-shrink: 0;
     margin-top: auto;
     padding: 12px 8px;
+
     text-align: center;
     font-size: 11px;
     font-style: italic;
     line-height: 1.4;
 }
 
+/* =========================================================
+   DARK MODE
+   Applied when body has the dark class
+========================================================= */
 
-/* ===========================
-   MOBILE
-=========================== */
+body.dark .sidebar,
+body[data-cqims-actual-theme="dark"] .sidebar {
+    background: #0B1120;
+    color: #F8FAFC;
+}
+
+body.dark .sidebar .logo h4,
+body[data-cqims-actual-theme="dark"] .sidebar .logo h4 {
+    color: #F8FAFC;
+}
+
+body.dark .sidebar .nav-link,
+body[data-cqims-actual-theme="dark"] .sidebar .nav-link {
+    color: #CBD5E1;
+}
+
+body.dark .sidebar .nav-link:hover,
+body.dark .sidebar .nav-link.active,
+body[data-cqims-actual-theme="dark"] .sidebar .nav-link:hover,
+body[data-cqims-actual-theme="dark"] .sidebar .nav-link.active {
+    background: #1E293B;
+    color: #93C5FD;
+}
+
+body.dark .sidebar .nav-title,
+body[data-cqims-actual-theme="dark"] .sidebar .nav-title {
+    color: #94A3B8;
+}
+
+body.dark .sidebar-footer,
+body[data-cqims-actual-theme="dark"] .sidebar-footer {
+    color: #94A3B8;
+}
+
+/* =========================================================
+   SYSTEM DARK MODE
+   Used when system preference is dark and body has system
+========================================================= */
+
+@media (prefers-color-scheme: dark) {
+
+    body.system .sidebar {
+        background: #0B1120;
+        color: #F8FAFC;
+    }
+
+    body.system .sidebar .logo h4 {
+        color: #F8FAFC;
+    }
+
+    body.system .sidebar .nav-link {
+        color: #CBD5E1;
+    }
+
+    body.system .sidebar .nav-link:hover,
+    body.system .sidebar .nav-link.active {
+        background: #1E293B;
+        color: #93C5FD;
+    }
+
+    body.system .sidebar .nav-title {
+        color: #94A3B8;
+    }
+
+    body.system .sidebar-footer {
+        color: #94A3B8;
+    }
+}
+
+/* =========================================================
+   DESKTOP WRAPPER
+========================================================= */
+
+.wrapper {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    min-height: 100vh;
+    overflow: hidden;
+    align-items: flex-start;
+}
+
+/* =========================================================
+   MAIN PAGE
+========================================================= */
+
+.page {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: calc(100% - var(--sidebar-width, 260px));
+    height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    -webkit-overflow-scrolling: touch;
+}
+
+.page::-webkit-scrollbar {
+    display: none;
+}
+
+/* =========================================================
+   MOBILE SIDEBAR
+========================================================= */
 
 @media (max-width: 991px) {
 
     .sidebar {
         position: fixed;
-
         top: 0;
-        left: -260px;
+        left: calc(-1 * var(--sidebar-width, 260px));
 
         width: 260px;
+        min-width: 260px;
         max-width: 260px;
 
         height: 100vh;
 
-        overflow-y: auto;
-        overflow-x: hidden;
-
-        -webkit-overflow-scrolling: touch;
-
         z-index: 1050;
 
         transition: left 0.3s ease;
-
-        /* Reset sticky behavior on mobile */
-        align-self: auto;
-
-        /* Hide scrollbar */
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-
-    .sidebar::-webkit-scrollbar {
-        display: none;
-        width: 0;
-        height: 0;
     }
 
     .sidebar.active {
         left: 0;
     }
 
-
-    /* ===========================
-       MOBILE OVERLAY
-    =========================== */
+    .page {
+        width: 100%;
+        max-width: 100%;
+        height: 100vh;
+    }
 
     .sidebar-overlay {
         position: fixed;
@@ -234,5 +285,20 @@
 
     .sidebar-overlay.show {
         display: block;
+    }
+}
+
+/* =========================================================
+   DARK MODE MOBILE OVERLAY
+========================================================= */
+
+body.dark .sidebar-overlay,
+body[data-cqims-actual-theme="dark"] .sidebar-overlay {
+    background: rgba(0, 0, 0, 0.65);
+}
+
+@media (prefers-color-scheme: dark) {
+    body.system .sidebar-overlay {
+        background: rgba(0, 0, 0, 0.65);
     }
 }

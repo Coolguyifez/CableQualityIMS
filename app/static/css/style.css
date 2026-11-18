@@ -1,113 +1,245 @@
-:root{
 
-    --primary:#0F172A;
-    --secondary:#2563EB;
-    --success:#16A34A;
-    --warning:#F59E0B;
-    --danger:#DC2626;
+/* =========================================================
+   CABLEQIMS GLOBAL THEME VARIABLES
+========================================================= */
 
-    --background:#F8FAFC;
-    --card:#FFFFFF;
-    --border:#E5E7EB;
+:root {
 
-    --text:#1F2937;
+    --primary: #0F172A;
+    --secondary: #2563EB;
+    --success: #16A34A;
+    --warning: #F59E0B;
+    --danger: #DC2626;
 
-    --sidebar-width:260px;
+    --background: #F8FAFC;
+    --card: #FFFFFF;
+    --border: #E5E7EB;
 
-}
+    --text: #1F2937;
 
-
-body.dark{
-
-    --primary:#60A5FA;
-    --secondary:#3B82F6;
-
-    --success:#22C55E;
-    --warning:#FBBF24;
-    --danger:#EF4444;
-
-    --background:#103895;
-    --card:#1E293B;
-    --border:#334155;
-
-    --text:#F8FAFC;
+    /* Sidebar dimensions */
+    --sidebar-width: 260px;
 
 }
 
 
-@media (prefers-color-scheme: dark){
+/* =========================================================
+   DARK THEME
+========================================================= */
 
-    body.system{
+body.dark {
 
-        --primary:#60A5FA;
-        --secondary:#3B82F6;
+    --primary: #60A5FA;
+    --secondary: #3B82F6;
 
-        --success:#22C55E;
-        --warning:#FBBF24;
-        --danger:#EF4444;
+    --success: #22C55E;
+    --warning: #FBBF24;
+    --danger: #EF4444;
 
-        --background:#103895;
-        --card:#1E293B;
-        --border:#334155;
+    --background: #111827;
+    --card: #1E293B;
+    --border: #334155;
 
-        --text:#F8FAFC;
+    --text: #F8FAFC;
+
+}
+
+
+/* =========================================================
+   SYSTEM DARK THEME
+========================================================= */
+
+@media (prefers-color-scheme: dark) {
+
+    body.system {
+
+        --primary: #60A5FA;
+        --secondary: #3B82F6;
+
+        --success: #22C55E;
+        --warning: #FBBF24;
+        --danger: #EF4444;
+
+        --background: #111827;
+        --card: #1E293B;
+        --border: #334155;
+
+        --text: #F8FAFC;
 
     }
 
 }
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+
+/* =========================================================
+   GLOBAL RESET
+========================================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-body{
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+}
+
+
+body {
 
     font-family: 'Inter', sans-serif;
-    background:var(--background);
 
-    color:var(--text);
+    background: var(--background);
 
-    overflow-x:hidden;
+    color: var(--text);
 
-}
-
-.wrapper{
-
-    display:flex;
-
-    min-height:100vh;
+    overflow: hidden;
 
 }
 
-.page{
 
-    flex:1;
+/* =========================================================
+   MAIN APPLICATION WRAPPER
 
-    display:flex;
+   Sidebar stays in place.
+   Page scrolls independently.
+========================================================= */
 
-    flex-direction:column;
+.wrapper {
 
-    min-width:0;
+    display: flex;
+
+    width: 100%;
+
+    height: 100vh;
+
+    min-height: 100vh;
+
+    overflow: hidden;
+
+    align-items: flex-start;
 
 }
 
-main{
 
-    flex:1;
+/* =========================================================
+   MAIN PAGE
+========================================================= */
+
+.page {
+
+    flex: 1 1 auto;
+
+    width: calc(100% - var(--sidebar-width));
+
+    min-width: 0;
+
+    height: 100vh;
+
+    display: flex;
+
+    flex-direction: column;
+
+    overflow-y: auto;
+
+    overflow-x: hidden;
+
+    scrollbar-width: none;
+
+    -ms-overflow-style: none;
+
+    -webkit-overflow-scrolling: touch;
 
 }
 
-/* ==========================================
+
+/* Hide page scrollbar */
+
+.page::-webkit-scrollbar {
+
+    display: none;
+
+    width: 0;
+
+    height: 0;
+
+}
+
+
+/* =========================================================
+   MAIN CONTENT
+========================================================= */
+
+main {
+
+    flex: 1 0 auto;
+
+    width: 100%;
+
+    min-width: 0;
+
+}
+
+
+/* =========================================================
+   GLOBAL WIDTH PROTECTION
+========================================================= */
+
+.container-fluid {
+
+    min-width: 0;
+
+}
+
+
+/* Prevent large tables from stretching the entire page */
+
+.table-responsive {
+
+    max-width: 100%;
+
+    overflow-x: auto;
+
+}
+
+
+/* =========================================================
+   GLOBAL SMOOTH TRANSITIONS
+========================================================= */
+
+body,
+.page,
+.sidebar,
+.navbar,
+.card,
+.table,
+.form-control,
+.form-select,
+.dropdown-menu {
+
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease;
+
+}
+
+
+/* =========================================================
    CABLEQIMS OFFLINE MESSAGE
-   ========================================== */
+========================================================= */
 
 #cqims-offline-message {
 
     position: fixed;
 
     top: 20px;
+
     right: 20px;
 
     z-index: 99999;
@@ -136,12 +268,13 @@ main{
         border-color 0.25s ease,
         box-shadow 0.25s ease,
         opacity 0.3s ease;
+
 }
 
 
-/* ==========================================
-   CONTENT
-   ========================================== */
+/* =========================================================
+   OFFLINE MESSAGE CONTENT
+========================================================= */
 
 .cqims-offline-content {
 
@@ -150,16 +283,18 @@ main{
     align-items: center;
 
     gap: 13px;
+
 }
 
 
-/* ==========================================
-   ICON
-   ========================================== */
+/* =========================================================
+   OFFLINE MESSAGE ICON
+========================================================= */
 
 .cqims-offline-icon {
 
     width: 42px;
+
     height: 42px;
 
     flex-shrink: 0;
@@ -167,6 +302,7 @@ main{
     display: flex;
 
     align-items: center;
+
     justify-content: center;
 
     border-radius: 50%;
@@ -176,12 +312,13 @@ main{
     color: #0d6efd;
 
     font-size: 19px;
+
 }
 
 
-/* ==========================================
-   TEXT
-   ========================================== */
+/* =========================================================
+   OFFLINE MESSAGE TEXT
+========================================================= */
 
 .cqims-offline-text {
 
@@ -190,6 +327,7 @@ main{
     flex-direction: column;
 
     gap: 3px;
+
 }
 
 
@@ -198,6 +336,7 @@ main{
     font-size: 14px;
 
     font-weight: 700;
+
 }
 
 
@@ -208,12 +347,13 @@ main{
     line-height: 1.5;
 
     color: #64748b;
+
 }
 
 
-/* ==========================================
-   DARK THEME
-   ========================================== */
+/* =========================================================
+   DARK THEME OFFLINE MESSAGE
+========================================================= */
 
 [data-cqims-actual-theme="dark"]
 #cqims-offline-message {
@@ -226,6 +366,7 @@ main{
 
     box-shadow:
         0 8px 30px rgba(0, 0, 0, 0.40);
+
 }
 
 
@@ -235,6 +376,7 @@ main{
     background: #334155;
 
     color: #60a5fa;
+
 }
 
 
@@ -242,12 +384,13 @@ main{
 .cqims-offline-text span {
 
     color: #94a3b8;
+
 }
 
 
-/* ==========================================
-   LIGHT THEME
-   ========================================== */
+/* =========================================================
+   LIGHT THEME OFFLINE MESSAGE
+========================================================= */
 
 [data-cqims-actual-theme="light"]
 #cqims-offline-message {
@@ -257,6 +400,7 @@ main{
     color: #0f172a;
 
     border-color: #e2e8f0;
+
 }
 
 
@@ -266,6 +410,7 @@ main{
     background: #f4f4f4;
 
     color: #0d6efd;
+
 }
 
 
@@ -273,12 +418,13 @@ main{
 .cqims-offline-text span {
 
     color: #64748b;
+
 }
 
 
-/* ==========================================
-   SYSTEM DARK MODE
-   ========================================== */
+/* =========================================================
+   SYSTEM DARK MODE OFFLINE MESSAGE
+========================================================= */
 
 @media (prefers-color-scheme: dark) {
 
@@ -293,6 +439,7 @@ main{
 
         box-shadow:
             0 8px 30px rgba(0, 0, 0, 0.40);
+
     }
 
 
@@ -302,6 +449,7 @@ main{
         background: #334155;
 
         color: #60a5fa;
+
     }
 
 
@@ -309,14 +457,15 @@ main{
     .cqims-offline-text span {
 
         color: #94a3b8;
+
     }
 
 }
 
 
-/* ==========================================
-   ANIMATION
-   ========================================== */
+/* =========================================================
+   OFFLINE MESSAGE ANIMATION
+========================================================= */
 
 @keyframes cqimsOfflineSlide {
 
@@ -348,5 +497,55 @@ main{
 }
 
 
+/* =========================================================
+   MOBILE LAYOUT
+========================================================= */
+
+@media (max-width: 991px) {
+
+    .wrapper {
+
+        width: 100%;
+
+    }
+
+    .page {
+
+        width: 100%;
+
+        max-width: 100%;
+
+    }
+
+}
 
 
+/* =========================================================
+   SMALL SCREEN OFFLINE MESSAGE
+========================================================= */
+
+@media (max-width: 480px) {
+
+    #cqims-offline-message {
+
+        top: 12px;
+
+        right: 12px;
+
+        width: calc(100vw - 24px);
+
+        padding: 13px 14px;
+
+    }
+
+    .cqims-offline-icon {
+
+        width: 38px;
+
+        height: 38px;
+
+        font-size: 17px;
+
+    }
+
+}
