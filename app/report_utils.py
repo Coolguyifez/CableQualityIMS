@@ -882,71 +882,54 @@ def get_production_line_chart(company_id):
 def get_cable_type_chart(company_id):
 
     results = (
-
         db.session.query(
-
             CableType.name,
-
-            func.count(
-
-                Inspection.id
-
-            )
-
+            CableType.pair_count,
+            CableType.conductor_size,
+            CableType.voltage_rating,
+            func.count(Inspection.id)
         )
 
         .join(
-
             CableBatch,
-
             CableBatch.cable_type_id == CableType.id
-
         )
 
         .join(
-
             Inspection,
-
             Inspection.batch_id == CableBatch.id
-
         )
 
         .filter(
-
             Inspection.company_id == company_id
-
         )
 
         .group_by(
+            CableType.name,
+            CableType.pair_count,
+            CableType.conductor_size,
+            CableType.voltage_rating
+        )
 
-            CableType.name
-
+        .order_by(
+            CableType.name.asc()
         )
 
         .all()
-
     )
 
     return {
-
-        "labels":[
-
-            row[0]
-
+        "labels": [
+            f"{row[1]} x {row[2]} - {row[0]} ({row[3]})"
             for row in results
-
         ],
 
-        "values":[
-
-            row[1]
-
+        "values": [
+            row[4]
             for row in results
-
         ]
-
     }
-
+    
 def get_filtered_deviation_query(company_id):
 
     query = Deviation.query.filter(
