@@ -22,11 +22,13 @@ Dashboard
 
 <p class="text-muted">
 
-Welcome back,
+Greetings,
 
-<strong>{{ current_user.full_name }}</strong>
-
+<strong>{{ current_user.full_name }}</strong>.
+See Cable Quality Management updates on {{ current_user.company.company_name }}.
+ 
 </p>
+
 
 </div>
 
@@ -153,7 +155,6 @@ Overdue CAPAs
 
     </div>
 
-    <!-- Monthly Trend -->
     <!-- Inspection Trend -->
 <div class="col-lg-6">
 
@@ -575,7 +576,7 @@ Recent Activities
 
 <tr>
 
-<th>User</th>  
+<th>User</th>
 
 <th>Module</th>
 
@@ -598,7 +599,7 @@ Recent Activities
 {{ log.user.full_name if log.user else "-" }}
 
 </td>
-    
+
 <td>
 
 {{ log.module }}
@@ -615,7 +616,7 @@ Recent Activities
 
 <span
 class="local-time"
-data-utc="{{ log.created_at.isoformat() }}">    
+data-utc="{{ log.created_at.isoformat() }}">
 
 {{ log.created_at.strftime("%d-%m-%Y %H:%M") }}
 
