@@ -572,11 +572,48 @@ class Inspection(db.Model):
         cascade="all, delete-orphan"
     )
 
-
+    images = db.relationship(
+        "InspectionImage",
+        back_populates="inspection",
+        cascade="all, delete-orphan",
+        order_by="InspectionImage.created_at"
+    )
 
     def __repr__(self):
         return f"<Inspection {self.inspection_number}>"
 
+
+class InspectionImage(db.Model):
+    __tablename__ = "inspection_images"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    inspection_id = db.Column(
+        db.Integer,
+        db.ForeignKey("inspections.id"),
+        nullable=False,
+        index=True
+    )
+
+    image_path = db.Column(db.String(500), nullable=False)
+    local_path = db.Column(db.String(500), nullable=True)
+
+    original_filename = db.Column(db.String(255), nullable=False)
+    content_type = db.Column(db.String(100), nullable=False)
+
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+
+    inspection = db.relationship(
+        "Inspection",
+        back_populates="images"
+    )
+
+    def __repr__(self):
+        return f"<InspectionImage {self.id}>"
 
 
 class QualityMetric(db.Model):
