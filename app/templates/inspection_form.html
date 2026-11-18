@@ -1,81 +1,455 @@
 {% extends "base.html" %}
 
-{% block title %}Inspection{% endblock %}
+{% block title %}{% if inspection %}Edit Inspection{% else %}New Inspection{% endif %}{% endblock %}
 
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-
     <div>
-
         <h2 class="fw-bold">
-
-            New Inspection
-
+            {% if inspection %}Edit Inspection{% else %}New Inspection{% endif %}
         </h2>
 
         <p class="text-muted">
-
-            Record cable quality inspection.
-
+            Record cable quality inspection and attach photographic evidence.
         </p>
+    </div>
+</div>
+
+{% set existing_count = inspection.images|length if inspection else 0 %}
+
+<!-- =====================================================
+     EXISTING INSPECTION IMAGES
+====================================================== -->
+
+{% if inspection and inspection.images %}
+
+<div class="card shadow-sm border-0 mb-4">
+
+    <div class="card-header bg-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-semibold">
+                <i class="bi bi-images"></i>
+                Existing Inspection Images
+            </h5>
+
+            <span class="badge bg-info">
+                {{ existing_count }} / 10 Images
+            </span>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="row g-3">
+
+            {% for image in inspection.images %}
+
+            <div class="col-6 col-md-3">
+
+                <div class="card h-100 shadow-sm">
+
+                    {% if image.display_url %}
+
+                        <a href="{{ image.display_url }}"
+                           target="_blank"
+                           rel="noopener noreferrer">
+
+                            <img
+                                src="{{ image.display_url }}"
+                                class="inspection-existing-image"
+                                alt="{{ image.original_filename }}"
+                                loading="lazy"
+                            >
+
+                        </a>
+
+                    {% else %}
+
+                        <div class="d-flex align-items-center justify-content-center bg-light"
+                             style="height: 150px;">
+
+                            <span class="text-muted small">
+                                Image unavailable
+                            </span>
+
+                        </div>
+
+                    {% endif %}
+
+                    <div class="card-body p-2">
+
+                        <div class="small text-muted text-truncate mb-2"
+                             title="{{ image.original_filename }}">
+
+                            {{ image.original_filename }}
+
+                        </div>
+
+                        <!-- REMOVE INDIVIDUAL IMAGE -->
+
+                        <form method="POST"
+                              action="{{ url_for(
+                                  'main.delete_inspection_image',
+                                  inspection_id=inspection.id,
+                                  image_id=image.id
+                              ) }}"
+                              onsubmit="return confirm('Are you sure you want to remove this image?');">
+
+                            <input
+                                type="hidden"
+                                name="csrf_token"
+                                value="{{ csrf_token() }}"
+                            >
+
+                            <button type="submit"
+                                    class="btn btn-outline-danger btn-sm w-100">
+
+                                <i class="bi bi-trash"></i>
+                                Remove Image
+
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+        <small class="text-muted d-block mt-3">
+            Remove an image individually if you want to replace it.
+            Other images will remain attached to this inspection.
+        </small>
 
     </div>
 
 </div>
 
+{% endif %}
+
+
+<!-- =====================================================
+     INSPECTION FORM
+====================================================== -->
+
 <div class="card shadow-sm border-0">
 
-<div class="card-body">
+    <div class="card-body">
 
-<form method="POST">
+        <form method="POST" enctype="multipart/form-data">
 
-{{ form.hidden_tag() }}
+            {{ form.hidden_tag() }}
 
-<div class="row">
+            <div class="row">
 
-<div class="col-md-6 mb-3">
-{{ form.batch_id.label(class="form-label") }}
-{{ form.batch_id(class="form-select") }}
+                <!-- BATCH -->
+
+                <div class="col-md-6 mb-3">
+
+                    {{ form.batch_id.label(class="form-label") }}
+
+                    {{ form.batch_id(class="form-select") }}
+
+                    {% for error in form.batch_id.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+
+                </div>
+
+
+                <!-- INSPECTOR -->
+
+                <div class="col-md-6 mb-3">
+
+                    {{ form.inspector.label(class="form-label") }}
+
+                    {{ form.inspector(class="form-control") }}
+
+                    {% for error in form.inspector.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+
+                </div>
+
+
+                <!-- REMARKS -->
+
+                <div class="col-md-12 mb-3">
+
+                    {{ form.remarks.label(class="form-label") }}
+
+                    {{ form.remarks(
+                        class="form-control",
+                        rows="4",
+                        placeholder="Enter inspection observations and remarks..."
+                    ) }}
+
+                </div>
+
+
+                <!-- INSPECTION DATE -->
+
+                <div class="col-md-6 mb-3">
+
+                    {{ form.inspection_date.label(class="form-label") }}
+
+                    {{ form.inspection_date(class="form-control") }}
+
+                    {% for error in form.inspection_date.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+
+                </div>
+
+
+                <!-- IMAGE UPLOAD -->
+
+                <div class="col-md-12 mb-4">
+
+                    <label for="inspection_images"
+                           class="form-label fw-semibold">
+
+                        {% if inspection %}
+                            Add Replacement / Additional Images
+                        {% else %}
+                            Inspection Images
+                        {% endif %}
+
+                    </label>
+
+                    <input
+                        type="file"
+                        class="form-control"
+                        id="inspection_images"
+                        name="inspection_images"
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple
+                    >
+
+                    <small class="text-muted d-block mt-2">
+
+                        Maximum 10 images per inspection.
+                        Maximum size: 5 MB per image.
+                        Supported formats: JPG, JPEG, PNG and WEBP.
+
+                    </small>
+
+                    <div
+                        class="small text-muted mt-2"
+                        id="existing-image-count"
+                        data-count="{{ existing_count }}">
+
+                        Existing images:
+                        {{ existing_count }} / 10
+
+                    </div>
+
+                    <div id="image-count"
+                         class="small text-primary mt-2">
+
+                        No new images selected.
+
+                    </div>
+
+                    <div id="image-preview"
+                         class="row g-3 mt-2">
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- FORM BUTTONS -->
+
+            <div class="d-flex justify-content-between">
+
+                <a href="{% if inspection %}{{ url_for('main.view_inspection', inspection_id=inspection.id) }}{% else %}{{ url_for('main.inspections') }}{% endif %}"
+                   class="btn btn-secondary">
+
+                    Cancel
+
+                </a>
+
+                <button type="submit" class="btn btn-primary">
+
+                    <i class="bi bi-check-circle"></i>
+
+                    {% if inspection %}
+                        Update Inspection
+                    {% else %}
+                        Save Inspection
+                    {% endif %}
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
 </div>
 
-<div class="col-md-6 mb-3">
-{{ form.inspector.label(class="form-label") }}
-{{ form.inspector(class="form-control") }}
-</div>
+
+<style>
+
+.inspection-existing-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 6px 6px 0 0;
+}
+
+#image-preview .inspection-preview {
+    overflow: hidden;
+}
+
+#image-preview .inspection-preview img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    transition: transform 0.2s ease;
+}
+
+#image-preview .inspection-preview img:hover {
+    transform: scale(1.03);
+}
+
+</style>
 
 
-<div class="col-md-12 mb-3">
-{{ form.remarks.label(class="form-label") }}
-{{ form.remarks(class="form-control", rows="4") }}
-</div>
+<script>
 
-<div class="col-md-6 mb-3">
-{{ form.inspection_date.label(class="form-label") }}
-{{ form.inspection_date(class="form-control") }}
-</div>
+document.addEventListener("DOMContentLoaded", function () {
 
-</div>
+    const imageInput = document.getElementById("inspection_images");
+    const preview = document.getElementById("image-preview");
+    const imageCount = document.getElementById("image-count");
 
-<div class="d-flex justify-content-between">
+    const existingImageCount = document.getElementById(
+        "existing-image-count"
+    );
 
+    const existingCount = parseInt(
+        existingImageCount.dataset.count || "0",
+        10
+    );
 
+    const maximumImages = 10;
+    const maximumSize = 5 * 1024 * 1024;
 
-<a href="{{ url_for('main.inspections') }}"
-class="btn btn-secondary">
+    const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ];
 
-Cancel
+    imageInput.addEventListener("change", function () {
 
-</a>
+        preview.innerHTML = "";
 
-{{ form.submit(class="btn btn-primary") }}
+        const files = Array.from(this.files);
 
-</div>
+        if (existingCount + files.length > maximumImages) {
 
-</form>
+            alert(
+                "You can only have a maximum of 10 images per inspection. " +
+                "You currently have " + existingCount + " image(s)."
+            );
 
-</div>
+            this.value = "";
 
-</div>
+            imageCount.textContent = "No new images selected.";
+
+            return;
+        }
+
+        for (const file of files) {
+
+            if (!allowedTypes.includes(file.type)) {
+
+                alert(
+                    "Only JPG, PNG and WEBP images are allowed."
+                );
+
+                this.value = "";
+                preview.innerHTML = "";
+
+                imageCount.textContent = "No new images selected.";
+
+                return;
+            }
+
+            if (file.size > maximumSize) {
+
+                alert(
+                    file.name +
+                    " exceeds the maximum allowed size of 5 MB."
+                );
+
+                this.value = "";
+                preview.innerHTML = "";
+
+                imageCount.textContent = "No new images selected.";
+
+                return;
+            }
+
+        }
+
+        imageCount.textContent =
+            files.length +
+            " new image(s) selected. " +
+            (existingCount + files.length) +
+            " / " + maximumImages +
+            " total images.";
+
+        files.forEach(function (file) {
+
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+
+                const column = document.createElement("div");
+
+                column.className = "col-6 col-md-3";
+
+                const wrapper = document.createElement("div");
+
+                wrapper.className = "inspection-preview";
+
+                const image = document.createElement("img");
+
+                image.src = event.target.result;
+
+                image.alt = "Inspection image preview";
+
+                wrapper.appendChild(image);
+
+                column.appendChild(wrapper);
+
+                preview.appendChild(column);
+
+            };
+
+            reader.readAsDataURL(file);
+
+        });
+
+    });
+
+});
+
+</script>
 
 {% endblock %}

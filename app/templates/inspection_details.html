@@ -1,37 +1,46 @@
-{% extends "base.html" %}
+ {% extends "base.html" %}
 
 {% block title %}Inspection Details{% endblock %}
 
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
 
     <div>
-
         <h2 class="fw-bold">
-
             Inspection Details
-
         </h2>
 
-        <p class="text-muted">
-
+        <p class="text-muted mb-0">
             {{ inspection.inspection_number }}
-
         </p>
-
     </div>
 
-    <div>
+    <div class="d-flex gap-2 flex-wrap">
 
         <a href="{{ url_for('main.inspections') }}"
            class="btn btn-outline-secondary">
 
             <i class="bi bi-arrow-left"></i>
-
             Back
 
         </a>
+
+        {% if current_user.role in [
+            "System Administrator",
+            "Company Administrator",
+            "Quality Manager",
+            "Quality Inspector"
+        ] %}
+
+            <a href="{{ url_for('main.edit_inspection', inspection_id=inspection.id) }}"
+            class="btn btn-warning">
+
+                <i class="bi bi-pencil-square"></i>
+                Edit Inspection
+
+            </a>
+        {% endif %}
 
     </div>
 
@@ -40,106 +49,191 @@
 
 <div class="row">
 
+    <!-- =================================================
+         INSPECTION INFORMATION
+    ================================================== -->
+
     <div class="col-lg-4">
 
         <div class="card shadow-sm border-0 mb-4">
 
             <div class="card-header fw-bold">
-
+                <i class="bi bi-clipboard-check me-2"></i>
                 Inspection Information
-
             </div>
 
             <div class="card-body">
 
                 <p>
-
                     <strong>Inspection No.</strong><br>
-
                     {{ inspection.inspection_number }}
-
                 </p>
 
                 <p>
-
                     <strong>Batch</strong><br>
-
                     {{ inspection.batch.batch_number }}
-
                 </p>
-
 
                 <p>
                     <strong>Cable Name</strong><br>
 
-                    {{ inspection.batch.cable_type.pair_count }} × {{ inspection.batch.cable_type.conductor_size }} - <small class="text-muted"> {{inspection.batch.cable_type.name }}</small>
+                    {{ inspection.batch.cable_type.pair_count }}
+                    ×
+                    {{ inspection.batch.cable_type.conductor_size }}
 
-
+                    <small class="text-muted d-block">
+                        {{ inspection.batch.cable_type.name }}
+                    </small>
                 </p>
 
                 <p>
-
                     <strong>Customer</strong><br>
 
-                    {{ inspection.batch.customer.company_name }} <br><small class="text-muted">{{inspection.batch.customer.address}}</Small>
+                    {{ inspection.batch.customer.company_name }}
 
+                    <br>
+
+                    <small class="text-muted">
+                        {{ inspection.batch.customer.address }}
+                    </small>
                 </p>
 
                 <p>
-
                     <strong>Inspector</strong><br>
-
                     {{ inspection.inspector }}
-
                 </p>
 
                 <p>
-
                     <strong>Date</strong><br>
-
                     {{ inspection.inspection_date }}
-
                 </p>
 
                 <p>
-
                     <strong>Status</strong><br>
 
-                    {% if inspection.overall_result=="Pass" %}
+                    {% if inspection.overall_result == "Pass" %}
 
                         <span class="badge bg-success">
-
                             PASS
-
                         </span>
 
-                    {% elif inspection.overall_result=="Fail" %}
+                    {% elif inspection.overall_result == "Fail" %}
 
                         <span class="badge bg-danger">
-
                             FAIL
-
                         </span>
 
                     {% else %}
 
                         <span class="badge bg-warning text-dark">
-
                             PENDING
-
                         </span>
 
                     {% endif %}
 
                 </p>
 
-                <p>
-
+                <p class="mb-0">
                     <strong>Remarks</strong><br>
-
                     {{ inspection.remarks or "-" }}
-
                 </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             INSPECTION IMAGES
+        ================================================== -->
+
+        <div class="card shadow-sm border-0 mb-4">
+
+            <div class="card-header d-flex justify-content-between align-items-center">
+
+                <span class="fw-bold">
+                    <i class="bi bi-images me-2"></i>
+                    Inspection Images
+                </span>
+
+                <span class="badge bg-primary">
+                    {{ inspection.images|length }} / 10
+                </span>
+
+            </div>
+
+            <div class="card-body">
+
+                {% if inspection.images %}
+
+                    <div class="row g-3">
+
+                        {% for image in inspection.images %}
+
+                            <div class="col-6">
+
+                                {% if image.display_url %}
+
+                                    <a href="{{ image.display_url }}"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="inspection-image-link">
+
+                                        <img
+                                            src="{{ image.display_url }}"
+                                            alt="{{ image.original_filename }}"
+                                            class="img-fluid rounded inspection-image"
+                                            loading="lazy"
+                                        >
+
+                                    </a>
+
+                                {% else %}
+
+                                    <div class="inspection-image-unavailable">
+
+                                        <i class="bi bi-image"></i>
+
+                                        <small>
+                                            Image temporarily unavailable
+                                        </small>
+
+                                    </div>
+
+                                {% endif %}
+
+                                <div class="small text-muted text-truncate mt-2"
+                                     title="{{ image.original_filename }}">
+
+                                    {{ image.original_filename }}
+
+                                </div>
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                    <p class="text-muted small mt-3 mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Click an image to view it in full size.
+                    </p>
+
+                {% else %}
+
+                    <div class="text-center py-4">
+
+                        <i class="bi bi-image text-muted"
+                           style="font-size: 2.5rem;"></i>
+
+                        <p class="text-muted mt-2 mb-0">
+                            No images attached to this inspection.
+                        </p>
+
+                    </div>
+
+                {% endif %}
 
             </div>
 
@@ -147,25 +241,40 @@
 
     </div>
 
+
+    <!-- =================================================
+         QUALITY METRICS
+    ================================================== -->
+
     <div class="col-lg-8">
 
         <div class="card shadow-sm border-0">
 
-            <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
 
                 <span class="fw-bold">
-
+                    <i class="bi bi-list-check me-2"></i>
                     Quality Metrics
-
                 </span>
 
-                {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Quality Inspector"] %}
+                {% if current_user.role in [
+                    "System Administrator",
+                    "Company Administrator",
+                    "Quality Manager",
+                    "Quality Inspector"
+                ] %}
 
-                <a href="{{ url_for('main.new_quality_metric', inspection_id=inspection.id) }}"
-                    class="btn btn-primary btn-sm">
-                    <i class="bi bi-plus-circle"></i>
-                    Add Metric
-                </a>
+                    <a href="{{ url_for(
+                        'main.new_quality_metric',
+                        inspection_id=inspection.id
+                    ) }}"
+                       class="btn btn-primary btn-sm">
+
+                        <i class="bi bi-plus-circle"></i>
+                        Add Metric
+
+                    </a>
+
                 {% endif %}
 
             </div>
@@ -176,163 +285,187 @@
 
                     <thead class="table">
 
-                    <tr>
-                        <th>#</th>
-
-                        <th>Metric</th>
-
-                        <th>Measured</th>
-
-                        <th>Requirement</th>
-
-                        <th>Result</th>
-                        
-                        <th class="text-center">Actions</th>
-                    </tr>
+                        <tr>
+                            <th>#</th>
+                            <th>Metric</th>
+                            <th>Measured</th>
+                            <th>Requirement</th>
+                            <th>Result</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
 
                     </thead>
 
                     <tbody>
 
-                    {% for metric in inspection.quality_metrics %}
+                        {% for metric in inspection.quality_metrics %}
 
-                    <tr>
+                            <tr>
 
-                        <td>{{loop.index}}</td>
+                                <td>
+                                    {{ loop.index }}
+                                </td>
 
-                        <td>
+                                <td>
+                                    {{ metric.specification.metric_name }}
+                                </td>
 
-                            {{ metric.specification.metric_name }}
+                                <td>
 
-                        </td>
+                                    {{ metric.measured_value }}
 
-                        <td>
+                                    {% if metric.specification.unit %}
+                                        {{ metric.specification.unit }}
+                                    {% endif %}
 
-                            {{ metric.measured_value }}
+                                </td>
 
-                            {% if metric.specification.unit %}
+                                <td>
 
-                                {{ metric.specification.unit }}
+                                    {% if metric.specification.requirement %}
 
-                            {% endif %}
+                                        {{ metric.specification.requirement }}
 
-                        </td>
+                                    {% elif metric.specification.validation_type == "any" %}
 
-                        <td>
+                                        Accept Any Value
 
-                            {% if metric.specification.requirement %}
+                                    {% elif metric.specification.validation_type == "minimum" %}
 
-                                {{ metric.specification.requirement }}
+                                        {{ metric.specification.minimum_value }} (Min)
 
-                            {% elif metric.specification.validation_type == "any" %}
+                                    {% elif metric.specification.validation_type == "maximum" %}
 
-                                Accept Any Value
+                                        {{ metric.specification.maximum_value }} (Max)
 
-                            {% elif metric.specification.validation_type == "minimum" %}
+                                    {% elif metric.specification.validation_type == "range" %}
 
-                                {{ metric.specification.minimum_value }} (Min)
+                                        {{ metric.specification.minimum_value }}
+                                        -
+                                        {{ metric.specification.maximum_value }}
 
-                            {% elif metric.specification.validation_type == "maximum" %}
+                                    {% elif metric.specification.validation_type == "text" %}
 
-                                {{ metric.specification.maximum_value }} (Max)
+                                        {{ metric.specification.expected_result }}
 
-                            {% elif metric.specification.validation_type == "range" %}
+                                    {% else %}
 
-                                {{ metric.specification.minimum_value }}
-                                -
-                                {{ metric.specification.maximum_value }}
+                                        -
 
-                            {% elif metric.specification.validation_type == "text" %}
+                                    {% endif %}
 
-                                {{ metric.specification.expected_result }}
+                                </td>
 
-                            {% else %}
+                                <td>
 
-                                -
+                                    {% if metric.result == "Pass" %}
 
-                            {% endif %}
+                                        <span class="badge bg-success">
+                                            PASS
+                                        </span>
 
-                        </td>
+                                    {% elif metric.result == "Fail" %}
 
-                        <td>
+                                        <span class="badge bg-danger">
+                                            FAIL
+                                        </span>
 
-                            {% if metric.result == "Pass" %}
+                                    {% else %}
 
-                                <span class="badge bg-success">
+                                        <span class="badge bg-warning text-dark">
+                                            PENDING
+                                        </span>
 
-                                    PASS
+                                    {% endif %}
 
-                                </span>
+                                </td>
 
-                            {% elif metric.result == "Fail" %}
+                                <td>
 
-                                <span class="badge bg-danger">
+                                    <div class="d-inline-flex align-items-center gap-1">
 
-                                    FAIL
+                                        {% set deviation = metric.deviations|first %}
 
-                                </span>
+                                        {% if deviation %}
 
-                            {% else %}
+                                            <a href="{{ url_for(
+                                                'main.view_deviation',
+                                                deviation_id=deviation.id
+                                            ) }}"
+                                               class="btn btn-sm btn-danger"
+                                               title="View Deviation">
 
-                                <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-exclamation-triangle"></i>
+                                                View Deviation
 
-                                    PENDING
+                                            </a>
 
-                                </span>
+                                        {% else %}
 
-                            {% endif %}
+                                            <span class="text-muted me-1">
+                                                —
+                                            </span>
 
-                        </td>
-                        <td> 
-                            <div class="d-inline-flex align-items-center gap-1"> 
+                                        {% endif %}
 
-                            {% set deviation = metric.deviations|first %} 
+                                        {% if current_user.role in [
+                                            "System Administrator",
+                                            "Company Administrator",
+                                            "Quality Manager",
+                                            "Quality Inspector"
+                                        ] %}
 
-                            {% if deviation %} 
-                            <a href="{{ url_for( 'main.view_deviation', deviation_id=deviation.id ) }}" 
-                            
-                            class="btn btn-sm btn-danger" title="View Deviation" > 
+                                            <a href="{{ url_for(
+                                                'main.edit_quality_metric',
+                                                metric_id=metric.id
+                                            ) }}"
+                                               class="btn btn-sm btn-warning"
+                                               title="Edit Metric">
 
-                            <i class="bi bi-exclamation-triangle"></i> 
+                                                <i class="bi bi-pencil"></i>
 
-                            View Deviation 
+                                            </a>
 
-                            </a> 
+                                            <a href="{{ url_for(
+                                                'main.delete_quality_metric',
+                                                metric_id=metric.id
+                                            ) }}"
+                                               class="btn btn-sm btn-danger"
+                                               title="Delete Metric"
+                                               onclick="return confirm('Delete this metric?')">
 
-                            {% else %} 
+                                                <i class="bi bi-trash"></i>
 
-                            <span class="text-muted me-1">—</span> 
+                                            </a>
 
-                            {% endif %} 
+                                        {% endif %}
 
-                            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Quality Inspector"] %}
+                                    </div>
 
-                            <a href="{{ url_for( 'main.edit_quality_metric', metric_id=metric.id ) }}" class="btn btn-sm btn-warning" title="Edit Metric" > 
+                                </td>
 
-                                <i class="bi bi-pencil"></i> </a> <a href="{{ url_for( 'main.delete_quality_metric', metric_id=metric.id ) }}" class="btn btn-sm btn-danger" 
-                                title="Delete Metric" onclick="return confirm('Delete this metric?')" > 
-                                    <i class="bi bi-trash"></i> </a> </div> 
+                            </tr>
 
-                            {% endif %}        
-                        </td>
+                        {% else %}
 
-                    </tr>
+                            <tr>
+                                <td colspan="6"
+                                    class="text-center py-5">
 
-                    {% else %}
+                                    <i class="bi bi-clipboard-x text-muted"
+                                       style="font-size: 2rem;"></i>
 
-                    <tr>
+                                    <p class="text-muted mt-2 mb-0">
+                                        No quality metrics recorded.
+                                    </p>
 
-                        <td colspan="4" class="text-center py-5">
+                                </td>
+                            </tr>
 
-                            No quality metrics recorded.
-
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
+                        {% endfor %}
 
                     </tbody>
+
                 </table>
 
             </div>
@@ -343,20 +476,82 @@
 
 </div>
 
+
+<!-- =================================================
+     PAGE STYLING
+================================================== -->
+
+<style>
+
+.inspection-image-link {
+    display: block;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.inspection-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border: 1px solid #dee2e6;
+    transition: transform 0.3s ease;
+}
+
+.inspection-image-link:hover .inspection-image {
+    transform: scale(1.05);
+}
+
+.inspection-image-unavailable {
+    height: 150px;
+    border: 1px dashed #dee2e6;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #6c757d;
+    text-align: center;
+    padding: 10px;
+}
+
+.inspection-image-unavailable i {
+    font-size: 2rem;
+}
+
+</style>
+
+
+<!-- =================================================
+     FAILURE SOUND
+================================================== -->
+
 <audio id="failSound">
-    <source src="{{ url_for('static', filename='sounds/fail.mp3') }}" type="audio/mpeg">
+
+    <source
+        src="{{ url_for('static', filename='sounds/fail.mp3') }}"
+        type="audio/mpeg"
+    >
+
 </audio>
 
+
 {% if current_user.failure_sound and session.pop('play_fail_sound', None) %}
+
 <script>
+
 document.addEventListener("DOMContentLoaded", function () {
+
     const sound = document.getElementById("failSound");
 
     sound.play().catch(function(err) {
         console.log("Sound could not autoplay:", err);
     });
+
 });
+
 </script>
+
 {% endif %}
 
 {% endblock %}

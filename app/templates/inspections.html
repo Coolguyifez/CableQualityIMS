@@ -24,12 +24,11 @@
     {# Header without the Add button #}
 
     <div class="mb-4">
-        <h2>{{ title }}</h2>
+        <h2 class="fw-bold">{{ title }}</h2>
         <p class="text-muted">{{ subtitle }}</p>
     </div>
 
 {% endif %}
-
 
 <div class="card shadow-sm">
 
@@ -167,37 +166,44 @@
 
                     </td>
 
+                    
                     <td class="text-center">
-
                         <div class="d-inline-flex gap-1">
 
+                            <!-- View Inspection -->
                             <a href="{{ url_for('main.view_inspection', inspection_id=inspection.id) }}"
-                               class="btn btn-primary btn-sm">
-
+                            class="btn btn-primary btn-sm"
+                            title="View Inspection">
                                 <i class="bi bi-eye"></i>
-
                             </a>
 
                             {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Quality Inspector"] %}
 
+                            <!-- Edit Inspection -->
                             <a href="{{ url_for('main.edit_inspection', inspection_id=inspection.id) }}"
-                               class="btn btn-warning btn-sm">
-
+                            class="btn btn-warning btn-sm"
+                            title="Edit Inspection">
                                 <i class="bi bi-pencil"></i>
-
                             </a>
 
-                            <a href="{{ url_for('main.delete_inspection', inspection_id=inspection.id) }}"
-                               class="btn btn-danger btn-sm"
-                               onclick="return confirm('Delete this inspection?')">
+                            <!-- Delete Inspection -->
+                            <form method="POST"
+                                action="{{ url_for('main.delete_inspection', inspection_id=inspection.id) }}"
+                                class="d-inline"
+                                onsubmit="return confirm('Are you sure you want to delete this inspection and its associated images?');">
 
-                                <i class="bi bi-trash"></i>
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                            </a>
+                                <button type="submit"
+                                        class="btn btn-danger btn-sm"
+                                        title="Delete Inspection">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+
+                            </form>
                             {% endif %}
-                        </div>
-                        
 
+                        </div>
                     </td>
 
                 </tr>
@@ -234,6 +240,7 @@
         </table>
 
     </div>
+    
     {% include "partials/pagination.html" %}
 
 </div>
