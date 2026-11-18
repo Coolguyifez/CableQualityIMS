@@ -53,10 +53,12 @@
                 </a>
             </li>
 
-            {% if current_user.role in ["Company Administrator", "Quality Manager", "Quality Inspector", "Production Supervisor", "Production Operator"] %}
+            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Production Supervisor"] %}
 
             <li class="nav-title mt-3">MASTER DATA</li>
-        
+            {% endif %}
+
+            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager"] %}
             <li class="nav-item">
                 <a class="nav-link {% if request.endpoint in ['main.customers','main.new_customer','main.edit_customer'] %}active{% endif %}"
                 href="{{ url_for('main.customers') }}">
@@ -64,6 +66,9 @@
                     Customers
                 </a>
             </li>
+            {% endif %}
+
+            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager"] %}
 
             <li class="nav-item">
                 <a class="nav-link {% if request.endpoint in ['main.cable_types','main.new_cable_type','main.edit_cable_type'] %}active{% endif %}"
@@ -72,6 +77,9 @@
                     Cable Types
                 </a>
             </li>
+            {% endif %}
+
+            {% if current_user.role in ["System Administrator", "Company Administrator", "Production Supervisor"] %}
 
             <li class="nav-item">
                 <a class="nav-link {% if request.endpoint in ['main.production_lines','main.new_production_line','main.edit_production_line'] %}active{% endif %}"
@@ -80,11 +88,16 @@
                     Production Lines
                 </a>
             </li>
-            
+
+            {% endif %}
+
+            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Quality Inspector", "Production Supervisor", "Production Operator"] %}
 
             <li class="nav-title mt-3">OPERATIONS</li>
 
+            {% endif %}
 
+            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager"] %}
             <li class="nav-item">
 
                 <a href="{{ url_for('main.quality_specifications') }}"
@@ -97,6 +110,9 @@
                 </a>
 
             </li>
+            {% endif %}
+
+            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Production Supervisor", "Production Operator"] %}
 
             <li class="nav-item">
                 <a class="nav-link {% if request.endpoint == 'main.batches' %}active{% endif %}"
@@ -105,9 +121,10 @@
                     Cable Batches
                 </a>
             </li>
+            {% endif %}
 
 
-        
+            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Quality Inspector", "Production Supervisor"] %}
 
             <li class="nav-item">
                 <a class="nav-link {% if request.endpoint in ['main.inspections', 'main.new_inspection'] %}active{% endif %}"
@@ -116,8 +133,9 @@
                     Inspections
                 </a>
             </li>
+            {% endif %}
 
-            
+            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Quality Inspector"] %}
 
             <li class="nav-item">
                 <a class="nav-link {% if request.endpoint in ['main.quality_metrics', 'main.new_quality_metric'] %}active{% endif %}"
@@ -126,6 +144,9 @@
                     Quality Metrics
                 </a>
             </li>
+            {% endif %}
+
+            {% if current_user.role in ["System Administrator","Company Administrator", "Quality Manager", "Quality Inspector", "Production Supervisor"] %}
 
             <li class="nav-item">
                 <a class="nav-link {% if request.endpoint in ['main.deviations', 'main.raise_deviation'] %}active{% endif %}"
@@ -134,6 +155,9 @@
                     Deviations
                 </a>
             </li>
+            {% endif %}
+
+            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Production Supervisor", "Production Operator"] %}
 
             <li class="nav-item">
                 <a class="nav-link {% if request.endpoint in ['main.capa', 'main.new_capa'] %}active{% endif %}"
@@ -224,6 +248,7 @@
             </li>
 
             {% endif %}
+           
 
         <li class="nav-item">
                 <a class="nav-link"
