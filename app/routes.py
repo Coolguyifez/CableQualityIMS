@@ -2,8 +2,18 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from .forms import CustomerForm, CableTypeForm, ProductionLineForm, CableBatchForm, InspectionForm, QualityMetricForm, \
     QualitySpecificationForm, DeviationForm, CAPAForm, CompanyForm, ThemeSettingsForm, AccountSettingsForm, \
     NotificationSettingsForm
-from .models import Customer, User, CableType, ProductionLine, CableBatch, Inspection, QualityMetric, \
+from .models import Customer, User, CableType, ProductionLine, CableBatch, Inspection, InspectionImage, QualityMetric, \
     QualitySpecification, Deviation, CAPA, Notification, Company, AuditLog, PushSubscription
+from werkzeug.utils import secure_filename
+from pathlib import Path
+from app.storage_utils import (
+    validate_inspection_image,
+    upload_inspection_image,
+    save_local_inspection_copy,
+    create_inspection_image_signed_url,
+    delete_supabase_inspection_images,
+    delete_local_inspection_copy,
+)
 from .extensions import db, bcrypt
 from datetime import datetime
 from datetime import date
@@ -520,6 +530,131 @@ def paginate_records(query, page=1, per_page=10):
         per_page=per_page,
         error_out=False
     )
+
+# =========================================================
+# INSPECTION IMAGE UPLOAD HELPER
+# =========================================================
+
+def attach_inspection_images(inspection, uploaded_files):
+    """
+    Upload inspection images to Supabase and save their
+    records in PostgreSQL.
+
+    Local development also keeps a copy under:
+    static/uploads/inspections/
+
+    Maximum:
+        5 images per inspection
+        5 MB per image
+    """
+
+    files = [
+        file for file in uploaded_files
+        if file and file.filename
+    ]
+
+    if not files:
+        return 0
+
+    existing_count = len(inspection.images)
+
+    if existing_count + len(files) > 10:
+        raise ValueError(
+            "An inspection can have a maximum of 10 images."
+        )
+
+    validated_images = []
+
+    # Validate every selected image before uploading.
+    for file in files:
+
+        image_bytes, extension, content_type = (
+            validate_inspection_image(file)
+        )
+
+        original_filename = (
+            secure_filename(file.filename)[:255]
+            or f"inspection-image.{extension}"
+        )
+
+        validated_images.append({
+            "image_bytes": image_bytes,
+            "extension": extension,
+            "content_type": content_type,
+            "original_filename": original_filename,
+        })
+
+    uploaded_paths = []
+    local_paths = []
+
+    try:
+
+        for item in validated_images:
+
+            # Upload image to Supabase.
+            object_path = upload_inspection_image(
+                image_bytes=item["image_bytes"],
+                company_id=inspection.company_id,
+                inspection_id=inspection.id,
+                extension=item["extension"],
+                content_type=item["content_type"],
+            )
+
+            uploaded_paths.append(object_path)
+
+            # Save local copy during local development only.
+            filename = Path(object_path).name
+
+            local_path = save_local_inspection_copy(
+                image_bytes=item["image_bytes"],
+                company_id=inspection.company_id,
+                inspection_id=inspection.id,
+                filename=filename,
+            )
+
+            if local_path:
+                local_paths.append(local_path)
+
+            # Save image information in PostgreSQL.
+            image_record = InspectionImage(
+                inspection_id=inspection.id,
+                image_path=object_path,
+                local_path=local_path,
+                original_filename=item["original_filename"],
+                content_type=item["content_type"],
+            )
+
+            db.session.add(image_record)
+
+        db.session.commit()
+
+        return len(validated_images)
+
+    except Exception:
+
+        db.session.rollback()
+
+        # Clean up Supabase uploads if the operation fails.
+        if uploaded_paths:
+            try:
+                delete_supabase_inspection_images(
+                    uploaded_paths
+                )
+            except Exception:
+                current_app.logger.exception(
+                    "Failed to clean up Supabase inspection images."
+                )
+
+        # Clean up local development copies.
+        for local_path in local_paths:
+            try:
+                delete_local_inspection_copy(local_path)
+            except Exception:
+                current_app.logger.exception(
+                    "Failed to clean up local inspection image."
+                )
+
+        raise
 
 
 @main.route("/")
@@ -2264,14 +2399,19 @@ def delete_batch(batch_id):
     )
 
 
-# ===========================================
+# =========================================================
 # INSPECTIONS
-# ===========================================
+# =========================================================
+
+# =========================================================
+# INSPECTION LIST
+# =========================================================
 
 @main.route("/inspections")
 @permission_required("manage_inspections")
 @login_required
 def inspections():
+
     page = request.args.get(
         "page",
         1,
@@ -2300,10 +2440,15 @@ def inspections():
     )
 
 
+# =========================================================
+# CREATE NEW INSPECTION
+# =========================================================
+
 @main.route("/inspections/new", methods=["GET", "POST"])
 @login_required
 @permission_required("manage_inspections")
 def new_inspection():
+
     form = InspectionForm()
 
     form.batch_id.choices = [
@@ -2311,23 +2456,26 @@ def new_inspection():
         (b.id, b.batch_number)
 
         for b in CableBatch.query.filter_by(
-
             company_id=current_user.company_id
-
         ).order_by(
-
             CableBatch.production_date.desc()
-
         ).all()
 
     ]
 
     if form.validate_on_submit():
+
+        uploaded_files = request.files.getlist(
+            "inspection_images"
+        )
+
         inspection = Inspection(
 
             company_id=current_user.company_id,
 
-            inspection_number=generate_inspection_number(form.inspection_date.data),
+            inspection_number=generate_inspection_number(
+                form.inspection_date.data
+            ),
 
             batch_id=form.batch_id.data,
 
@@ -2339,15 +2487,84 @@ def new_inspection():
 
         )
 
-        db.session.add(inspection)
+        try:
 
+            # Save inspection first to generate its ID.
+            db.session.add(inspection)
+            db.session.commit()
+
+            # Upload and attach selected images.
+            attach_inspection_images(
+                inspection,
+                uploaded_files
+            )
+
+        except ValueError as exc:
+
+            db.session.rollback()
+
+            # Remove the inspection if image validation fails.
+            if inspection.id:
+
+                try:
+                    db.session.delete(inspection)
+                    db.session.commit()
+
+                except Exception:
+                    db.session.rollback()
+                    current_app.logger.exception(
+                        "Could not remove incomplete inspection."
+                    )
+
+            flash(str(exc), "danger")
+
+            return render_template(
+                "inspection_form.html",
+                form=form
+            )
+
+        except Exception:
+
+            db.session.rollback()
+
+            current_app.logger.exception(
+                "Inspection creation or image upload failed."
+            )
+
+            # Remove incomplete inspection record.
+            if inspection.id:
+
+                try:
+                    db.session.delete(inspection)
+                    db.session.commit()
+
+                except Exception:
+                    db.session.rollback()
+                    current_app.logger.exception(
+                        "Could not remove incomplete inspection."
+                    )
+
+            flash(
+                "The inspection could not be saved. "
+                "Please check your storage configuration and try again.",
+                "danger"
+            )
+
+            return render_template(
+                "inspection_form.html",
+                form=form
+            )
+
+        # Record activity after successful creation.
         log_activity(
 
             module="Inspection",
 
             action="Create",
 
-            description=f"Created inspection '{inspection.inspection_number}'"
+            description=(
+                f"Created inspection '{inspection.inspection_number}'"
+            )
 
         )
 
@@ -2357,16 +2574,34 @@ def new_inspection():
             "Inspection saved successfully.",
             "success"
         )
-        create_notification(
-            title="Inspection pending",
-            message=f"{inspection.inspection_number} is awaiting quality metric evaluation from {inspection.inspector}.",
-            category="Inspection",
-            priority="Normal",
-            link=url_for(
-                "main.view_inspection",
-                inspection_id=inspection.id
+
+        # Create notification without allowing notification
+        # failure to interrupt inspection creation.
+        try:
+
+            create_notification(
+                title="Inspection pending",
+
+                message=(
+                    f"{inspection.inspection_number} is awaiting "
+                    f"quality metric evaluation from {inspection.inspector}."
+                ),
+
+                category="Inspection",
+
+                priority="Normal",
+
+                link=url_for(
+                    "main.view_inspection",
+                    inspection_id=inspection.id
+                )
             )
-        )
+
+        except Exception:
+
+            current_app.logger.exception(
+                "Could not create inspection notification."
+            )
 
         return redirect(
             url_for("main.inspections")
@@ -2378,14 +2613,40 @@ def new_inspection():
     )
 
 
+# =========================================================
+# VIEW INSPECTION
+# =========================================================
+
 @main.route("/inspections/<int:inspection_id>")
 @permission_required("manage_inspections")
 @login_required
 def view_inspection(inspection_id):
+
     inspection = Inspection.query.filter_by(
         id=inspection_id,
         company_id=current_user.company_id
     ).first_or_404()
+
+    # Generate temporary signed URLs for private Supabase images.
+    for image in inspection.images:
+
+        try:
+
+            image.display_url = (
+                create_inspection_image_signed_url(
+                    image.image_path,
+                    expires_in=3600
+                )
+            )
+
+        except Exception:
+
+            image.display_url = None
+
+            current_app.logger.exception(
+                "Could not generate signed URL for inspection image %s",
+                image.id
+            )
 
     return render_template(
         "inspection_details.html",
@@ -2393,10 +2654,18 @@ def view_inspection(inspection_id):
     )
 
 
-@main.route("/inspections/<int:inspection_id>/edit", methods=["GET", "POST"])
+# =========================================================
+# EDIT INSPECTION
+# =========================================================
+
+@main.route(
+    "/inspections/<int:inspection_id>/edit",
+    methods=["GET", "POST"]
+)
 @login_required
 @permission_required("manage_inspections")
 def edit_inspection(inspection_id):
+
     inspection = Inspection.query.filter_by(
         id=inspection_id,
         company_id=current_user.company_id
@@ -2409,30 +2678,117 @@ def edit_inspection(inspection_id):
         (b.id, b.batch_number)
 
         for b in CableBatch.query.filter_by(
-
             company_id=current_user.company_id
-
         ).order_by(
-
             CableBatch.production_date.desc()
-
         ).all()
 
     ]
 
     if form.validate_on_submit():
+
+        # Update existing inspection information.
         inspection.batch_id = form.batch_id.data
+
         inspection.inspector = form.inspector.data
+
         inspection.inspection_date = form.inspection_date.data
+
         inspection.remarks = form.remarks.data
 
+        uploaded_files = request.files.getlist(
+            "inspection_images"
+        )
+
+        try:
+
+            # Add any newly selected images.
+            attach_inspection_images(
+                inspection,
+                uploaded_files
+            )
+
+        except ValueError as exc:
+
+            db.session.rollback()
+
+            flash(str(exc), "danger")
+
+            # Reload the inspection after rollback.
+            inspection = Inspection.query.filter_by(
+                id=inspection_id,
+                company_id=current_user.company_id
+            ).first_or_404()
+
+            form = InspectionForm(obj=inspection)
+
+            form.batch_id.choices = [
+
+                (b.id, b.batch_number)
+
+                for b in CableBatch.query.filter_by(
+                    company_id=current_user.company_id
+                ).order_by(
+                    CableBatch.production_date.desc()
+                ).all()
+
+            ]
+
+            return render_template(
+                "inspection_form.html",
+                form=form,
+                inspection=inspection
+            )
+
+        except Exception:
+
+            db.session.rollback()
+
+            current_app.logger.exception(
+                "Inspection update or image upload failed."
+            )
+
+            flash(
+                "The inspection could not be updated. "
+                "Please try again.",
+                "danger"
+            )
+
+            inspection = Inspection.query.filter_by(
+                id=inspection_id,
+                company_id=current_user.company_id
+            ).first_or_404()
+
+            form = InspectionForm(obj=inspection)
+
+            form.batch_id.choices = [
+
+                (b.id, b.batch_number)
+
+                for b in CableBatch.query.filter_by(
+                    company_id=current_user.company_id
+                ).order_by(
+                    CableBatch.production_date.desc()
+                ).all()
+
+            ]
+
+            return render_template(
+                "inspection_form.html",
+                form=form,
+                inspection=inspection
+            )
+
+        # Record update activity.
         log_activity(
 
             module="Inspection",
 
             action="Update",
 
-            description=f"Updated inspection '{inspection.inspection_number}'"
+            description=(
+                f"Updated inspection '{inspection.inspection_number}'"
+            )
 
         )
 
@@ -2443,43 +2799,273 @@ def edit_inspection(inspection_id):
             "success"
         )
 
-        return redirect(url_for("main.inspections"))
+        return redirect(
+            url_for(
+                "main.view_inspection",
+                inspection_id=inspection.id
+            )
+        )
 
     return render_template(
         "inspection_form.html",
-        form=form
+        form=form,
+        inspection=inspection
     )
 
 
-@main.route("/inspections/<int:inspection_id>/delete")
+# =========================================================
+# DELETE INSPECTION
+# =========================================================
+
+@main.route(
+    "/inspections/<int:inspection_id>/delete",
+    methods=["POST"]
+)
 @login_required
 @permission_required("manage_inspections")
 def delete_inspection(inspection_id):
+
     inspection = Inspection.query.filter_by(
         id=inspection_id,
         company_id=current_user.company_id
     ).first_or_404()
 
-    log_activity(
+    inspection_number = inspection.inspection_number
 
-        module="Inspection",
+    # Collect Supabase image paths.
+    image_paths = [
+        image.image_path
+        for image in inspection.images
+        if image.image_path
+    ]
 
-        action="Delete",
+    # Collect local development image copies.
+    local_paths = [
+        image.local_path
+        for image in inspection.images
+        if image.local_path
+    ]
 
-        description=f"Deleted inspection '{inspection.inspection_number}'"
+    # -----------------------------------------------------
+    # DELETE SUPABASE IMAGES
+    # -----------------------------------------------------
 
-    )
+    if image_paths:
 
-    db.session.delete(inspection)
+        try:
 
-    db.session.commit()
+            delete_supabase_inspection_images(
+                image_paths
+            )
+
+        except Exception:
+
+            current_app.logger.exception(
+                "Failed to delete inspection images from Supabase."
+            )
+
+            flash(
+                "Inspection deletion failed because its "
+                "images could not be removed from storage.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "main.view_inspection",
+                    inspection_id=inspection.id
+                )
+            )
+
+    # -----------------------------------------------------
+    # RECORD DELETION ACTIVITY
+    # -----------------------------------------------------
+
+    try:
+
+        log_activity(
+            module="Inspection",
+            action="Delete",
+            description=(
+                f"Deleted inspection '{inspection_number}'"
+            )
+        )
+
+        # SQLAlchemy cascade deletes associated InspectionImage
+        # records when the inspection is deleted.
+        db.session.delete(inspection)
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "Failed to delete inspection from the database."
+        )
+
+        flash(
+            "The inspection could not be deleted from the database. "
+            "Please try again.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "main.view_inspection",
+                inspection_id=inspection_id
+            )
+        )
+
+    # -----------------------------------------------------
+    # DELETE LOCAL DEVELOPMENT COPIES
+    # -----------------------------------------------------
+
+    for local_path in local_paths:
+
+        try:
+
+            delete_local_inspection_copy(
+                local_path
+            )
+
+        except Exception:
+
+            current_app.logger.exception(
+                "Failed to delete local inspection image copy."
+            )
+
+    # -----------------------------------------------------
+    # SUCCESS
+    # -----------------------------------------------------
 
     flash(
-        "Inspection deleted successfully.",
+        f"Inspection '{inspection_number}' and its attached "
+        "images have been deleted successfully.",
         "success"
     )
 
-    return redirect(url_for("main.inspections"))
+    return redirect(
+        url_for("main.inspections")
+    )
+
+
+# =========================================================
+# DELETE SINGLE INSPECTION IMAGE
+# =========================================================
+
+@main.route(
+    "/inspections/<int:inspection_id>/images/<int:image_id>/delete",
+    methods=["POST"]
+)
+@login_required
+@permission_required("manage_inspections")
+def delete_inspection_image(inspection_id, image_id):
+
+    inspection = Inspection.query.filter_by(
+        id=inspection_id,
+        company_id=current_user.company_id
+    ).first_or_404()
+
+    image = InspectionImage.query.filter_by(
+        id=image_id,
+        inspection_id=inspection.id
+    ).first_or_404()
+
+    # Store paths before deleting the database record.
+    supabase_path = image.image_path
+    local_path = image.local_path
+
+    # -----------------------------------------------------
+    # DELETE FROM SUPABASE
+    # -----------------------------------------------------
+
+    if supabase_path:
+
+        try:
+
+            delete_supabase_inspection_images(
+                [supabase_path]
+            )
+
+        except Exception:
+
+            current_app.logger.exception(
+                "Failed to delete inspection image from Supabase."
+            )
+
+            flash(
+                "The image could not be removed from storage.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "main.edit_inspection",
+                    inspection_id=inspection.id
+                )
+            )
+
+    # -----------------------------------------------------
+    # DELETE DATABASE RECORD
+    # -----------------------------------------------------
+
+    try:
+
+        db.session.delete(image)
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "Failed to remove inspection image record."
+        )
+
+        flash(
+            "The image could not be removed from the database.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "main.edit_inspection",
+                inspection_id=inspection.id
+            )
+        )
+
+    # -----------------------------------------------------
+    # DELETE LOCAL DEVELOPMENT COPY
+    # -----------------------------------------------------
+
+    if local_path:
+
+        try:
+
+            delete_local_inspection_copy(
+                local_path
+            )
+
+        except Exception:
+
+            current_app.logger.exception(
+                "Failed to delete local inspection image."
+            )
+
+    flash(
+        "Inspection image removed successfully.",
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "main.edit_inspection",
+            inspection_id=inspection.id
+        )
+    )
 
 
 # ==========================================
