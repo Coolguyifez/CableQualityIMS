@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 import time
 from config import Config
-
+from flask_wtf.csrf import CSRFProtect
 from .extensions import (
     db,
     login_manager,
@@ -12,6 +12,7 @@ from .extensions import (
 from flask_login import current_user
 from .models import User, Notification
 
+csrf = CSRFProtect()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -21,7 +22,7 @@ def load_user(user_id):
 def create_app():
 
     app = Flask(__name__)
-
+    csrf.init_app(app)
     app.config.from_object(Config)
 
     # --------------------------------
