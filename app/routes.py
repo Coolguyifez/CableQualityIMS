@@ -2618,7 +2618,7 @@ def new_inspection():
 # =========================================================
 
 @main.route("/inspections/<int:inspection_id>")
-@permission_required("manage_inspections")
+@permission_required("view_inspections")
 @login_required
 def view_inspection(inspection_id):
 
