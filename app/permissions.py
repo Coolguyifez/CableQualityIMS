@@ -24,6 +24,8 @@ ROLE_PERMISSIONS = {
 
         "manage_inspections",
 
+        "view_inspections",
+
         "manage_specifications",
 
         "manage_quality_metrics",
@@ -45,7 +47,6 @@ ROLE_PERMISSIONS = {
     # ==================================================
     "Company Administrator": {
 
-
         "manage_users",
 
         "manage_customers",
@@ -57,6 +58,8 @@ ROLE_PERMISSIONS = {
         "manage_batches",
 
         "manage_inspections",
+
+        "view_inspections",
 
         "manage_specifications",
 
@@ -79,9 +82,13 @@ ROLE_PERMISSIONS = {
 
         "manage_customers",
 
+        "manage_cable_types",
+
         "manage_batches",
 
         "manage_inspections",
+
+        "view_inspections",
 
         "manage_specifications",
 
@@ -104,6 +111,8 @@ ROLE_PERMISSIONS = {
 
         "manage_inspections",
 
+        "view_inspections",
+
         "manage_quality_metrics",
 
         "manage_deviations",
@@ -124,11 +133,13 @@ ROLE_PERMISSIONS = {
 
         "manage_inspections",
 
-        "manage_deviations",
-        
+        "view_inspections",
+
         "manage_capa",
         
-        "manage_notifications"
+        "manage_notifications",
+
+         "manage_deviations"
 
     },
 
@@ -138,8 +149,11 @@ ROLE_PERMISSIONS = {
     "Production Operator": {
 
         "manage_batches",
-        
+
+        "view_inspections",
+
         "manage_notifications"
+
 
     },
 
@@ -149,6 +163,8 @@ ROLE_PERMISSIONS = {
     "Viewer": {
 
         "view_dashboard"
+        
+        "view_inspections",
 
     }
 
