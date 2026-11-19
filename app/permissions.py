@@ -162,9 +162,9 @@ ROLE_PERMISSIONS = {
     # ==================================================
     "Viewer": {
 
-        "view_dashboard"
+        "view_dashboard",
         
-        "view_inspections",
+        "view_inspections"
 
     }
 
