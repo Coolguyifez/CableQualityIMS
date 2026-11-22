@@ -1,11 +1,12 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session, current_app, Response
-from .forms import CustomerForm, CableTypeForm, ProductionLineForm, CableBatchForm, InspectionForm, QualityMetricForm, \
-    QualitySpecificationForm, DeviationForm, CAPAForm, CompanyForm, ThemeSettingsForm, AccountSettingsForm, \
-    NotificationSettingsForm
-from .models import Customer, User, CableType, ProductionLine, CableBatch, Inspection, InspectionImage, QualityMetric, \
-    QualitySpecification, Deviation, CAPA, Notification, Company, AuditLog, PushSubscription
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session, current_app, Response, send_file
+from .forms import CustomerForm, CableTypeForm, ProductionLineForm, CableBatchForm, InspectionForm, QualityMetricForm, QualitySpecificationForm, DeviationForm, CAPAForm, CompanyForm, ThemeSettingsForm, AccountSettingsForm, NotificationSettingsForm
+from .models import Customer, User, CableType, ProductionLine, CableBatch, Inspection, QualityMetric, QualitySpecification, Deviation, CAPA, Notification, Company, AuditLog, PushSubscription, InspectionImage, RawMaterialInspection, RawMaterialInspectionItem
 from werkzeug.utils import secure_filename
 from pathlib import Path
+import re
+import uuid
+from io import BytesIO
+from decimal import Decimal, InvalidOperation
 from app.storage_utils import (
     validate_inspection_image,
     upload_inspection_image,
@@ -13,10 +14,16 @@ from app.storage_utils import (
     create_inspection_image_signed_url,
     delete_supabase_inspection_images,
     delete_local_inspection_copy,
+    validate_raw_material_certificate,
+    upload_raw_material_certificate,
+    save_local_raw_material_certificate,
+    create_raw_material_certificate_signed_url,
+    download_raw_material_certificate,
+    delete_supabase_raw_material_certificates,
+    delete_local_raw_material_certificate,
 )
 from .extensions import db, bcrypt
-from datetime import datetime
-from datetime import date
+from datetime import datetime, date
 from .audit import log_activity
 from .utils import create_notification
 from sqlalchemy.exc import IntegrityError
@@ -65,6 +72,8 @@ from app.report_utils import (
     export_pdf,
     build_rows
 )
+
+
 from .dashboard_utils import (
 
     get_dashboard_statistics,
@@ -655,6 +664,1133 @@ def attach_inspection_images(inspection, uploaded_files):
                 )
 
         raise
+
+# =========================================================
+# RAW MATERIAL INSPECTION
+# =========================================================
+
+RAW_MATERIAL_TYPES = [
+    "XLPE",
+    "LSZH Compound",
+    "PVC Compound",
+    "Copper Conductor",
+    "Aluminium Conductor",
+    "SWA",
+    "MICA Tape",
+    "Water Blocking Tape",
+]
+
+
+def validate_raw_material_form_row(
+    material_type,
+    certificate_number,
+    purchase_date,
+    duration,
+    duration_unit,
+    unit_symbol,
+    unit_amount,
+):
+    """Validate the information supplied for one material."""
+
+    if material_type not in RAW_MATERIAL_TYPES:
+        raise ValueError("Please select a valid raw material type.")
+
+    certificate_number = (certificate_number or "").strip()
+
+    if not certificate_number:
+        raise ValueError("Certificate number is required.")
+
+    if not re.fullmatch(r"[A-Za-z0-9]+", certificate_number):
+        raise ValueError(
+            "Certificate numbers must contain letters and numbers only."
+        )
+
+    try:
+        purchase_date = date.fromisoformat(purchase_date)
+    except (TypeError, ValueError):
+        raise ValueError("Please provide a valid purchase date.")
+
+    try:
+        duration = Decimal(str(duration))
+    except (InvalidOperation, TypeError, ValueError):
+        raise ValueError("Please provide a valid material duration.")
+
+    if duration <= 0:
+        raise ValueError("Material duration must be greater than zero.")
+
+    try:
+        unit_amount = Decimal(str(unit_amount))
+    except (InvalidOperation, TypeError, ValueError):
+        raise ValueError("Please provide a valid unit amount.")
+
+    if unit_amount < 0:
+        raise ValueError("Unit amount cannot be negative.")
+
+    duration_unit = (duration_unit or "").strip()
+    unit_symbol = (unit_symbol or "").strip()
+
+    if duration_unit not in ["Days", "Weeks", "Months", "Years"]:
+        raise ValueError("Please select a valid duration unit.")
+
+    if not unit_symbol:
+        raise ValueError("Unit symbol is required.")
+
+    return {
+        "material_type": material_type,
+        "certificate_number": certificate_number,
+        "purchase_date": purchase_date,
+        "duration": duration,
+        "duration_unit": duration_unit,
+        "unit_symbol": unit_symbol,
+        "unit_amount": unit_amount,
+    }
+
+
+def cleanup_new_raw_material_files(uploaded_paths, local_paths):
+    """Clean up files uploaded during a failed database transaction."""
+
+    if uploaded_paths:
+        try:
+            delete_supabase_raw_material_certificates(uploaded_paths)
+        except Exception:
+            current_app.logger.exception(
+                "Could not clean up newly uploaded raw material certificates."
+            )
+
+    for local_path in local_paths:
+        if local_path:
+            try:
+                delete_local_raw_material_certificate(local_path)
+            except Exception:
+                current_app.logger.exception(
+                    "Could not clean up local raw material certificate."
+                )
+
+
+def delete_old_raw_material_files(object_paths, local_paths):
+    """Delete replaced or removed certificate files after a DB commit."""
+
+    if object_paths:
+        try:
+            delete_supabase_raw_material_certificates(object_paths)
+        except Exception:
+            current_app.logger.exception(
+                "Could not delete old raw material certificates from Supabase."
+            )
+
+    for local_path in local_paths:
+        if local_path:
+            try:
+                delete_local_raw_material_certificate(local_path)
+            except Exception:
+                current_app.logger.exception(
+                    "Could not delete old local raw material certificate."
+                )
+
+ALLOWED_CERTIFICATION_STATUSES = {
+    "Certification Verified",
+    "Certification Not Verified"
+}
+
+
+def validate_certification_status(value):
+    value = (value or "").strip()
+
+    if value not in ALLOWED_CERTIFICATION_STATUSES:
+        raise ValueError("Please select a valid certification verification status.")
+
+    return value
+
+
+# =========================================================
+# RAW MATERIAL CERTIFICATION PERMISSIONS
+# =========================================================
+
+CERTIFICATION_MANAGEMENT_ROLES = {
+    "System Administrator",
+    "Company Administrator",
+    "Quality Manager"
+}
+
+DEFAULT_CERTIFICATION_STATUS = "Certification Not Verified"
+
+
+def can_manage_certification_status():
+    """
+    Only authorized roles can change certification verification status.
+    """
+    return current_user.role in CERTIFICATION_MANAGEMENT_ROLES
+
+
+
+# =========================================================
+# RAW MATERIAL INSPECTION LIST
+# =========================================================
+
+@main.route("/raw-material-inspections")
+@login_required
+@permission_required("manage_raw")
+def raw_material_inspections():
+
+    page = request.args.get("page", 1, type=int)
+
+    pagination = paginate_records(
+        RawMaterialInspection.query.filter_by(
+            company_id=current_user.company_id
+        ).order_by(
+            RawMaterialInspection.created_at.desc()
+        ),
+        page=page,
+        per_page=10
+    )
+
+    return render_template(
+        "raw_material_inspections.html",
+        inspections=pagination.items,
+        pagination=pagination
+    )
+
+
+
+
+# =========================================================
+# NEW RAW MATERIAL INSPECTION
+# =========================================================
+
+@main.route(
+    "/raw-material-inspections/new",
+    methods=["GET", "POST"]
+)
+@login_required
+@permission_required("manage_raw")
+def new_raw_material_inspection():
+
+    if request.method == "POST":
+
+        can_verify = can_manage_certification_status()
+
+        material_types = request.form.getlist("material_type[]")
+        certificate_numbers = request.form.getlist("certificate_number[]")
+        certification_statuses = request.form.getlist("certification_status[]")
+        purchase_dates = request.form.getlist("purchase_date[]")
+        durations = request.form.getlist("duration[]")
+        duration_units = request.form.getlist("duration_unit[]")
+        unit_symbols = request.form.getlist("unit_symbol[]")
+        unit_amounts = request.form.getlist("unit_amount[]")
+        certificate_files = request.files.getlist("certificate[]")
+
+        row_count = len(material_types)
+
+        if row_count == 0:
+            flash(
+                "Add at least one raw material before submitting.",
+                "warning"
+            )
+            return redirect(url_for("main.new_raw_material_inspection"))
+
+        # Validate all repeated form fields.
+        required_arrays = [
+            certificate_numbers,
+            purchase_dates,
+            durations,
+            duration_units,
+            unit_symbols,
+            unit_amounts,
+            certificate_files
+        ]
+
+        if can_verify:
+            required_arrays.append(certification_statuses)
+
+        if not all(len(values) == row_count for values in required_arrays):
+            flash(
+                "The submitted material information is incomplete. "
+                "Please reload the form and try again.",
+                "danger"
+            )
+            return redirect(url_for("main.new_raw_material_inspection"))
+
+        prepared_rows = []
+
+        try:
+
+            # -------------------------------------------------
+            # VALIDATE ALL MATERIAL ROWS FIRST
+            # -------------------------------------------------
+
+            for index in range(row_count):
+
+                row = validate_raw_material_form_row(
+                    material_types[index],
+                    certificate_numbers[index],
+                    purchase_dates[index],
+                    durations[index],
+                    duration_units[index],
+                    unit_symbols[index],
+                    unit_amounts[index],
+                )
+
+                # Only authorized users can choose the status.
+                if can_verify:
+
+                    row["certification_status"] = (
+                        validate_certification_status(
+                            certification_statuses[index]
+                        )
+                    )
+
+                else:
+
+                    row["certification_status"] = (
+                        DEFAULT_CERTIFICATION_STATUS
+                    )
+
+                uploaded_file = certificate_files[index]
+
+                if not uploaded_file or not uploaded_file.filename:
+                    raise ValueError(
+                        f"Please upload a certificate for "
+                        f"{row['material_type']}."
+                    )
+
+                file_bytes, extension, content_type = (
+                    validate_raw_material_certificate(uploaded_file)
+                )
+
+                row.update({
+                    "file_bytes": file_bytes,
+                    "extension": extension,
+                    "content_type": content_type,
+                    "original_filename": secure_filename(
+                        uploaded_file.filename
+                    ) or f"certificate.{extension}",
+                })
+
+                prepared_rows.append(row)
+
+            # -------------------------------------------------
+            # CREATE PARENT INSPECTION
+            # -------------------------------------------------
+
+            inspection = RawMaterialInspection(
+                company_id=current_user.company_id,
+                inspection_number=f"RMI-PENDING-{uuid.uuid4().hex}",
+                created_by=current_user.id,
+            )
+
+            db.session.add(inspection)
+            db.session.flush()
+
+            inspection.inspection_number = (
+                f"RMI-{inspection.id:06d}"
+            )
+
+            db.session.flush()
+
+            uploaded_paths = []
+            local_paths = []
+
+            try:
+
+                # -------------------------------------------------
+                # CREATE MATERIAL ITEMS AND UPLOAD CERTIFICATES
+                # -------------------------------------------------
+
+                for row in prepared_rows:
+
+                    material = RawMaterialInspectionItem(
+                        raw_material_inspection_id=inspection.id,
+                        material_type=row["material_type"],
+                        certificate_number=row["certificate_number"],
+
+                        certification_status=row[
+                            "certification_status"
+                        ],
+
+                        certificate_path="pending",
+                        original_filename=row["original_filename"],
+                        content_type=row["content_type"],
+                        purchase_date=row["purchase_date"],
+                        duration=row["duration"],
+                        duration_unit=row["duration_unit"],
+                        unit_symbol=row["unit_symbol"],
+                        unit_amount=row["unit_amount"],
+                    )
+
+                    db.session.add(material)
+                    db.session.flush()
+
+                    # Upload certificate to Supabase.
+                    object_path = upload_raw_material_certificate(
+                        file_bytes=row["file_bytes"],
+                        company_id=current_user.company_id,
+                        inspection_id=inspection.id,
+                        material_item_id=material.id,
+                        extension=row["extension"],
+                        content_type=row["content_type"],
+                    )
+
+                    uploaded_paths.append(object_path)
+
+                    # Save local copy during local development.
+                    local_path = save_local_raw_material_certificate(
+                        file_bytes=row["file_bytes"],
+                        company_id=current_user.company_id,
+                        inspection_id=inspection.id,
+                        material_item_id=material.id,
+                        original_filename=row["original_filename"],
+                    )
+
+                    if local_path:
+                        local_paths.append(local_path)
+
+                    material.certificate_path = object_path
+                    material.local_path = local_path
+
+                # -------------------------------------------------
+                # ACTIVITY LOG
+                # -------------------------------------------------
+
+                log_activity(
+                    module="Raw Material Inspection",
+                    action="Create",
+                    description=(
+                        f"Created raw material inspection "
+                        f"{inspection.inspection_number} with "
+                        f"{len(prepared_rows)} material item(s)."
+                    )
+                )
+
+                db.session.commit()
+
+            except Exception:
+
+                db.session.rollback()
+
+                cleanup_new_raw_material_files(
+                    uploaded_paths,
+                    local_paths
+                )
+
+                raise
+
+            flash(
+                "Raw Material Inspection created successfully.",
+                "success"
+            )
+
+            return redirect(
+                url_for(
+                    "main.view_raw_material_inspection",
+                    inspection_id=inspection.id
+                )
+            )
+
+        except ValueError as error:
+
+            db.session.rollback()
+
+            flash(str(error), "warning")
+
+        except Exception:
+
+            db.session.rollback()
+
+            current_app.logger.exception(
+                "Raw Material Inspection creation failed."
+            )
+
+            flash(
+                "An error occurred while saving the Raw Material Inspection. "
+                "Please try again.",
+                "danger"
+            )
+
+    return render_template(
+        "raw_material_inspection_form.html",
+        inspection=None,
+        material_types=RAW_MATERIAL_TYPES
+    )
+
+
+# =========================================================
+# VIEW RAW MATERIAL INSPECTION
+# =========================================================
+
+@main.route(
+    "/raw-material-inspections/<int:inspection_id>"
+)
+@login_required
+def view_raw_material_inspection(inspection_id):
+
+    inspection = RawMaterialInspection.query.filter_by(
+        id=inspection_id,
+        company_id=current_user.company_id
+    ).first_or_404()
+
+    return render_template(
+        "raw_material_inspection_view.html",
+        inspection=inspection
+    )
+
+
+# =========================================================
+# EDIT RAW MATERIAL INSPECTION
+# =========================================================
+
+@main.route(
+    "/raw-material-inspections/<int:inspection_id>/edit",
+    methods=["GET", "POST"]
+)
+@login_required
+@permission_required("manage_raw")
+def edit_raw_material_inspection(inspection_id):
+
+    inspection = RawMaterialInspection.query.filter_by(
+        id=inspection_id,
+        company_id=current_user.company_id
+    ).first_or_404()
+
+    if request.method == "POST":
+
+        can_verify = can_manage_certification_status()
+
+        # -------------------------------------------------
+        # GET FORM ARRAYS
+        # -------------------------------------------------
+
+        item_ids = request.form.getlist("item_id[]")
+        material_types = request.form.getlist("material_type[]")
+        certificate_numbers = request.form.getlist("certificate_number[]")
+        certification_statuses = request.form.getlist("certification_status[]")
+        purchase_dates = request.form.getlist("purchase_date[]")
+        durations = request.form.getlist("duration[]")
+        duration_units = request.form.getlist("duration_unit[]")
+        unit_symbols = request.form.getlist("unit_symbol[]")
+        unit_amounts = request.form.getlist("unit_amount[]")
+
+        certificate_files = request.files.getlist("certificate[]")
+
+        removed_ids = set(
+            request.form.getlist("remove_item_ids[]")
+        )
+
+        row_count = len(item_ids)
+
+        # -------------------------------------------------
+        # BASIC VALIDATION
+        # -------------------------------------------------
+
+        if row_count == 0:
+
+            flash(
+                "An inspection must contain at least one material.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "main.edit_raw_material_inspection",
+                    inspection_id=inspection.id
+                )
+            )
+
+        required_arrays = [
+            material_types,
+            certificate_numbers,
+            purchase_dates,
+            durations,
+            duration_units,
+            unit_symbols,
+            unit_amounts,
+            certificate_files
+        ]
+
+        if can_verify:
+            required_arrays.append(certification_statuses)
+
+        if not all(
+            len(values) == row_count
+            for values in required_arrays
+        ):
+
+            flash(
+                "The submitted material information is incomplete. "
+                "Please reload the form and try again.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "main.edit_raw_material_inspection",
+                    inspection_id=inspection.id
+                )
+            )
+
+        # -------------------------------------------------
+        # GET EXISTING MATERIAL RECORDS
+        # -------------------------------------------------
+
+        existing_items = {
+            str(item.id): item
+            for item in inspection.materials
+        }
+
+        submitted_existing_ids = {
+            item_id
+            for item_id in item_ids
+            if item_id
+        }
+
+        # -------------------------------------------------
+        # VALIDATE SUBMITTED ITEM IDS
+        # -------------------------------------------------
+
+        if not set(existing_items).issubset(
+            submitted_existing_ids | removed_ids
+        ):
+
+            flash(
+                "Some existing material entries were missing from "
+                "the form. Please reload and try again.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "main.edit_raw_material_inspection",
+                    inspection_id=inspection.id
+                )
+            )
+
+        if not removed_ids.issubset(set(existing_items)):
+
+            flash(
+                "Invalid material selection.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "main.edit_raw_material_inspection",
+                    inspection_id=inspection.id
+                )
+            )
+
+        # -------------------------------------------------
+        # PREVENT DUPLICATE OR INVALID ITEM IDS
+        # -------------------------------------------------
+
+        non_empty_ids = [
+            item_id for item_id in item_ids if item_id
+        ]
+
+        if len(non_empty_ids) != len(set(non_empty_ids)):
+
+            flash(
+                "Duplicate material entries were submitted.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "main.edit_raw_material_inspection",
+                    inspection_id=inspection.id
+                )
+            )
+
+        prepared_rows = []
+
+        try:
+
+            # -------------------------------------------------
+            # VALIDATE EACH MATERIAL ROW
+            # -------------------------------------------------
+
+            for index in range(row_count):
+
+                item_id = item_ids[index]
+
+                if item_id and item_id not in existing_items:
+                    raise ValueError(
+                        "Invalid material entry submitted."
+                    )
+
+                # Skip rows selected for removal.
+                if item_id and item_id in removed_ids:
+                    continue
+
+                row = validate_raw_material_form_row(
+                    material_types[index],
+                    certificate_numbers[index],
+                    purchase_dates[index],
+                    durations[index],
+                    duration_units[index],
+                    unit_symbols[index],
+                    unit_amounts[index],
+                )
+
+                # -------------------------------------------------
+                # CERTIFICATION STATUS
+                # -------------------------------------------------
+
+                if can_verify:
+
+                    row["certification_status"] = (
+                        validate_certification_status(
+                            certification_statuses[index]
+                        )
+                    )
+
+                elif item_id:
+
+                    # Unauthorized users retain the existing status.
+                    row["certification_status"] = (
+                        existing_items[item_id].certification_status
+                        or DEFAULT_CERTIFICATION_STATUS
+                    )
+
+                else:
+
+                    # New materials added by unauthorized users
+                    # always start as not verified.
+                    row["certification_status"] = (
+                        DEFAULT_CERTIFICATION_STATUS
+                    )
+
+                # -------------------------------------------------
+                # CERTIFICATE FILE
+                # -------------------------------------------------
+
+                uploaded_file = certificate_files[index]
+
+                if uploaded_file and uploaded_file.filename:
+
+                    file_bytes, extension, content_type = (
+                        validate_raw_material_certificate(uploaded_file)
+                    )
+
+                    row.update({
+                        "file_bytes": file_bytes,
+                        "extension": extension,
+                        "content_type": content_type,
+                        "original_filename": secure_filename(
+                            uploaded_file.filename
+                        ) or f"certificate.{extension}",
+                    })
+
+                elif not item_id:
+
+                    raise ValueError(
+                        f"Please upload a certificate for "
+                        f"{row['material_type']}."
+                    )
+
+                prepared_rows.append({
+                    "item_id": item_id,
+                    "data": row,
+                })
+
+            # -------------------------------------------------
+            # ENSURE AT LEAST ONE MATERIAL REMAINS
+            # -------------------------------------------------
+
+            if not prepared_rows:
+
+                raise ValueError(
+                    "An inspection must contain at least one material."
+                )
+
+            # -------------------------------------------------
+            # FILE TRACKING
+            # -------------------------------------------------
+
+            uploaded_paths = []
+            local_paths = []
+
+            old_object_paths = []
+            old_local_paths = []
+
+            try:
+
+                # -------------------------------------------------
+                # REMOVE SELECTED MATERIALS
+                # -------------------------------------------------
+
+                for item_id in removed_ids:
+
+                    item = existing_items[item_id]
+
+                    if (
+                        item.certificate_path
+                        and item.certificate_path != "pending"
+                    ):
+                        old_object_paths.append(
+                            item.certificate_path
+                        )
+
+                    if item.local_path:
+                        old_local_paths.append(
+                            item.local_path
+                        )
+
+                    db.session.delete(item)
+
+                # -------------------------------------------------
+                # UPDATE EXISTING OR CREATE NEW MATERIALS
+                # -------------------------------------------------
+
+                for prepared in prepared_rows:
+
+                    item_id = prepared["item_id"]
+                    row = prepared["data"]
+
+                    if item_id:
+
+                        material = existing_items[item_id]
+
+                    else:
+
+                        material = RawMaterialInspectionItem(
+                            raw_material_inspection_id=inspection.id,
+                            certificate_path="pending",
+                            original_filename="pending",
+                            content_type="application/octet-stream",
+                            certification_status=(
+                                DEFAULT_CERTIFICATION_STATUS
+                            )
+                        )
+
+                        db.session.add(material)
+                        db.session.flush()
+
+                    # -------------------------------------------------
+                    # UPDATE MATERIAL INFORMATION
+                    # -------------------------------------------------
+
+                    material.material_type = row["material_type"]
+
+                    material.certificate_number = (
+                        row["certificate_number"]
+                    )
+
+                    # This assignment is protected by the role check
+                    # performed above.
+                    material.certification_status = (
+                        row["certification_status"]
+                    )
+
+                    material.purchase_date = row["purchase_date"]
+                    material.duration = row["duration"]
+                    material.duration_unit = row["duration_unit"]
+                    material.unit_symbol = row["unit_symbol"]
+                    material.unit_amount = row["unit_amount"]
+
+                    # -------------------------------------------------
+                    # REPLACE CERTIFICATE ONLY IF NEW FILE EXISTS
+                    # -------------------------------------------------
+
+                    if "file_bytes" in row:
+
+                        object_path = upload_raw_material_certificate(
+                            file_bytes=row["file_bytes"],
+                            company_id=current_user.company_id,
+                            inspection_id=inspection.id,
+                            material_item_id=material.id,
+                            extension=row["extension"],
+                            content_type=row["content_type"],
+                        )
+
+                        uploaded_paths.append(object_path)
+
+                        local_path = save_local_raw_material_certificate(
+                            file_bytes=row["file_bytes"],
+                            company_id=current_user.company_id,
+                            inspection_id=inspection.id,
+                            material_item_id=material.id,
+                            original_filename=row["original_filename"],
+                        )
+
+                        if local_path:
+                            local_paths.append(local_path)
+
+                        # Keep the old paths for deletion after commit.
+                        if (
+                            material.certificate_path
+                            and material.certificate_path != "pending"
+                        ):
+                            old_object_paths.append(
+                                material.certificate_path
+                            )
+
+                        if material.local_path:
+                            old_local_paths.append(
+                                material.local_path
+                            )
+
+                        material.certificate_path = object_path
+                        material.local_path = local_path
+
+                        material.original_filename = (
+                            row["original_filename"]
+                        )
+
+                        material.content_type = row["content_type"]
+
+                # -------------------------------------------------
+                # ACTIVITY LOG
+                # -------------------------------------------------
+
+                log_activity(
+                    module="Raw Material Inspection",
+                    action="Update",
+                    description=(
+                        f"Updated raw material inspection "
+                        f"{inspection.inspection_number}."
+                    )
+                )
+
+                # -------------------------------------------------
+                # COMMIT DATABASE CHANGES
+                # -------------------------------------------------
+
+                db.session.commit()
+
+            except Exception:
+
+                db.session.rollback()
+
+                # Delete newly uploaded files if the database
+                # transaction fails.
+                cleanup_new_raw_material_files(
+                    uploaded_paths,
+                    local_paths
+                )
+
+                raise
+
+            # -------------------------------------------------
+            # DELETE OLD FILES AFTER SUCCESSFUL COMMIT
+            # -------------------------------------------------
+
+            try:
+
+                delete_old_raw_material_files(
+                    old_object_paths,
+                    old_local_paths
+                )
+
+            except Exception:
+
+                current_app.logger.exception(
+                    "Could not delete replaced or removed "
+                    "raw material certificate files."
+                )
+
+            flash(
+                "Raw Material Inspection updated successfully.",
+                "success"
+            )
+
+            return redirect(
+                url_for(
+                    "main.view_raw_material_inspection",
+                    inspection_id=inspection.id
+                )
+            )
+
+        except ValueError as error:
+
+            db.session.rollback()
+
+            flash(str(error), "warning")
+
+        except Exception:
+
+            db.session.rollback()
+
+            current_app.logger.exception(
+                "Raw Material Inspection update failed."
+            )
+
+            flash(
+                "An error occurred while updating the inspection. "
+                "Please try again.",
+                "danger"
+            )
+
+    return render_template(
+        "raw_material_inspection_form.html",
+        inspection=inspection,
+        material_types=RAW_MATERIAL_TYPES
+    )
+
+
+# =========================================================
+# PREVIEW RAW MATERIAL CERTIFICATE
+# =========================================================
+
+@main.route(
+    "/raw-material-inspections/<int:inspection_id>/certificate/<int:item_id>"
+)
+@login_required
+def view_raw_material_certificate(inspection_id, item_id):
+
+    inspection = RawMaterialInspection.query.filter_by(
+        id=inspection_id,
+        company_id=current_user.company_id
+    ).first_or_404()
+
+    material = RawMaterialInspectionItem.query.filter_by(
+        id=item_id,
+        raw_material_inspection_id=inspection.id
+    ).first_or_404()
+
+    try:
+        signed_url = create_raw_material_certificate_signed_url(
+            material.certificate_path
+        )
+
+        return redirect(signed_url)
+
+    except Exception:
+        current_app.logger.exception(
+            "Could not create raw material certificate preview URL."
+        )
+        flash(
+            "The certificate could not be opened. Please try downloading it.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "main.view_raw_material_inspection",
+                inspection_id=inspection.id
+            )
+        )
+
+
+# =========================================================
+# DOWNLOAD RAW MATERIAL CERTIFICATE
+# =========================================================
+
+@main.route(
+    "/raw-material-inspections/<int:inspection_id>/certificate/<int:item_id>/download"
+)
+@login_required
+def download_raw_material_certificate_route(inspection_id, item_id):
+
+    inspection = RawMaterialInspection.query.filter_by(
+        id=inspection_id,
+        company_id=current_user.company_id
+    ).first_or_404()
+
+    material = RawMaterialInspectionItem.query.filter_by(
+        id=item_id,
+        raw_material_inspection_id=inspection.id
+    ).first_or_404()
+
+    try:
+
+        file_bytes = download_raw_material_certificate(
+            material.certificate_path
+        )
+
+        return send_file(
+            BytesIO(file_bytes),
+            mimetype=material.content_type,
+            as_attachment=True,
+            download_name=material.original_filename
+        )
+
+    except Exception:
+        current_app.logger.exception(
+            "Could not download raw material certificate."
+        )
+
+        flash(
+            "The certificate could not be downloaded. Please try again.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "main.view_raw_material_inspection",
+                inspection_id=inspection.id
+            )
+        )
+
+
+# =========================================================
+# DELETE RAW MATERIAL INSPECTION
+# =========================================================
+
+@main.route(
+    "/raw-material-inspections/<int:inspection_id>/delete",
+    methods=["POST"]
+)
+@login_required
+@permission_required("manage_raw")
+def delete_raw_material_inspection(inspection_id):
+
+    inspection = RawMaterialInspection.query.filter_by(
+        id=inspection_id,
+        company_id=current_user.company_id
+    ).first_or_404()
+
+    object_paths = [
+        item.certificate_path
+        for item in inspection.materials
+        if item.certificate_path
+    ]
+
+    local_paths = [
+        item.local_path
+        for item in inspection.materials
+        if item.local_path
+    ]
+
+    inspection_number = inspection.inspection_number
+
+    try:
+
+        db.session.delete(inspection)
+
+        log_activity(
+            module="Raw Material Inspection",
+            action="Delete",
+            description=(
+                f"Deleted raw material inspection {inspection_number}."
+            )
+        )
+
+        db.session.commit()
+
+        delete_old_raw_material_files(
+            object_paths,
+            local_paths
+        )
+
+        flash(
+            "Raw Material Inspection deleted successfully.",
+            "success"
+        )
+
+    except Exception:
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "Raw Material Inspection deletion failed."
+        )
+
+        flash(
+            "The inspection could not be deleted. Please try again.",
+            "danger"
+        )
+
+    return redirect(
+        url_for("main.raw_material_inspections")
+    )
 
 
 @main.route("/")
