@@ -1,0 +1,221 @@
+
+{% extends "base.html" %}
+
+{% block title %}Raw Material Inspections{% endblock %}
+
+{% block content %}
+
+{% set title = "Raw Material Inspection" %}
+{% set subtitle = "Manage incoming raw material inspection records." %}
+
+{% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Quality Inspector"] %}
+
+{% set action_url = url_for('main.new_raw_material_inspection') %}
+
+{% set action_text = "New Raw Material Inspection" %}
+
+{% endif %}
+
+{% include "partials/page_header.html" %}
+
+<div class="card shadow-sm border-0">
+
+    <div class="card-header bg-transparent py-3">
+
+        <div class="row align-items-center">
+
+            <div class="col-md-5">
+
+                <input
+                    type="search"
+                    id="rawMaterialSearch"
+                    class="form-control"
+                    placeholder="Search inspection number..."
+                >
+
+            </div>
+
+            <div class="col-md-7 text-md-end mt-3 mt-md-0">
+
+                <span class="text-muted">
+                    Total Inspection Records:
+                    <strong>{{ pagination.total }}</strong>
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="table-responsive">
+
+        <table class="table table-hover align-middle mb-0"
+               id="rawMaterialTable">
+
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Inspection ID</th>
+                    <th>Materials</th>
+                    <th>Created Date</th>
+                    <th>Created By</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for inspection in inspections %}
+
+                <tr>
+
+                    <td>{{ loop.index }}</td>
+
+                    <td>
+                        <strong>
+                            {{ inspection.inspection_number }}
+                        </strong>
+                    </td>
+
+                    <td>
+                        <span class="badge bg-info">
+                            {{ inspection.materials|length }}
+                            Material(s)
+                        </span>
+                    </td>
+
+                    <td>
+                        {{ inspection.created_at.strftime("%d %b %Y") }}
+                    </td>
+
+                    <td>
+                        {{ inspection.creator.full_name
+                           if inspection.creator else "System" }}
+                    </td>
+
+                    <td class="text-center">
+
+                        <div class="d-inline-flex gap-1">
+
+                            <a href="{{ url_for(
+                                'main.view_raw_material_inspection',
+                                inspection_id=inspection.id
+                            ) }}"
+                               class="btn btn-primary btn-sm"
+                               title="View">
+
+                                <i class="bi bi-eye"></i>
+
+                            </a>
+
+                            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Quality Inspector"] %}
+
+                            <a href="{{ url_for(
+                                'main.edit_raw_material_inspection',
+                                inspection_id=inspection.id
+                            ) }}"
+                               class="btn btn-warning btn-sm"
+                               title="Edit">
+
+                                <i class="bi bi-pencil"></i>
+
+                            </a>
+
+                            <form method="POST"
+                                  action="{{ url_for(
+                                      'main.delete_raw_material_inspection',
+                                      inspection_id=inspection.id
+                                  ) }}"
+                                  onsubmit="return confirm(
+                                      'Are you sure you want to delete this Raw Material Inspection and all its material records?'
+                                  );">
+
+                                <input type="hidden"
+                                       name="csrf_token"
+                                       value="{{ csrf_token() }}">
+
+                                <button type="submit"
+                                        class="btn btn-danger btn-sm"
+                                        title="Delete">
+
+                                    <i class="bi bi-trash"></i>
+
+                                </button>
+
+                            </form>
+
+                            {% endif %}
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+
+                    <td colspan="6" class="text-center py-5">
+
+                        <i class="bi bi-box-seam display-4 text-secondary"></i>
+
+                        <h5 class="mt-3">
+                            No Raw Material Inspections Found
+                        </h5>
+
+                        <p class="text-muted mb-3">
+                            Create your first raw material inspection record.
+                        </p>
+
+                        <a href="{{ url_for(
+                            'main.new_raw_material_inspection'
+                        ) }}"
+                           class="btn btn-primary">
+
+                            <i class="bi bi-plus-circle me-1"></i>
+                            New Inspection
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {% include "partials/pagination.html" %}
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const search = document.getElementById("rawMaterialSearch");
+    const rows = document.querySelectorAll("#rawMaterialTable tbody tr");
+
+    search.addEventListener("input", function () {
+
+        const value = this.value.toLowerCase();
+
+        rows.forEach(function (row) {
+
+            row.style.display = row.textContent
+                .toLowerCase()
+                .includes(value) ? "" : "none";
+
+        });
+
+    });
+
+});
+</script>
+
+{% endblock %}

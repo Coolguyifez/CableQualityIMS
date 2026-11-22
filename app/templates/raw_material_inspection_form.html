@@ -1,0 +1,838 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+    {% if inspection %}
+        Edit Raw Material Inspection
+    {% else %}
+        New Raw Material Inspection
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+
+    <div class="col-12 col-xl-11">
+
+        <div class="card shadow-sm border-0">
+
+            <!-- HEADER -->
+            <div class="card-header bg-transparent py-3">
+
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+                    <div>
+                        <h4 class="mb-1">
+                            {% if inspection %}
+                                Edit Raw Material Inspection
+                            {% else %}
+                                New Raw Material Inspection
+                            {% endif %}
+                        </h4>
+
+                        <small class="text-muted">
+                            Add raw materials, their certificates and certification verification status.
+                        </small>
+                    </div>
+
+                    {% if inspection %}
+                        <span class="badge bg-primary fs-6">
+                            {{ inspection.inspection_number }}
+                        </span>
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+            <!-- FORM BODY -->
+            <div class="card-body">
+
+                <form method="POST"
+                      enctype="multipart/form-data"
+                      id="rawMaterialForm">
+
+                    <input type="hidden"
+                           name="csrf_token"
+                           value="{{ csrf_token() }}">
+
+                    <!-- INFORMATION -->
+                    <div class="alert alert-info d-flex align-items-start gap-2">
+
+                        <i class="bi bi-info-circle fs-5"></i>
+
+                        <div>
+                            Each material must have its own certificate number,
+                            certification verification status, certificate file,
+                            purchase date, duration, unit symbol and unit amount.
+                        </div>
+
+                    </div>
+
+                    <!-- MATERIAL HEADER -->
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+
+                        <h5 class="mb-0">
+                            <i class="bi bi-box-seam me-2"></i>
+                            Material Entries
+                        </h5>
+
+                        <button type="button"
+                                class="btn btn-primary btn-sm"
+                                id="addMaterialButton">
+
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Add Material
+
+                        </button>
+
+                    </div>
+
+                    <!-- MATERIAL CONTAINER -->
+                    <div id="materialContainer">
+
+                        {% if inspection %}
+
+                            {% for material in inspection.materials %}
+
+                                <div class="material-entry card mb-4 border">
+
+                                    <!-- MATERIAL CARD HEADER -->
+                                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+                                        <strong class="material-heading">
+                                            Material {{ loop.index }}
+                                        </strong>
+
+                                        <label class="text-danger small mb-0">
+
+                                            <input type="checkbox"
+                                                   name="remove_item_ids[]"
+                                                   value="{{ material.id }}"
+                                                   class="form-check-input remove-existing">
+
+                                            Remove Material
+
+                                        </label>
+
+                                    </div>
+
+                                    <div class="card-body">
+
+                                        <!-- IMPORTANT: Keep this hidden field enabled -->
+                                        <input type="hidden"
+                                               name="item_id[]"
+                                               value="{{ material.id }}">
+
+                                        <div class="row">
+
+                                            <!-- MATERIAL TYPE -->
+                                            <div class="col-md-6 mb-3">
+
+                                                <label class="form-label fw-semibold">
+                                                    Material Type
+                                                    <span class="text-danger">*</span>
+                                                </label>
+
+                                                <select name="material_type[]"
+                                                        class="form-select"
+                                                        required>
+
+                                                    <option value="">
+                                                        Select Material
+                                                    </option>
+
+                                                    {% for material_type in material_types %}
+
+                                                        <option value="{{ material_type }}"
+                                                            {% if material.material_type == material_type %}selected{% endif %}>
+
+                                                            {{ material_type }}
+
+                                                        </option>
+
+                                                    {% endfor %}
+
+                                                </select>
+
+                                            </div>
+
+                                            <!-- CERTIFICATE NUMBER -->
+                                            <div class="col-md-6 mb-3">
+
+                                                <label class="form-label fw-semibold">
+                                                    Certificate Number
+                                                    <span class="text-danger">*</span>
+                                                </label>
+
+                                                <input type="text"
+                                                       name="certificate_number[]"
+                                                       class="form-control"
+                                                       value="{{ material.certificate_number }}"
+                                                       pattern="[A-Za-z0-9]+"
+                                                       title="Use letters and numbers only."
+                                                       required>
+
+                                            </div>
+
+                                            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager"] %}
+                                            
+                                            <!-- CERTIFICATION STATUS -->
+                                            <div class="col-md-6 mb-3">
+
+                                                <label class="form-label fw-semibold">
+                                                    Certification Verification Status
+                                                    <span class="text-danger">*</span>
+                                                </label>
+
+                                                <select name="certification_status[]"
+                                                        class="form-select certification-status"
+                                                        required>
+
+                                                    <option value="Certification Not Verified"
+                                                        {% if material.certification_status == "Certification Not Verified" %}selected{% endif %}>
+
+                                                        Certification Not Verified
+
+                                                    </option>
+
+                                                    <option value="Certification Verified"
+                                                        {% if material.certification_status == "Certification Verified" %}selected{% endif %}>
+
+                                                        Certification Verified
+
+                                                    </option>
+
+                                                </select>
+
+                                                <small class="text-muted">
+                                                    Select the verification result for this material's certificate.
+                                                </small>
+
+                                            </div>
+
+                                            {% endif %}
+
+                                            <!-- PURCHASE DATE -->
+                                            <div class="col-md-6 mb-3">
+
+                                                <label class="form-label fw-semibold">
+                                                    Purchase Date
+                                                    <span class="text-danger">*</span>
+                                                </label>
+
+                                                <input type="date"
+                                                       name="purchase_date[]"
+                                                       class="form-control"
+                                                       value="{{ material.purchase_date.isoformat() }}"
+                                                       required>
+
+                                            </div>
+
+                                            <!-- DURATION -->
+                                            <div class="col-md-6 mb-3">
+
+                                                <label class="form-label fw-semibold">
+                                                    Duration
+                                                    <span class="text-danger">*</span>
+                                                </label>
+
+                                                <div class="input-group">
+
+                                                    <input type="number"
+                                                           name="duration[]"
+                                                           class="form-control"
+                                                           min="0.01"
+                                                           step="0.01"
+                                                           value="{{ material.duration }}"
+                                                           required>
+
+                                                    <select name="duration_unit[]"
+                                                            class="form-select"
+                                                            style="max-width: 130px;">
+
+                                                        {% for unit in ["Days", "Weeks", "Months", "Years"] %}
+
+                                                            <option value="{{ unit }}"
+                                                                {% if material.duration_unit == unit %}selected{% endif %}>
+
+                                                                {{ unit }}
+
+                                                            </option>
+
+                                                        {% endfor %}
+
+                                                    </select>
+
+                                                </div>
+
+                                            </div>
+
+                                            <!-- UNIT SYMBOL -->
+                                            <div class="col-md-6 mb-3">
+
+                                                <label class="form-label fw-semibold">
+                                                    Unit Symbol
+                                                    <span class="text-danger">*</span>
+                                                </label>
+
+                                                <input type="text"
+                                                       name="unit_symbol[]"
+                                                       class="form-control"
+                                                       value="{{ material.unit_symbol }}"
+                                                       placeholder="Example: kg, m, mm"
+                                                       required>
+
+                                            </div>
+
+                                            <!-- UNIT AMOUNT -->
+                                            <div class="col-md-6 mb-3">
+
+                                                <label class="form-label fw-semibold">
+                                                    Unit Amount
+                                                    <span class="text-danger">*</span>
+                                                </label>
+
+                                                <input type="number"
+                                                       name="unit_amount[]"
+                                                       class="form-control"
+                                                       min="0"
+                                                       step="0.01"
+                                                       value="{{ material.unit_amount }}"
+                                                       required>
+
+                                            </div>
+
+                                            <!-- CERTIFICATE FILE -->
+                                            <div class="col-12 mb-3">
+
+                                                <label class="form-label fw-semibold">
+                                                    Certificate File
+                                                </label>
+
+                                                <input type="file"
+                                                       name="certificate[]"
+                                                       class="form-control"
+                                                       accept=".pdf,.doc,.docx">
+
+                                                <small class="text-muted">
+                                                    Leave empty to retain the existing certificate.
+                                                    Accepted formats: PDF, DOC and DOCX.
+                                                </small>
+
+                                                <div class="mt-2">
+
+                                                    <a href="{{ url_for(
+                                                        'main.view_raw_material_certificate',
+                                                        inspection_id=inspection.id,
+                                                        item_id=material.id
+                                                    ) }}"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer"
+                                                       class="btn btn-outline-primary btn-sm">
+
+                                                        <i class="bi bi-file-earmark-text me-1"></i>
+                                                        View Current Certificate
+
+                                                    </a>
+
+                                                    <a href="{{ url_for(
+                                                        'main.download_raw_material_certificate_route',
+                                                        inspection_id=inspection.id,
+                                                        item_id=material.id
+                                                    ) }}"
+                                                       class="btn btn-outline-secondary btn-sm">
+
+                                                        <i class="bi bi-download me-1"></i>
+                                                        Download
+
+                                                    </a>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            {% endfor %}
+
+                        {% endif %}
+
+                    </div>
+
+                    <!-- FORM BUTTONS -->
+                    <div class="d-flex justify-content-between flex-wrap gap-2 mt-4">
+
+                        <a href="{% if inspection %}{{ url_for('main.view_raw_material_inspection', inspection_id=inspection.id) }}{% else %}{{ url_for('main.raw_material_inspections') }}{% endif %}"
+                           class="btn btn-secondary">
+
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Cancel
+
+                        </a>
+
+                        <button type="submit"
+                                class="btn btn-primary"
+                                id="submitButton">
+
+                            <i class="bi bi-save me-1"></i>
+
+                            {% if inspection %}
+                                Update Inspection
+                            {% else %}
+                                Save Inspection
+                            {% endif %}
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     NEW MATERIAL TEMPLATE
+===================================================== -->
+
+<template id="materialTemplate">
+
+    <div class="material-entry card mb-4 border">
+
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+
+            <strong class="material-heading">
+                New Material
+            </strong>
+
+            <button type="button"
+                    class="btn btn-outline-danger btn-sm remove-new-material">
+
+                <i class="bi bi-trash me-1"></i>
+                Remove
+
+            </button>
+
+        </div>
+
+        <div class="card-body">
+
+            <input type="hidden"
+                   name="item_id[]"
+                   value="">
+
+            <div class="row">
+
+                <!-- MATERIAL TYPE -->
+                <div class="col-md-6 mb-3">
+
+                    <label class="form-label fw-semibold">
+                        Material Type
+                        <span class="text-danger">*</span>
+                    </label>
+
+                    <select name="material_type[]"
+                            class="form-select"
+                            required>
+
+                        <option value="">
+                            Select Material
+                        </option>
+
+                        {% for material_type in material_types %}
+
+                            <option value="{{ material_type }}">
+                                {{ material_type }}
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <!-- CERTIFICATE NUMBER -->
+                <div class="col-md-6 mb-3">
+
+                    <label class="form-label fw-semibold">
+                        Certificate Number
+                        <span class="text-danger">*</span>
+                    </label>
+
+                    <input type="text"
+                           name="certificate_number[]"
+                           class="form-control"
+                           pattern="[A-Za-z0-9]+"
+                           title="Use letters and numbers only."
+                           placeholder="Example: CERT2026001"
+                           required>
+
+                </div>
+
+                {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager"] %}
+
+                <!-- CERTIFICATION STATUS -->
+                <div class="col-md-6 mb-3">
+
+                    <label class="form-label fw-semibold">
+                        Certification Verification Status
+                        <span class="text-danger">*</span>
+                    </label>
+
+                    <select name="certification_status[]"
+                            class="form-select certification-status"
+                            required>
+
+                        <option value="Certification Not Verified" selected>
+                            Certification Not Verified
+                        </option>
+
+                        <option value="Certification Verified">
+                            Certification Verified
+                        </option>
+
+                    </select>
+
+                    <small class="text-muted">
+                        Select the verification result for this material's certificate.
+                    </small>
+
+                </div>
+
+                {% endif %}
+
+                <!-- PURCHASE DATE -->
+                <div class="col-md-6 mb-3">
+
+                    <label class="form-label fw-semibold">
+                        Purchase Date
+                        <span class="text-danger">*</span>
+                    </label>
+
+                    <input type="date"
+                           name="purchase_date[]"
+                           class="form-control"
+                           required>
+
+                </div>
+
+                <!-- DURATION -->
+                <div class="col-md-6 mb-3">
+
+                    <label class="form-label fw-semibold">
+                        Duration
+                        <span class="text-danger">*</span>
+                    </label>
+
+                    <div class="input-group">
+
+                        <input type="number"
+                               name="duration[]"
+                               class="form-control"
+                               min="0.01"
+                               step="0.01"
+                               placeholder="Enter duration"
+                               required>
+
+                        <select name="duration_unit[]"
+                                class="form-select"
+                                style="max-width: 130px;">
+
+                            <option value="Days">Days</option>
+                            <option value="Weeks">Weeks</option>
+                            <option value="Months" selected>Months</option>
+                            <option value="Years">Years</option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+                <!-- UNIT SYMBOL -->
+                <div class="col-md-6 mb-3">
+
+                    <label class="form-label fw-semibold">
+                        Unit Symbol
+                        <span class="text-danger">*</span>
+                    </label>
+
+                    <input type="text"
+                           name="unit_symbol[]"
+                           class="form-control"
+                           placeholder="Example: kg, m, mm"
+                           required>
+
+                </div>
+
+                <!-- UNIT AMOUNT -->
+                <div class="col-md-6 mb-3">
+
+                    <label class="form-label fw-semibold">
+                        Unit Amount
+                        <span class="text-danger">*</span>
+                    </label>
+
+                    <input type="number"
+                           name="unit_amount[]"
+                           class="form-control"
+                           min="0"
+                           step="0.01"
+                           placeholder="Enter unit amount"
+                           required>
+
+                </div>
+
+                <!-- CERTIFICATE FILE -->
+                <div class="col-12 mb-3">
+
+                    <label class="form-label fw-semibold">
+                        Certificate File
+                        <span class="text-danger">*</span>
+                    </label>
+
+                    <input type="file"
+                           name="certificate[]"
+                           class="form-control"
+                           accept=".pdf,.doc,.docx"
+                           required>
+
+                    <small class="text-muted">
+                        Accepted formats: PDF, DOC and DOCX.
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</template>
+
+
+<!-- =====================================================
+     JAVASCRIPT
+===================================================== -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const container = document.getElementById("materialContainer");
+    const template = document.getElementById("materialTemplate");
+    const addButton = document.getElementById("addMaterialButton");
+    const form = document.getElementById("rawMaterialForm");
+    const submitButton = document.getElementById("submitButton");
+
+    // =====================================================
+    // UPDATE MATERIAL HEADINGS
+    // =====================================================
+
+    function updateMaterialHeadings() {
+
+        const entries = container.querySelectorAll(".material-entry");
+
+        entries.forEach(function (entry, index) {
+
+            const heading = entry.querySelector(".material-heading");
+
+            if (heading) {
+                heading.textContent = "Material " + (index + 1);
+            }
+
+        });
+
+    }
+
+
+    // =====================================================
+    // ADD MATERIAL
+    // =====================================================
+
+    function addMaterial() {
+
+        const clone = template.content.cloneNode(true);
+
+        container.appendChild(clone);
+
+        updateMaterialHeadings();
+
+    }
+
+
+    // =====================================================
+    // ADD BUTTON
+    // =====================================================
+
+    addButton.addEventListener("click", function () {
+
+        addMaterial();
+
+    });
+
+
+    // =====================================================
+    // REMOVE NEW MATERIAL
+    // =====================================================
+
+    container.addEventListener("click", function (event) {
+
+        const removeButton = event.target.closest(".remove-new-material");
+
+        if (removeButton) {
+
+            const entry = removeButton.closest(".material-entry");
+
+            if (entry) {
+                entry.remove();
+            }
+
+            updateMaterialHeadings();
+
+        }
+
+    });
+
+
+    // =====================================================
+    // MARK EXISTING MATERIAL FOR REMOVAL
+    // =====================================================
+
+    container.addEventListener("change", function (event) {
+
+        if (!event.target.classList.contains("remove-existing")) {
+            return;
+        }
+
+        const checkbox = event.target;
+        const entry = checkbox.closest(".material-entry");
+
+        if (!entry) {
+            return;
+        }
+
+        const isRemoved = checkbox.checked;
+
+        entry.style.opacity = isRemoved ? "0.45" : "1";
+
+        entry.style.borderStyle = isRemoved ? "dashed" : "solid";
+
+        /*
+         * IMPORTANT:
+         * Do not disable item_id[] or remove-existing.
+         *
+         * The backend needs item_id[] to identify existing
+         * records and remove_item_ids[] to know which records
+         * should be deleted.
+         *
+         * Disable only visible material fields.
+         */
+
+        entry.querySelectorAll(
+            "input:not([type='hidden']):not(.remove-existing), select"
+        ).forEach(function (field) {
+
+            field.disabled = isRemoved;
+
+        });
+
+        // Keep the hidden ID enabled.
+        const hiddenId = entry.querySelector("input[name='item_id[]']");
+
+        if (hiddenId) {
+            hiddenId.disabled = false;
+        }
+
+        // Keep the removal checkbox enabled.
+        checkbox.disabled = false;
+
+    });
+
+
+    // =====================================================
+    // FORM SUBMISSION VALIDATION
+    // =====================================================
+
+    form.addEventListener("submit", function (event) {
+
+        const entries = container.querySelectorAll(".material-entry");
+
+        let activeCount = 0;
+
+        entries.forEach(function (entry) {
+
+            const removeCheckbox = entry.querySelector(".remove-existing");
+
+            if (!removeCheckbox || !removeCheckbox.checked) {
+
+                activeCount++;
+
+            }
+
+        });
+
+        if (activeCount === 0) {
+
+            event.preventDefault();
+
+            alert("An inspection must contain at least one material.");
+
+            return;
+
+        }
+
+        /*
+         * Ensure removed entries do not block HTML validation.
+         * Their visible controls are disabled above.
+         */
+
+        if (!form.checkValidity()) {
+
+            event.preventDefault();
+
+            form.reportValidity();
+
+            return;
+
+        }
+
+        submitButton.disabled = true;
+
+        submitButton.innerHTML =
+            '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+    });
+
+
+    // =====================================================
+    // INITIALIZE
+    // =====================================================
+
+    {% if not inspection %}
+
+        // Automatically add the first material on a new inspection.
+        addMaterial();
+
+    {% endif %}
+
+    updateMaterialHeadings();
+
+});
+
+</script>
+
+{% endblock %}
