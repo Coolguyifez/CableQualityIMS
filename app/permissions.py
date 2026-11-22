@@ -20,6 +20,8 @@ ROLE_PERMISSIONS = {
 
         "manage_production_lines",
 
+        "manage_raw",
+
         "manage_batches",
 
         "manage_inspections",
@@ -61,6 +63,8 @@ ROLE_PERMISSIONS = {
 
         "view_inspections",
 
+        "manage_raw",
+
         "manage_specifications",
 
         "manage_quality_metrics",
@@ -90,6 +94,8 @@ ROLE_PERMISSIONS = {
 
         "view_inspections",
 
+        "manage_raw",
+
         "manage_specifications",
 
         "manage_quality_metrics",
@@ -115,6 +121,8 @@ ROLE_PERMISSIONS = {
 
         "manage_quality_metrics",
 
+        "manage_raw",
+
         "manage_deviations",
         
         "manage_notifications"
@@ -130,6 +138,8 @@ ROLE_PERMISSIONS = {
         "manage_batches",
 
         "manage_production_lines",
+
+        "manage_raw",
 
         "manage_inspections",
 
@@ -149,6 +159,8 @@ ROLE_PERMISSIONS = {
     "Production Operator": {
 
         "manage_batches",
+
+        "manage_raw",
 
         "view_inspections",
 
