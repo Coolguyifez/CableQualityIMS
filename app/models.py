@@ -671,6 +671,172 @@ class QualityMetric(db.Model):
         "QualitySpecification"
     )
 
+# =========================================================
+# RAW MATERIAL INSPECTION
+# =========================================================
+
+class RawMaterialInspection(db.Model):
+    __tablename__ = "raw_material_inspections"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    company_id = db.Column(
+        db.Integer,
+        db.ForeignKey("companies.id"),
+        nullable=False,
+        index=True
+    )
+
+    inspection_number = db.Column(
+        db.String(50),
+        nullable=False,
+        unique=True,
+        index=True
+    )
+
+    created_by = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=True
+    )
+
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+
+    company = db.relationship(
+        "Company",
+        backref="raw_material_inspections"
+    )
+
+    creator = db.relationship(
+        "User",
+        backref="created_raw_material_inspections"
+    )
+
+    materials = db.relationship(
+        "RawMaterialInspectionItem",
+        back_populates="inspection",
+        cascade="all, delete-orphan",
+        order_by="RawMaterialInspectionItem.id"
+    )
+
+    def __repr__(self):
+        return f"<RawMaterialInspection {self.inspection_number}>"
+
+
+# =========================================================
+# RAW MATERIAL INSPECTION ITEMS
+# =========================================================
+
+class RawMaterialInspectionItem(db.Model):
+    __tablename__ = "raw_material_inspection_items"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    raw_material_inspection_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            "raw_material_inspections.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    material_type = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    certificate_number = db.Column(
+        db.String(150),
+        nullable=False
+    )
+
+    certificate_path = db.Column(
+        db.String(500),
+        nullable=False
+    )
+
+    original_filename = db.Column(
+        db.String(255),
+        nullable=False
+    )
+
+    content_type = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    purchase_date = db.Column(
+        db.Date,
+        nullable=False
+    )
+
+    duration = db.Column(
+        db.Numeric(10, 2),
+        nullable=False
+    )
+
+    duration_unit = db.Column(
+        db.String(20),
+        nullable=False,
+        default="Months"
+    )
+
+    unit_symbol = db.Column(
+        db.String(30),
+        nullable=False
+    )
+
+    unit_amount = db.Column(
+        db.Numeric(14, 2),
+        nullable=False
+    )
+
+    local_path = db.Column(
+        db.String(500),
+        nullable=True
+    )
+
+    certification_status = db.Column(
+        db.String(50),
+        nullable=False,
+        default="Certification Not Verified"
+    )
+
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+
+    inspection = db.relationship(
+        "RawMaterialInspection",
+        back_populates="materials"
+    )
+
+    def __repr__(self):
+        return (
+            f"<RawMaterialInspectionItem "
+            f"{self.material_type}>"
+        )
 
 
 class QualitySpecification(db.Model):
