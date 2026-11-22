@@ -97,6 +97,23 @@
 
             {% endif %}
 
+            {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager", "Quality Inspector", "Production Supervisor", "Production Operator"] %}
+            <li class="nav-item">
+                <a href="{{ url_for('main.raw_material_inspections') }}"
+                class="nav-link {% if request.endpoint in [
+                    'main.raw_material_inspections',
+                    'main.new_raw_material_inspection',
+                    'main.view_raw_material_inspection',
+                    'main.edit_raw_material_inspection'
+                ] %}active{% endif %}">
+
+                    <i class="bi bi-box-seam"></i>
+                    Raw Material
+
+                </a>
+            </li>
+            {% endif %}
+
             {% if current_user.role in ["System Administrator", "Company Administrator", "Quality Manager"] %}
             <li class="nav-item">
 
