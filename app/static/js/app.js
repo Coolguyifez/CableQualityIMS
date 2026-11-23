@@ -621,28 +621,9 @@ function urlBase64ToUint8Array(base64String) {
 
 /*
 |--------------------------------------------------------------------------
-| Start automatic notification setup
+| LOCAL TIME CONVERSION
 |--------------------------------------------------------------------------
 */
-
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
-
-        /*
-        Small delay gives CQIMS time to finish
-        loading the authenticated page.
-        */
-
-        setTimeout(
-            setupAutomaticPushNotifications,
-            1500
-        );
-
-    }
-);
-
-
 
 document.addEventListener("DOMContentLoaded", function () {
 
@@ -652,14 +633,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!utcString) return;
 
-        // Tell JavaScript that the database timestamp is UTC
-        const utcDate = new Date(
-            utcString.endsWith("Z")
-                ? utcString
-                : utcString + "Z"
-        );
+        let normalizedDate = utcString.trim();
 
-        if (isNaN(utcDate.getTime())) return;
+        /*
+        If the timestamp has no timezone information,
+        explicitly treat it as UTC.
+        */
+
+        const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(normalizedDate);
+
+        if (!hasTimezone) {
+            normalizedDate += "Z";
+        }
+
+        const utcDate = new Date(normalizedDate);
+
+        if (isNaN(utcDate.getTime())) {
+            console.error("Invalid local-time timestamp:", utcString);
+            return;
+        }
 
         element.textContent = new Intl.DateTimeFormat(
             undefined,
@@ -676,7 +668,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 });
-
 
 /* =========================================================
    CABLEQIMS OFFLINE FORM PROTECTION
